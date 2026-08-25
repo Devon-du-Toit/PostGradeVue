@@ -4,6 +4,7 @@ import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import CoursesView from '@/views/CoursesView.vue'
+import CourseDetailView from '@/views/CourseDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -33,6 +34,14 @@ const router = createRouter({
       path: '/courses',
       name: 'courses',
       component: CoursesView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/courses/:id',
+      name: 'course-detail',
+      component: CourseDetailView,
       meta: {
         requiresAuth: true,
       },
