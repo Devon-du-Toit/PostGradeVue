@@ -25,6 +25,11 @@ const logout = async () => {
         <strong>Courses</strong>
         <span>Manage courses, students and assessments.</span>
       </RouterLink>
+
+      <RouterLink class="action-card" to="/verification-queue">
+        <strong>Verification queue</strong>
+        <span>Review OCR student matches that need confirmation.</span>
+      </RouterLink>
     </section>
 
     <button type="button" @click="logout">
@@ -41,11 +46,15 @@ const logout = async () => {
 }
 
 .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
   margin: 2rem 0;
 }
 
 .action-card {
   display: flex;
+  width: 100%;
   max-width: 360px;
   flex-direction: column;
   gap: 0.5rem;
