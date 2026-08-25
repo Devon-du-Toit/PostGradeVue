@@ -11,7 +11,9 @@ const authStore = useAuthStore()
     <header class="dashboard-hero">
       <div>
         <p class="page-eyebrow">Workspace</p>
-        <h1>Good to see you{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}.</h1>
+        <h1>
+          Welcome{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}.
+        </h1>
         <p class="dashboard-subtitle">
           Manage courses, review submission matches and keep assessment results up to date.
         </p>
