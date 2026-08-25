@@ -7,6 +7,11 @@ export const fetchSubmissions = async () => {
   return response.data
 }
 
+export const fetchVerificationQueue = async () => {
+  const response = await api.get<Submission[]>('submissions/verification-queue/')
+  return response.data
+}
+
 export const uploadSubmission = async (assessmentId: number, file: File) => {
   const formData = new FormData()
   formData.append('assessment', String(assessmentId))
