@@ -11,6 +11,7 @@ import {
 } from '@/services/results'
 import {
   fetchSubmissions,
+  markSubmission,
   uploadSubmission,
   verifySubmission,
 } from '@/services/submissions'
@@ -30,12 +31,14 @@ const loading = ref(true)
 const savingEnrollment = ref<number | null>(null)
 const uploading = ref(false)
 const verifyingSubmissionId = ref<number | null>(null)
+const markingSubmissionId = ref<number | null>(null)
 const selectedSubmissionFile = ref<File | null>(null)
 const error = ref('')
 const successMessage = ref('')
 
 const marks = reactive<Record<number, number | null>>({})
 const verificationSelections = reactive<Record<number, number | null>>({})
+const submissionMarks = reactive<Record<number, number | null>>({})
 
 const resultByEnrollment = computed(() => {
   return new Map(results.value.map((result) => [result.enrollment, result]))
@@ -86,6 +89,14 @@ const loadPage = async () => {
 
     for (const submission of submissions.value) {
       verificationSelections[submission.id] = submission.enrollment
+
+      const existingResult = submission.enrollment
+        ? resultData.find((result) => result.enrollment === submission.enrollment)
+        : undefined
+
+      submissionMarks[submission.id] = existingResult
+        ? Number(existingResult.mark)
+        : null
     }
   } catch {
     error.value = 'Could not load assessment data.'
@@ -163,6 +174,7 @@ const submitSubmission = async () => {
 
     submissions.value.push(submission)
     verificationSelections[submission.id] = submission.enrollment
+    submissionMarks[submission.id] = null
     selectedSubmissionFile.value = null
     successMessage.value = `Uploaded ${submission.original_filename}.`
   } catch {
@@ -193,11 +205,65 @@ const confirmSubmission = async (submission: Submission) => {
     }
 
     verificationSelections[verified.id] = verified.enrollment
+
+    const existingResult = verified.enrollment
+      ? resultByEnrollment.value.get(verified.enrollment)
+      : undefined
+    submissionMarks[verified.id] = existingResult
+      ? Number(existingResult.mark)
+      : null
+
     successMessage.value = `Verified ${verified.original_filename}.`
   } catch {
     error.value = 'Could not verify submission for that student.'
   } finally {
     verifyingSubmissionId.value = null
+  }
+}
+
+const saveSubmissionMark = async (submission: Submission) => {
+  const mark = submissionMarks[submission.id]
+
+  if (typeof mark !== 'number' || Number.isNaN(mark)) {
+    error.value = 'Enter a mark before marking the submission.'
+    return
+  }
+
+  if (assessment.value && (mark < 0 || mark > Number(assessment.value.max_mark))) {
+    error.value = `Mark must be between 0 and ${assessment.value.max_mark}.`
+    return
+  }
+
+  markingSubmissionId.value = submission.id
+  error.value = ''
+  successMessage.value = ''
+
+  try {
+    const savedResult = await markSubmission(submission.id, mark)
+
+    const resultIndex = results.value.findIndex((result) => result.id === savedResult.id)
+    if (resultIndex >= 0) {
+      results.value[resultIndex] = savedResult
+    } else {
+      results.value.push(savedResult)
+    }
+
+    marks[savedResult.enrollment] = Number(savedResult.mark)
+    submissionMarks[submission.id] = Number(savedResult.mark)
+
+    const submissionIndex = submissions.value.findIndex((item) => item.id === submission.id)
+    if (submissionIndex >= 0) {
+      submissions.value[submissionIndex] = {
+        ...submissions.value[submissionIndex],
+        status: 'marked',
+      }
+    }
+
+    successMessage.value = `Marked ${submission.original_filename}: ${savedResult.mark}/${assessment.value?.max_mark}.`
+  } catch {
+    error.value = 'Could not mark submission. It must be verified first and the mark must be valid.'
+  } finally {
+    markingSubmissionId.value = null
   }
 }
 
@@ -265,7 +331,7 @@ onMounted(() => {
                 <th>File</th>
                 <th>Status</th>
                 <th>Student</th>
-                <th>Verification</th>
+                <th>Verification / mark</th>
               </tr>
             </thead>
             <tbody>
@@ -310,6 +376,38 @@ onMounted(() => {
                       </button>
                     </div>
                   </template>
+
+                  <template v-else-if="submission.status === 'verified'">
+                    <div class="marking-controls">
+                      <input
+                        v-model.number="submissionMarks[submission.id]"
+                        type="number"
+                        min="0"
+                        :max="Number(assessment.max_mark)"
+                        step="0.01"
+                        placeholder="Mark"
+                      />
+                      <span>/ {{ assessment.max_mark }}</span>
+                      <button
+                        type="button"
+                        :disabled="markingSubmissionId === submission.id"
+                        @click="saveSubmissionMark(submission)"
+                      >
+                        {{ markingSubmissionId === submission.id ? 'Marking…' : 'Save mark' }}
+                      </button>
+                    </div>
+                  </template>
+
+                  <template v-else-if="submission.status === 'marked'">
+                    <span>
+                      Marked
+                      <template v-if="submission.enrollment && resultByEnrollment.get(submission.enrollment)">
+                        — {{ resultByEnrollment.get(submission.enrollment)?.mark }}/{{ assessment.max_mark }}
+                        ({{ Number(resultByEnrollment.get(submission.enrollment)?.percentage).toFixed(2) }}%)
+                      </template>
+                    </span>
+                  </template>
+
                   <span v-else>Complete</span>
                 </td>
               </tr>
@@ -409,11 +507,16 @@ dd {
 }
 
 .upload-controls,
-.verification-controls {
+.verification-controls,
+.marking-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+}
+
+.marking-controls input {
+  width: 7rem;
 }
 
 .submissions-table-wrap,
