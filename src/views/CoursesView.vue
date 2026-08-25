@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 
 import { useCoursesStore } from '@/stores/courses'
 
@@ -81,9 +82,11 @@ onMounted(() => {
 
       <ul v-else class="course-list">
         <li v-for="course in coursesStore.courses" :key="course.id">
-          <strong>{{ course.code }}</strong>
-          <span>{{ course.name }}</span>
-          <span>{{ course.year }} · Semester {{ course.semester }}</span>
+          <RouterLink class="course-link" :to="`/courses/${course.id}`">
+            <strong>{{ course.code }}</strong>
+            <span>{{ course.name }}</span>
+            <span>{{ course.year }} · Semester {{ course.semester }}</span>
+          </RouterLink>
         </li>
       </ul>
     </section>
@@ -135,11 +138,20 @@ button {
 }
 
 .course-list li {
+  border-bottom: 1px solid #eee;
+}
+
+.course-link {
   display: grid;
   grid-template-columns: minmax(90px, 0.5fr) minmax(180px, 1.5fr) 1fr;
   gap: 1rem;
   padding: 0.85rem 0;
-  border-bottom: 1px solid #eee;
+  color: inherit;
+  text-decoration: none;
+}
+
+.course-link:hover {
+  background: #f7f7f7;
 }
 
 .error {
