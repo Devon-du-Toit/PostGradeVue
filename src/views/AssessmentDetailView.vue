@@ -62,7 +62,7 @@ const loadPage = async () => {
 const saveMark = async (student: GradebookStudent) => {
   const mark = marks[student.enrollment]
 
-  if (mark === null || Number.isNaN(mark)) {
+  if (typeof mark !== 'number' || Number.isNaN(mark)) {
     error.value = 'Enter a mark before saving.'
     return
   }
