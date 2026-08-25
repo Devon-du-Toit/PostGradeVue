@@ -251,12 +251,9 @@ const saveSubmissionMark = async (submission: Submission) => {
     marks[savedResult.enrollment] = Number(savedResult.mark)
     submissionMarks[submission.id] = Number(savedResult.mark)
 
-    const submissionIndex = submissions.value.findIndex((item) => item.id === submission.id)
-    if (submissionIndex >= 0) {
-      submissions.value[submissionIndex] = {
-        ...submissions.value[submissionIndex],
-        status: 'marked',
-      }
+    const existingSubmission = submissions.value.find((item) => item.id === submission.id)
+    if (existingSubmission) {
+      existingSubmission.status = 'marked'
     }
 
     successMessage.value = `Marked ${submission.original_filename}: ${savedResult.mark}/${assessment.value?.max_mark}.`
@@ -515,10 +512,6 @@ dd {
   align-items: center;
 }
 
-.marking-controls input {
-  width: 7rem;
-}
-
 .submissions-table-wrap,
 .results-table-wrap {
   margin-top: 1rem;
@@ -541,7 +534,8 @@ dd {
   vertical-align: middle;
 }
 
-.results-table input {
+.results-table input,
+.marking-controls input {
   width: 7rem;
 }
 
