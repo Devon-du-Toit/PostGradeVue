@@ -5,6 +5,7 @@ import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import CoursesView from '@/views/CoursesView.vue'
 import CourseDetailView from '@/views/CourseDetailView.vue'
+import AssessmentDetailView from '@/views/AssessmentDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -42,6 +43,14 @@ const router = createRouter({
       path: '/courses/:id',
       name: 'course-detail',
       component: CourseDetailView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/assessments/:id',
+      name: 'assessment-detail',
+      component: AssessmentDetailView,
       meta: {
         requiresAuth: true,
       },
