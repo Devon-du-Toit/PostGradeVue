@@ -113,7 +113,12 @@ onMounted(() => {
           <p class="course-code">{{ course.code }}</p>
           <h1>{{ course.name }}</h1>
         </div>
-        <p>{{ course.year }} · Semester {{ course.semester }}</p>
+        <div class="course-actions">
+          <p>{{ course.year }} · Semester {{ course.semester }}</p>
+          <RouterLink class="gradebook-link" :to="`/courses/${courseId}/gradebook`">
+            View gradebook
+          </RouterLink>
+        </div>
       </header>
 
       <section class="panel">
@@ -218,6 +223,20 @@ onMounted(() => {
   gap: 1rem;
   align-items: end;
   margin-top: 1.5rem;
+}
+
+.course-actions {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: end;
+}
+
+.course-actions p {
+  margin: 0;
+}
+
+.gradebook-link {
+  font-weight: 600;
 }
 
 .course-code {
