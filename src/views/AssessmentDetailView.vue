@@ -9,9 +9,15 @@ import {
   fetchAssessmentResults,
   updateAssessmentResult,
 } from '@/services/results'
+import {
+  fetchSubmissions,
+  uploadSubmission,
+  verifySubmission,
+} from '@/services/submissions'
 import type { Assessment } from '@/types/assessment'
 import type { GradebookStudent } from '@/types/gradebook'
 import type { Result } from '@/types/result'
+import type { Submission, SubmissionStatus } from '@/types/submission'
 
 const route = useRoute()
 const assessmentId = Number(route.params.id)
@@ -19,16 +25,37 @@ const assessmentId = Number(route.params.id)
 const assessment = ref<Assessment | null>(null)
 const students = ref<GradebookStudent[]>([])
 const results = ref<Result[]>([])
+const submissions = ref<Submission[]>([])
 const loading = ref(true)
 const savingEnrollment = ref<number | null>(null)
+const uploading = ref(false)
+const verifyingSubmissionId = ref<number | null>(null)
+const selectedSubmissionFile = ref<File | null>(null)
 const error = ref('')
 const successMessage = ref('')
 
 const marks = reactive<Record<number, number | null>>({})
+const verificationSelections = reactive<Record<number, number | null>>({})
 
 const resultByEnrollment = computed(() => {
   return new Map(results.value.map((result) => [result.enrollment, result]))
 })
+
+const studentByEnrollment = computed(() => {
+  return new Map(students.value.map((student) => [student.enrollment, student]))
+})
+
+const statusLabel = (status: SubmissionStatus) => {
+  const labels: Record<SubmissionStatus, string> = {
+    uploaded: 'Uploaded',
+    matched: 'Matched',
+    needs_verification: 'Needs verification',
+    verified: 'Verified',
+    marked: 'Marked',
+  }
+
+  return labels[status]
+}
 
 const loadPage = async () => {
   loading.value = true
@@ -38,13 +65,17 @@ const loadPage = async () => {
     const assessmentData = await fetchAssessment(assessmentId)
     assessment.value = assessmentData
 
-    const [gradebookData, resultData] = await Promise.all([
+    const [gradebookData, resultData, submissionData] = await Promise.all([
       fetchCourseGradebook(assessmentData.course),
       fetchAssessmentResults(assessmentId),
+      fetchSubmissions(),
     ])
 
     students.value = gradebookData.students
     results.value = resultData
+    submissions.value = submissionData.filter(
+      (submission) => submission.assessment === assessmentId,
+    )
 
     for (const student of students.value) {
       const existing = resultData.find(
@@ -52,8 +83,12 @@ const loadPage = async () => {
       )
       marks[student.enrollment] = existing ? Number(existing.mark) : null
     }
+
+    for (const submission of submissions.value) {
+      verificationSelections[submission.id] = submission.enrollment
+    }
   } catch {
-    error.value = 'Could not load assessment results.'
+    error.value = 'Could not load assessment data.'
   } finally {
     loading.value = false
   }
@@ -103,6 +138,69 @@ const saveMark = async (student: GradebookStudent) => {
   }
 }
 
+const handleSubmissionFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  selectedSubmissionFile.value = input.files?.[0] ?? null
+  error.value = ''
+  successMessage.value = ''
+}
+
+const submitSubmission = async () => {
+  if (!selectedSubmissionFile.value) {
+    error.value = 'Choose a submission file first.'
+    return
+  }
+
+  uploading.value = true
+  error.value = ''
+  successMessage.value = ''
+
+  try {
+    const submission = await uploadSubmission(
+      assessmentId,
+      selectedSubmissionFile.value,
+    )
+
+    submissions.value.push(submission)
+    verificationSelections[submission.id] = submission.enrollment
+    selectedSubmissionFile.value = null
+    successMessage.value = `Uploaded ${submission.original_filename}.`
+  } catch {
+    error.value = 'Could not upload submission.'
+  } finally {
+    uploading.value = false
+  }
+}
+
+const confirmSubmission = async (submission: Submission) => {
+  const enrollment = verificationSelections[submission.id]
+
+  if (typeof enrollment !== 'number') {
+    error.value = 'Select a student before verifying the submission.'
+    return
+  }
+
+  verifyingSubmissionId.value = submission.id
+  error.value = ''
+  successMessage.value = ''
+
+  try {
+    const verified = await verifySubmission(submission.id, enrollment)
+    const index = submissions.value.findIndex((item) => item.id === verified.id)
+
+    if (index >= 0) {
+      submissions.value[index] = verified
+    }
+
+    verificationSelections[verified.id] = verified.enrollment
+    successMessage.value = `Verified ${verified.original_filename}.`
+  } catch {
+    error.value = 'Could not verify submission for that student.'
+  } finally {
+    verifyingSubmissionId.value = null
+  }
+}
+
 onMounted(() => {
   void loadPage()
 })
@@ -132,6 +230,92 @@ onMounted(() => {
             <dd>{{ assessment.weight }}%</dd>
           </div>
         </dl>
+      </section>
+
+      <section class="panel">
+        <h2>Submissions</h2>
+        <p>
+          Upload a scanned submission. PostGrade will run recognition automatically and
+          either suggest a student match or place the file into verification.
+        </p>
+
+        <div class="upload-controls">
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            @change="handleSubmissionFileChange"
+          />
+          <button
+            type="button"
+            :disabled="uploading || !selectedSubmissionFile"
+            @click="submitSubmission"
+          >
+            {{ uploading ? 'Uploading and recognizing…' : 'Upload submission' }}
+          </button>
+        </div>
+
+        <p v-if="submissions.length === 0" class="empty-state">
+          No submissions uploaded for this assessment yet.
+        </p>
+
+        <div v-else class="submissions-table-wrap">
+          <table class="submissions-table">
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Status</th>
+                <th>Student</th>
+                <th>Verification</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="submission in submissions" :key="submission.id">
+                <td>{{ submission.original_filename }}</td>
+                <td>{{ statusLabel(submission.status) }}</td>
+                <td>
+                  <template v-if="submission.enrollment">
+                    {{ studentByEnrollment.get(submission.enrollment)?.student_number ?? 'Unknown' }}
+                    <span v-if="studentByEnrollment.get(submission.enrollment)">
+                      — {{ studentByEnrollment.get(submission.enrollment)?.first_name }}
+                      {{ studentByEnrollment.get(submission.enrollment)?.last_name }}
+                    </span>
+                  </template>
+                  <span v-else>Not matched</span>
+                </td>
+                <td>
+                  <template v-if="submission.status === 'matched' || submission.status === 'needs_verification'">
+                    <div class="verification-controls">
+                      <select v-model.number="verificationSelections[submission.id]">
+                        <option :value="null" disabled>Select student</option>
+                        <option
+                          v-for="student in students"
+                          :key="student.enrollment"
+                          :value="student.enrollment"
+                        >
+                          {{ student.student_number }} — {{ student.first_name }} {{ student.last_name }}
+                        </option>
+                      </select>
+                      <button
+                        type="button"
+                        :disabled="verifyingSubmissionId === submission.id"
+                        @click="confirmSubmission(submission)"
+                      >
+                        {{
+                          verifyingSubmissionId === submission.id
+                            ? 'Verifying…'
+                            : submission.status === 'matched'
+                              ? 'Confirm match'
+                              : 'Verify'
+                        }}
+                      </button>
+                    </div>
+                  </template>
+                  <span v-else>Complete</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section class="panel">
@@ -184,17 +368,17 @@ onMounted(() => {
             </tbody>
           </table>
         </div>
-
-        <p v-if="successMessage" class="success">{{ successMessage }}</p>
-        <p v-if="error" class="error">{{ error }}</p>
       </section>
+
+      <p v-if="successMessage" class="success">{{ successMessage }}</p>
+      <p v-if="error" class="error">{{ error }}</p>
     </template>
   </main>
 </template>
 
 <style scoped>
 .assessment-detail-page {
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 2rem 1rem;
 }
@@ -224,32 +408,53 @@ dd {
   margin: 0.25rem 0 0;
 }
 
+.upload-controls,
+.verification-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.submissions-table-wrap,
 .results-table-wrap {
+  margin-top: 1rem;
   overflow-x: auto;
 }
 
+.submissions-table,
 .results-table {
   width: 100%;
   border-collapse: collapse;
 }
 
+.submissions-table th,
+.submissions-table td,
 .results-table th,
 .results-table td {
   padding: 0.75rem;
   border-bottom: 1px solid #eee;
   text-align: left;
+  vertical-align: middle;
 }
 
 .results-table input {
   width: 7rem;
-  padding: 0.5rem;
+}
+
+input,
+select,
+button {
+  padding: 0.55rem 0.75rem;
   font: inherit;
 }
 
 button {
-  padding: 0.55rem 0.85rem;
-  font: inherit;
   cursor: pointer;
+}
+
+.empty-state {
+  margin-top: 1rem;
 }
 
 .error {
