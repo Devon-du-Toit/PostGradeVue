@@ -3,6 +3,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
+import CoursesView from '@/views/CoursesView.vue'
+import CourseDetailView from '@/views/CourseDetailView.vue'
+import AssessmentDetailView from '@/views/AssessmentDetailView.vue'
+import GradebookView from '@/views/GradebookView.vue'
+import VerificationQueueView from '@/views/VerificationQueueView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,6 +29,46 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/verification-queue',
+      name: 'verification-queue',
+      component: VerificationQueueView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/courses',
+      name: 'courses',
+      component: CoursesView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/courses/:id',
+      name: 'course-detail',
+      component: CourseDetailView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/courses/:id/gradebook',
+      name: 'course-gradebook',
+      component: GradebookView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/assessments/:id',
+      name: 'assessment-detail',
+      component: AssessmentDetailView,
       meta: {
         requiresAuth: true,
       },

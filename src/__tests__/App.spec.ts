@@ -1,11 +1,33 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { mount } from '@vue/test-utils'
+import { createMemoryHistory, createRouter } from 'vue-router'
+
 import App from '../App.vue'
 
 describe('App', () => {
-  it('mounts renders properly', () => {
-    const wrapper = mount(App)
-    expect(wrapper.text()).toContain('You did it!')
+  it('renders the active route', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        {
+          path: '/',
+          component: {
+            template: '<div>PostGrade</div>',
+          },
+        },
+      ],
+    })
+
+    await router.push('/')
+    await router.isReady()
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [router],
+      },
+    })
+
+    expect(wrapper.text()).toContain('PostGrade')
   })
 })

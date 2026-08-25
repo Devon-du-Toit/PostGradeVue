@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 
@@ -13,15 +13,59 @@ const logout = async () => {
 </script>
 
 <template>
-  <main>
+  <main class="dashboard">
     <h1>Dashboard</h1>
 
     <p v-if="authStore.user">
       Welcome, {{ authStore.user.first_name || authStore.user.email }}
     </p>
 
+    <section class="actions">
+      <RouterLink class="action-card" to="/courses">
+        <strong>Courses</strong>
+        <span>Manage courses, students and assessments.</span>
+      </RouterLink>
+
+      <RouterLink class="action-card" to="/verification-queue">
+        <strong>Verification queue</strong>
+        <span>Review OCR student matches that need confirmation.</span>
+      </RouterLink>
+    </section>
+
     <button type="button" @click="logout">
       Log out
     </button>
   </main>
 </template>
+
+<style scoped>
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.action-card {
+  display: flex;
+  width: 100%;
+  max-width: 360px;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.action-card:hover {
+  background: #f7f7f7;
+}
+</style>
