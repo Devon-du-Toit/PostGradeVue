@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import type { Result } from '@/types/result'
 import type { Submission } from '@/types/submission'
 
 export const fetchSubmissions = async () => {
@@ -18,6 +19,13 @@ export const uploadSubmission = async (assessmentId: number, file: File) => {
 export const verifySubmission = async (submissionId: number, enrollment: number) => {
   const response = await api.post<Submission>(`submissions/${submissionId}/verify/`, {
     enrollment,
+  })
+  return response.data
+}
+
+export const markSubmission = async (submissionId: number, mark: number) => {
+  const response = await api.post<Result>(`submissions/${submissionId}/mark/`, {
+    mark,
   })
   return response.data
 }
