@@ -7,6 +7,7 @@ import CoursesView from '@/views/CoursesView.vue'
 import CourseDetailView from '@/views/CourseDetailView.vue'
 import AssessmentDetailView from '@/views/AssessmentDetailView.vue'
 import GradebookView from '@/views/GradebookView.vue'
+import VerificationQueueView from '@/views/VerificationQueueView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +29,14 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/verification-queue',
+      name: 'verification-queue',
+      component: VerificationQueueView,
       meta: {
         requiresAuth: true,
       },
