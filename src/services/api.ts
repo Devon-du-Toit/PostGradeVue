@@ -14,9 +14,8 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 let refreshPromise: Promise<string | null> | null = null
 
 api.interceptors.request.use((config) => {
-  // Pull directly from Pinia state, not localStorage
-  const authStore = useAuthStore()
-
+  const authStore = useAuthStore() 
+  
   if (authStore.accessToken) {
     config.headers.Authorization = `Bearer ${authStore.accessToken}`
   }
@@ -37,13 +36,12 @@ api.interceptors.response.use(
     const authStore = useAuthStore()
 
     try {
-      // Defer to Pinia's refresh logic to ensure the UI stays in sync
       refreshPromise ??= authStore.refreshAccessToken().finally(() => {
         refreshPromise = null
       })
 
       const newAccessToken = await refreshPromise
-
+      
       if (newAccessToken) {
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
         return api(originalRequest)
