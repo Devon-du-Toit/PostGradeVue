@@ -1,10 +1,11 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
-
-const baseURL = 'http://127.0.0.1:8000/api/'
+// Load from Vite environment, falling back to local Django default
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/'
 
 const api = axios.create({
   baseURL,
 })
+
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
