@@ -6,6 +6,7 @@ import { fetchCourse } from '@/services/courses'
 import { fetchCourseGradebook } from '@/services/gradebook'
 import type { Course } from '@/types/course'
 import type { Gradebook } from '@/types/gradebook'
+import AlertBox from '@/components/AlertBox.vue'
 
 const route = useRoute()
 const courseId = Number(route.params.id)
@@ -60,7 +61,7 @@ onMounted(() => {
     <RouterLink class="back-link" :to="`/courses/${courseId}`">← Back to course</RouterLink>
 
     <p v-if="loading" class="status-text loading-text">Loading gradebook…</p>
-    <p v-else-if="error" class="error-box">{{ error }}</p>
+    <AlertBox v-else-if="error" type="error">{{ error }}</AlertBox>
 
     <template v-else-if="course && gradebook">
       <header class="gradebook-header">
@@ -250,13 +251,4 @@ onMounted(() => {
   margin-top: 0;
 }
 
-.error-box {
-  margin-top: 1.25rem;
-  color: #fca5a5;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid var(--status-error);
-  padding: 0.85rem;
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-}
 </style>

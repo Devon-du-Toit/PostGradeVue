@@ -8,6 +8,7 @@ import { fetchCourseStudents, importCourseStudents } from '@/services/students'
 import type { Assessment } from '@/types/assessment'
 import type { Course } from '@/types/course'
 import type { Student } from '@/types/student'
+import AlertBox from '@/components/AlertBox.vue'
 
 const route = useRoute()
 const courseId = Number(route.params.id)
@@ -105,7 +106,7 @@ onMounted(() => {
     <RouterLink class="back-link" to="/courses">← Back to courses</RouterLink>
 
     <p v-if="loading" class="status-text loading-text">Loading course…</p>
-    <p v-else-if="error && !course" class="error-box">{{ error }}</p>
+    <AlertBox v-else-if="error && !course" type="error">{{ error }}</AlertBox>
 
     <template v-else-if="course">
       <header class="course-header">
@@ -185,8 +186,8 @@ onMounted(() => {
           </button>
         </div>
 
-        <p v-if="importMessage" class="success-box">{{ importMessage }}</p>
-        <p v-if="error" class="error-box">{{ error }}</p>
+        <AlertBox v-if="importMessage" type="success">{{ importMessage }}</AlertBox>
+        <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
       </section>
 
       <!-- Applied glass-panel -->
@@ -454,26 +455,6 @@ code {
 .loading-text {
   font-size: 1.1rem;
   margin-top: 2rem;
-}
-
-.error-box {
-  margin-top: 1.25rem;
-  color: #fca5a5;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid var(--status-error);
-  padding: 0.85rem;
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-}
-
-.success-box {
-  margin-top: 1.25rem;
-  color: #86efac;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid var(--status-success);
-  padding: 0.85rem;
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
 }
 
 @media (max-width: 760px) {

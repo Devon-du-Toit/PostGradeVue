@@ -8,6 +8,7 @@ import { fetchVerificationQueue, verifySubmission } from '@/services/submissions
 import type { Assessment } from '@/types/assessment'
 import type { GradebookStudent } from '@/types/gradebook'
 import type { Submission } from '@/types/submission'
+import AlertBox from '@/components/AlertBox.vue'
 
 const submissions = ref<Submission[]>([])
 const assessments = reactive<Record<number, Assessment>>({})
@@ -97,7 +98,7 @@ onMounted(() => {
     </header>
 
     <p v-if="loading" class="status-text loading-text">Loading verification queue…</p>
-    <p v-else-if="error && submissions.length === 0" class="error-box">{{ error }}</p>
+    <AlertBox v-else-if="error && submissions.length === 0" type="error">{{ error }}</AlertBox>
 
     <!-- Applied glass-panel -->
     <section v-else class="panel glass-panel">
@@ -164,8 +165,8 @@ onMounted(() => {
       </div>
     </section>
 
-    <p v-if="successMessage" class="success-box">{{ successMessage }}</p>
-    <p v-if="error && submissions.length > 0" class="error-box">{{ error }}</p>
+    <AlertBox v-if="successMessage" type="success">{{ successMessage }}</AlertBox>
+    <AlertBox v-if="error && submissions.length > 0" type="error">{{ error }}</AlertBox>
   </main>
 </template>
 
@@ -309,23 +310,4 @@ select.glass-input option {
   margin-top: 2rem;
 }
 
-.error-box {
-  margin-top: 1.25rem;
-  color: #fca5a5;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid var(--status-error);
-  padding: 0.85rem;
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-}
-
-.success-box {
-  margin-top: 1.25rem;
-  color: #86efac;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid var(--status-success);
-  padding: 0.85rem;
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-}
 </style>
