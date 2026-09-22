@@ -2,12 +2,17 @@
 import { onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
+<<<<<<< HEAD
 import { createCourse, fetchCourses } from '@/services/courses'
 import type { Course } from '@/types/course'
 import AlertBox from '@/components/AlertBox.vue'
 
 const route = useRoute()
 const router = useRouter()
+=======
+import { useCoursesStore } from '@/stores/courses'
+import AlertBox from '@/components/AlertBox.vue'
+>>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
 
 const submitting = ref(false)
 const form = reactive({
@@ -141,7 +146,11 @@ onMounted(() => {
         </button>
       </form>
 
+<<<<<<< HEAD
       <AlertBox type="error" v-if="error" class="error">{{ error }}</AlertBox>
+=======
+      <AlertBox type="error" v-if="coursesStore.error" class="error">{{ coursesStore.error }}</AlertBox>
+>>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
     </section>
 
    <!-- Applied glass-panel to the list container -->
@@ -149,6 +158,7 @@ onMounted(() => {
       <div class="list-header">
         <h2>Your courses</h2>
 
+<<<<<<< HEAD
         <div class="filters-bar">
           <input class="glass-input search-input" v-model="filters.search" placeholder="Search course name or code..." />
           <select class="glass-input" v-model="filters.year">
@@ -172,6 +182,10 @@ onMounted(() => {
       <AlertBox type="info" v-else-if="courses.length === 0" class="status-text">
         No courses found matching those filters.
       </AlertBox>
+=======
+      <p v-if="coursesStore.loading" class="status-text">Loading courses…</p>
+      <AlertBox type="info" v-else-if="coursesStore.courses.length === 0" class="status-text">No courses yet.</AlertBox>
+>>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
 
       <ul v-else class="course-list">
         <li v-for="course in courses" :key="course.id">
