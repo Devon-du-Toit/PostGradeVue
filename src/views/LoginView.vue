@@ -33,7 +33,6 @@ const login = async () => {
   <main class="login-page">
     <section class="login-brand-panel">
       <div class="login-brand-content">
-        <img src="/postgradeLogo.jpg" alt="PostGrade Logo" class="login-logo-img" />
         <h1>Assessment administration, without the admin burden.</h1>
         <p class="login-intro">
           Organise classes, recognise scanned submissions, verify students and keep results
