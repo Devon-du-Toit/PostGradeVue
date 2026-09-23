@@ -32,8 +32,7 @@ const login = async () => {
   <main class="login-page">
     <section class="login-brand-panel">
       <div class="login-brand-content">
-        <div class="login-logo">P</div>
-        <p class="page-eyebrow">PostGrade</p>
+        <img src="/postgradeLogo.jpg" alt="PostGrade Logo" class="login-logo-img" />
         <h1>Assessment administration, without the admin burden.</h1>
         <p class="login-intro">
           Organise classes, recognise scanned submissions, verify students and keep results
@@ -49,15 +48,18 @@ const login = async () => {
     </section>
 
     <section class="login-form-panel">
-      <div class="login-card">
+      <!-- Applied the new global glass-panel class here -->
+      <div class="login-card glass-panel">
         <p class="page-eyebrow">Welcome back</p>
         <h2>Sign in to PostGrade</h2>
         <p class="login-help">Use your lecturer account to continue.</p>
 
         <form @submit.prevent="login">
           <label for="email">Email address</label>
+          <!-- Applied glass-input -->
           <input
             id="email"
+            class="glass-input"
             v-model="email"
             type="email"
             autocomplete="email"
@@ -66,8 +68,10 @@ const login = async () => {
           />
 
           <label for="password">Password</label>
+          <!-- Applied glass-input -->
           <input
             id="password"
+            class="glass-input"
             v-model="password"
             type="password"
             autocomplete="current-password"
@@ -77,7 +81,8 @@ const login = async () => {
 
           <p v-if="error" class="error error-box">{{ error }}</p>
 
-          <button type="submit" :disabled="loading">
+          <!-- Applied btn-primary -->
+          <button type="submit" class="btn-primary" :disabled="loading">
             {{ loading ? 'Signing in…' : 'Sign in' }}
           </button>
         </form>
@@ -87,21 +92,19 @@ const login = async () => {
 </template>
 
 <style scoped>
+/* Stripped out all hardcoded backgrounds so the global gradient shows */
 .login-page {
   display: grid;
   min-height: 100vh;
   grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
-  background: #fff;
+  background: transparent;
 }
 
 .login-brand-panel {
   display: flex;
   padding: clamp(3rem, 7vw, 7rem);
   align-items: center;
-  background:
-    radial-gradient(circle at 20% 15%, rgba(78, 137, 255, 0.22), transparent 34%),
-    linear-gradient(145deg, #14203a 0%, #1d3157 100%);
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .login-brand-content {
@@ -109,34 +112,38 @@ const login = async () => {
   max-width: 590px;
 }
 
-.login-logo {
-  display: grid;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 2.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  font-size: 1.35rem;
-  font-weight: 700;
-  place-items: center;
+.login-logo-img {
+  width: 140px;
+  height: 140px;
+  margin-bottom: 1.5rem;
+  border-radius: 50%;
+  box-shadow: var(--glass-shadow);
+  border: 1px solid var(--glass-border);
+  transition: transform 0.3s ease;
+}
+
+.login-logo-img:hover {
+  transform: scale(1.05); /* Adds a subtle floating effect on hover */
 }
 
 .login-brand-panel .page-eyebrow {
-  color: #87adff;
+  color: var(--accent-green);
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
 }
 
 .login-brand-panel h1 {
   max-width: 570px;
   margin-bottom: 1.25rem;
-  color: #fff;
+  color: var(--text-primary);
   font-size: clamp(2.25rem, 5vw, 4rem);
   line-height: 1.05;
 }
 
 .login-intro {
   max-width: 540px;
-  color: #c6d1e7;
+  color: var(--text-secondary);
   font-size: 1.05rem;
 }
 
@@ -153,7 +160,7 @@ const login = async () => {
 }
 
 .feature-list span {
-  color: #7fa9ff;
+  color: var(--accent-green);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -161,12 +168,12 @@ const login = async () => {
 
 .feature-list p {
   margin: 0;
-  color: #aebbd2;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
 .feature-list strong {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .login-form-panel {
@@ -174,23 +181,23 @@ const login = async () => {
   padding: 2rem;
   align-items: center;
   justify-content: center;
-  background: #fff;
 }
 
 .login-card {
   width: 100%;
-  max-width: 410px;
+  max-width: 420px;
+  padding: 2.5rem;
 }
 
 .login-card h2 {
   margin-bottom: 0.4rem;
-  color: var(--pg-navy);
+  color: var(--text-primary);
   font-size: 1.8rem;
 }
 
 .login-help {
   margin-bottom: 2rem;
-  color: var(--pg-muted);
+  color: var(--text-secondary);
 }
 
 form {
@@ -200,19 +207,22 @@ form {
 
 form input + label {
   margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
 }
 
 form button {
   width: 100%;
-  margin-top: 0.9rem;
+  margin-top: 1.2rem;
 }
 
 .error-box {
   margin: 0.6rem 0 0;
   padding: 0.75rem 0.9rem;
-  border: 1px solid #f2c5c2;
-  border-radius: 8px;
-  background: #fff5f4;
+  border: 1px solid var(--status-error);
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
   font-size: 0.86rem;
 }
 
@@ -227,15 +237,6 @@ form button {
 
   .login-form-panel {
     min-height: 100vh;
-    background: var(--pg-bg);
-  }
-
-  .login-card {
-    padding: 2rem;
-    border: 1px solid var(--pg-border);
-    border-radius: 14px;
-    background: #fff;
-    box-shadow: var(--pg-shadow);
   }
 }
 </style>
