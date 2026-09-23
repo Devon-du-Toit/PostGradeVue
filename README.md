@@ -52,3 +52,11 @@ npm run test:unit
 ```sh
 npm run lint
 ```
+## Environment Configuration
+
+This project uses Vite environment variables to manage API endpoints across different environments. 
+
+1. Create a `.env.local` file in the root directory for local development.
+2. Add your local backend URL:
+VITE_API_BASE_URL=http://127.0.0.1:8000/api/
+3. For production or staging, configure the host environment variables to inject the correct backend URL during the build process. Secrets should never be hardcoded or committed to the repository.
