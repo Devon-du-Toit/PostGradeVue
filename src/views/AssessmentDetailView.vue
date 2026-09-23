@@ -18,7 +18,9 @@ import {
 import type { Assessment } from '@/types/assessment'
 import type { GradebookStudent } from '@/types/gradebook'
 import type { Result } from '@/types/result'
-import type { Submission, SubmissionStatus } from '@/types/submission'
+import type { Submission } from '@/types/submission'
+import AlertBox from '@/components/AlertBox.vue'
+import StatusBadge from '@/components/StatusBadge.vue'
 
 const route = useRoute()
 const assessmentId = Number(route.params.id)
@@ -47,18 +49,6 @@ const resultByEnrollment = computed(() => {
 const studentByEnrollment = computed(() => {
   return new Map(students.value.map((student) => [student.enrollment, student]))
 })
-
-const statusLabel = (status: SubmissionStatus) => {
-  const labels: Record<SubmissionStatus, string> = {
-    uploaded: 'Uploaded',
-    matched: 'Matched',
-    needs_verification: 'Needs verification',
-    verified: 'Verified',
-    marked: 'Marked',
-  }
-
-  return labels[status]
-}
 
 const loadPage = async () => {
   loading.value = true
@@ -271,44 +261,48 @@ onMounted(() => {
 
 <template>
   <main class="assessment-detail-page">
-    <p v-if="loading">Loading assessment…</p>
-    <p v-else-if="error && !assessment" class="error">{{ error }}</p>
+    <p v-if="loading" class="status-text loading-text">Loading assessment…</p>
+    <p v-else-if="error && !assessment" class="error-box">{{ error }}</p>
 
     <template v-else-if="assessment">
-      <RouterLink :to="`/courses/${assessment.course}`">← Back to course</RouterLink>
+      <RouterLink class="back-link" :to="`/courses/${assessment.course}`">← Back to course</RouterLink>
 
-      <header>
+      <header class="page-header">
         <h1>{{ assessment.name }}</h1>
-        <p>{{ assessment.date }}</p>
+        <p class="assessment-date">{{ assessment.date }}</p>
       </header>
 
-      <section class="panel">
-        <dl>
-          <div>
+      <!-- Glassy stats panel -->
+      <section class="panel glass-panel stats-panel">
+        <dl class="stats-grid">
+          <div class="stat-item">
             <dt>Maximum mark</dt>
             <dd>{{ assessment.max_mark }}</dd>
           </div>
-          <div>
+          <div class="stat-item">
             <dt>Course weight</dt>
             <dd>{{ assessment.weight }}%</dd>
           </div>
         </dl>
       </section>
 
-      <section class="panel">
+      <!-- Submissions Panel -->
+      <section class="panel glass-panel">
         <h2>Submissions</h2>
-        <p>
+        <p class="section-desc">
           Upload a scanned submission. PostGrade will run recognition automatically and
           either suggest a student match or place the file into verification.
         </p>
 
         <div class="upload-controls">
           <input
+            class="file-input"
             type="file"
             accept=".pdf,image/*"
             @change="handleSubmissionFileChange"
           />
           <button
+            class="btn-primary"
             type="button"
             :disabled="uploading || !selectedSubmissionFile"
             @click="submitSubmission"
@@ -317,12 +311,12 @@ onMounted(() => {
           </button>
         </div>
 
-        <p v-if="submissions.length === 0" class="empty-state">
+        <p v-if="submissions.length === 0" class="empty-state status-text">
           No submissions uploaded for this assessment yet.
         </p>
 
-        <div v-else class="submissions-table-wrap">
-          <table class="submissions-table">
+        <div v-else class="table-wrap submissions-wrap">
+          <table class="glass-table">
             <thead>
               <tr>
                 <th>File</th>
@@ -333,22 +327,24 @@ onMounted(() => {
             </thead>
             <tbody>
               <tr v-for="submission in submissions" :key="submission.id">
-                <td>{{ submission.original_filename }}</td>
-                <td>{{ statusLabel(submission.status) }}</td>
+                <td class="filename-cell">{{ submission.original_filename }}</td>
+                <td>
+                  <StatusBadge :status="submission.status" />
+                </td>
                 <td>
                   <template v-if="submission.enrollment">
-                    {{ studentByEnrollment.get(submission.enrollment)?.student_number ?? 'Unknown' }}
-                    <span v-if="studentByEnrollment.get(submission.enrollment)">
+                    <span class="student-number">{{ studentByEnrollment.get(submission.enrollment)?.student_number ?? 'Unknown' }}</span>
+                    <span v-if="studentByEnrollment.get(submission.enrollment)" class="student-name">
                       — {{ studentByEnrollment.get(submission.enrollment)?.first_name }}
                       {{ studentByEnrollment.get(submission.enrollment)?.last_name }}
                     </span>
                   </template>
-                  <span v-else>Not matched</span>
+                  <span v-else class="status-text warning-text">Not matched</span>
                 </td>
                 <td>
                   <template v-if="submission.status === 'matched' || submission.status === 'needs_verification'">
                     <div class="verification-controls">
-                      <select v-model.number="verificationSelections[submission.id]">
+                      <select class="glass-input" v-model.number="verificationSelections[submission.id]">
                         <option :value="null" disabled>Select student</option>
                         <option
                           v-for="student in students"
@@ -359,6 +355,7 @@ onMounted(() => {
                         </option>
                       </select>
                       <button
+                        class="btn-primary"
                         type="button"
                         :disabled="verifyingSubmissionId === submission.id"
                         @click="confirmSubmission(submission)"
@@ -377,6 +374,7 @@ onMounted(() => {
                   <template v-else-if="submission.status === 'verified'">
                     <div class="marking-controls">
                       <input
+                        class="glass-input mark-input"
                         v-model.number="submissionMarks[submission.id]"
                         type="number"
                         min="0"
@@ -384,8 +382,9 @@ onMounted(() => {
                         step="0.01"
                         placeholder="Mark"
                       />
-                      <span>/ {{ assessment.max_mark }}</span>
+                      <span class="max-mark-text">/ {{ assessment.max_mark }}</span>
                       <button
+                        class="btn-primary"
                         type="button"
                         :disabled="markingSubmissionId === submission.id"
                         @click="saveSubmissionMark(submission)"
@@ -396,16 +395,15 @@ onMounted(() => {
                   </template>
 
                   <template v-else-if="submission.status === 'marked'">
-                    <span>
-                      Marked
+                    <span class="marked-text">
                       <template v-if="submission.enrollment && resultByEnrollment.get(submission.enrollment)">
-                        — {{ resultByEnrollment.get(submission.enrollment)?.mark }}/{{ assessment.max_mark }}
-                        ({{ Number(resultByEnrollment.get(submission.enrollment)?.percentage).toFixed(2) }}%)
+                        <strong>{{ resultByEnrollment.get(submission.enrollment)?.mark }}</strong> / {{ assessment.max_mark }}
+                        <small class="percentage-muted">({{ Number(resultByEnrollment.get(submission.enrollment)?.percentage).toFixed(2) }}%)</small>
                       </template>
                     </span>
                   </template>
 
-                  <span v-else>Complete</span>
+                  <span v-else class="status-text">Complete</span>
                 </td>
               </tr>
             </tbody>
@@ -413,37 +411,40 @@ onMounted(() => {
         </div>
       </section>
 
-      <section class="panel">
+      <!-- Results Panel -->
+      <section class="panel glass-panel">
         <h2>Results</h2>
+        <p v-if="students.length === 0" class="status-text">No students are enrolled in this course.</p>
 
-        <p v-if="students.length === 0">No students are enrolled in this course.</p>
-
-        <div v-else class="results-table-wrap">
-          <table class="results-table">
+        <div v-else class="table-wrap results-wrap">
+          <table class="glass-table">
             <thead>
               <tr>
                 <th>Student number</th>
                 <th>Name</th>
                 <th>Mark</th>
                 <th>Percentage</th>
-                <th></th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="student in students" :key="student.enrollment">
-                <td>{{ student.student_number }}</td>
-                <td>{{ student.first_name }} {{ student.last_name }}</td>
+                <td class="student-number">{{ student.student_number }}</td>
+                <td class="student-name">{{ student.first_name }} {{ student.last_name }}</td>
                 <td>
-                  <input
-                    v-model.number="marks[student.enrollment]"
-                    type="number"
-                    min="0"
-                    :max="Number(assessment.max_mark)"
-                    step="0.01"
-                  />
-                  / {{ assessment.max_mark }}
+                  <div class="marking-controls">
+                    <input
+                      class="glass-input mark-input"
+                      v-model.number="marks[student.enrollment]"
+                      type="number"
+                      min="0"
+                      :max="Number(assessment.max_mark)"
+                      step="0.01"
+                    />
+                    <span class="max-mark-text">/ {{ assessment.max_mark }}</span>
+                  </div>
                 </td>
-                <td>
+                <td class="percentage-cell">
                   {{
                     resultByEnrollment.get(student.enrollment)
                       ? `${Number(resultByEnrollment.get(student.enrollment)?.percentage).toFixed(2)}%`
@@ -452,6 +453,7 @@ onMounted(() => {
                 </td>
                 <td>
                   <button
+                    class="btn-primary"
                     type="button"
                     :disabled="savingEnrollment === student.enrollment"
                     @click="saveMark(student)"
@@ -465,100 +467,248 @@ onMounted(() => {
         </div>
       </section>
 
-      <p v-if="successMessage" class="success">{{ successMessage }}</p>
-      <p v-if="error" class="error">{{ error }}</p>
+     <AlertBox v-if="successMessage" type="success">{{ successMessage }}</AlertBox>
+    <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
     </template>
   </main>
 </template>
 
 <style scoped>
 .assessment-detail-page {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 3.5rem 1.5rem 5rem;
 }
 
-header {
-  margin-top: 1.5rem;
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.back-link:hover {
+  color: var(--accent-green);
+  transform: translateX(-4px);
+}
+
+.page-header {
+  margin-bottom: 2.5rem;
+}
+
+.page-header h1 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+  font-size: 2.2rem;
+}
+
+.assessment-date {
+  color: var(--accent-green);
+  font-weight: 600;
+  margin: 0;
 }
 
 .panel {
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  border: 1px solid #ddd;
-  border-radius: 0.75rem;
+  margin-bottom: 2.5rem;
+  padding: 2rem;
 }
 
-dl {
+.panel h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-size: 1.4rem;
+}
+
+.section-desc {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+/* Stats panel styling */
+.stats-panel {
+  padding: 1.5rem 2rem;
+  background: rgba(0,0,0,0.2);
+}
+
+.stats-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 2rem;
+  gap: 3rem;
+  margin: 0;
 }
 
-dt {
+.stat-item dt {
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.stat-item dd {
+  margin: 0.25rem 0 0;
+  color: var(--accent-green);
+  font-size: 1.8rem;
   font-weight: 700;
 }
 
-dd {
-  margin: 0.25rem 0 0;
+/* Forms and Inputs */
+.upload-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
 }
 
-.upload-controls,
+.file-input {
+  color: var(--text-secondary);
+}
+
+.file-input::file-selector-button {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  padding: 0.65rem 1rem;
+  margin-right: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.file-input::file-selector-button:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-highlight);
+}
+
 .verification-controls,
 .marking-controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.75rem;
   align-items: center;
 }
 
-.submissions-table-wrap,
-.results-table-wrap {
-  margin-top: 1rem;
-  overflow-x: auto;
+.mark-input {
+  width: 90px;
+  text-align: center;
 }
 
-.submissions-table,
-.results-table {
+.max-mark-text {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Data Tables */
+.table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.glass-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.submissions-table th,
-.submissions-table td,
-.results-table th,
-.results-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #eee;
+.glass-table th {
+  padding: 1rem;
+  border-bottom: 1px solid var(--glass-border);
+  text-align: left;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--accent-green);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.glass-table td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   text-align: left;
   vertical-align: middle;
+  color: var(--text-primary);
+  font-size: 0.95rem;
 }
 
-.results-table input,
-.marking-controls input {
-  width: 7rem;
+.glass-table tr:last-child td {
+  border-bottom: none;
 }
 
-input,
-select,
-button {
-  padding: 0.55rem 0.75rem;
-  font: inherit;
+.glass-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
 }
 
-button {
-  cursor: pointer;
+.filename-cell {
+  font-family: monospace;
+  color: var(--text-secondary) !important;
+  font-size: 0.9rem !important;
+}
+
+.student-number {
+  font-family: monospace;
+  color: var(--text-secondary);
+}
+
+.student-name {
+  color: var(--text-primary);
+}
+
+/* Custom dropdown arrow for verification */
+select.glass-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem top 50%;
+  background-size: 0.65rem auto;
+  padding-right: 1.5rem;
+  min-width: 180px;
+}
+select.glass-input option {
+  background: #151f32;
+  color: var(--text-primary);
+}
+
+.percentage-muted {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.percentage-cell {
+  font-weight: 600;
+  color: var(--accent-green) !important;
+}
+
+.marked-text {
+  color: var(--text-primary);
+}
+.marked-text strong {
+  color: var(--accent-green);
+  font-size: 1.1rem;
+}
+
+.status-text {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.warning-text {
+  color: var(--status-warning);
+}
+
+.loading-text {
+  font-size: 1.1rem;
+  margin-top: 2rem;
 }
 
 .empty-state {
   margin-top: 1rem;
 }
 
-.error {
-  color: #b00020;
-}
-
-.success {
-  color: #1b5e20;
-}
 </style>

@@ -2,13 +2,22 @@ import api from '@/services/api'
 import type { Result } from '@/types/result'
 import type { Submission } from '@/types/submission'
 
+export interface VerificationFilters {
+  search?: string
+  status?: string
+}
+
 export const fetchSubmissions = async () => {
   const response = await api.get<Submission[]>('submissions/')
   return response.data
 }
 
-export const fetchVerificationQueue = async () => {
-  const response = await api.get<Submission[]>('submissions/verification-queue/')
+// Added filters and AbortSignal support
+export const fetchVerificationQueue = async (filters: VerificationFilters = {}, signal?: AbortSignal) => {
+  const response = await api.get<Submission[]>('submissions/verification-queue/', {
+    params: filters,
+    signal
+  })
   return response.data
 }
 
