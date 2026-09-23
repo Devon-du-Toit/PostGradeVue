@@ -1,7 +1,8 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/'
+// Export baseURL so we can reuse it in auth.ts for the clean refresh call
+export const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/'
 
 const api = axios.create({
   baseURL,
@@ -46,9 +47,12 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
         return api(originalRequest)
       }
+
+      // If newAccessToken is null, refresh failed gracefully
+      authStore.logout(true)
       return Promise.reject(error)
     } catch (refreshError) {
-      authStore.logout()
+      authStore.logout(true)
       return Promise.reject(refreshError)
     }
   },
