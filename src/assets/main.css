@@ -88,3 +88,9 @@ body {
 .btn-primary:hover {
   background: var(--accent-green-hover);
 }
+/* Accessibility: Ensure keyboard focus is always highly visible */
+*:focus-visible {
+  outline: 2px solid var(--pg-blue, #3b82f6) !important;
+  outline-offset: 2px !important;
+  border-radius: inherit;
+}
