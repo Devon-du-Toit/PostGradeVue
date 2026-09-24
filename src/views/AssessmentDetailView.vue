@@ -81,9 +81,7 @@ const loadPage = async () => {
     )
 
     for (const student of students.value) {
-      const existing = resultData.find(
-        (result) => result.enrollment === student.enrollment,
-      )
+      const existing = resultData.find((result) => result.enrollment === student.enrollment)
       marks[student.enrollment] = existing ? Number(existing.mark) : null
     }
 
@@ -94,9 +92,7 @@ const loadPage = async () => {
         ? resultData.find((result) => result.enrollment === submission.enrollment)
         : undefined
 
-      submissionMarks[submission.id] = existingResult
-        ? Number(existingResult.mark)
-        : null
+      submissionMarks[submission.id] = existingResult ? Number(existingResult.mark) : null
     }
   } catch {
     error.value = 'Could not load assessment data.'
@@ -167,10 +163,7 @@ const submitSubmission = async () => {
   successMessage.value = ''
 
   try {
-    const submission = await uploadSubmission(
-      assessmentId,
-      selectedSubmissionFile.value,
-    )
+    const submission = await uploadSubmission(assessmentId, selectedSubmissionFile.value)
 
     submissions.value.push(submission)
     verificationSelections[submission.id] = submission.enrollment
@@ -209,9 +202,7 @@ const confirmSubmission = async (submission: Submission) => {
     const existingResult = verified.enrollment
       ? resultByEnrollment.value.get(verified.enrollment)
       : undefined
-    submissionMarks[verified.id] = existingResult
-      ? Number(existingResult.mark)
-      : null
+    submissionMarks[verified.id] = existingResult ? Number(existingResult.mark) : null
 
     successMessage.value = `Verified ${verified.original_filename}.`
   } catch {
@@ -298,16 +289,12 @@ onMounted(() => {
       <section class="panel">
         <h2>Submissions</h2>
         <p>
-          Upload a scanned submission. PostGrade will run recognition automatically and
-          either suggest a student match or place the file into verification.
+          Upload a scanned submission. PostGrade will run recognition automatically and either
+          suggest a student match or place the file into verification.
         </p>
 
         <div class="upload-controls">
-          <input
-            type="file"
-            accept=".pdf,image/*"
-            @change="handleSubmissionFileChange"
-          />
+          <input type="file" accept=".pdf,image/*" @change="handleSubmissionFileChange" />
           <button
             type="button"
             :disabled="uploading || !selectedSubmissionFile"
@@ -337,7 +324,9 @@ onMounted(() => {
                 <td>{{ statusLabel(submission.status) }}</td>
                 <td>
                   <template v-if="submission.enrollment">
-                    {{ studentByEnrollment.get(submission.enrollment)?.student_number ?? 'Unknown' }}
+                    {{
+                      studentByEnrollment.get(submission.enrollment)?.student_number ?? 'Unknown'
+                    }}
                     <span v-if="studentByEnrollment.get(submission.enrollment)">
                       — {{ studentByEnrollment.get(submission.enrollment)?.first_name }}
                       {{ studentByEnrollment.get(submission.enrollment)?.last_name }}
@@ -346,7 +335,11 @@ onMounted(() => {
                   <span v-else>Not matched</span>
                 </td>
                 <td>
-                  <template v-if="submission.status === 'matched' || submission.status === 'needs_verification'">
+                  <template
+                    v-if="
+                      submission.status === 'matched' || submission.status === 'needs_verification'
+                    "
+                  >
                     <div class="verification-controls">
                       <select v-model.number="verificationSelections[submission.id]">
                         <option :value="null" disabled>Select student</option>
@@ -355,7 +348,8 @@ onMounted(() => {
                           :key="student.enrollment"
                           :value="student.enrollment"
                         >
-                          {{ student.student_number }} — {{ student.first_name }} {{ student.last_name }}
+                          {{ student.student_number }} — {{ student.first_name }}
+                          {{ student.last_name }}
                         </option>
                       </select>
                       <button
@@ -398,9 +392,19 @@ onMounted(() => {
                   <template v-else-if="submission.status === 'marked'">
                     <span>
                       Marked
-                      <template v-if="submission.enrollment && resultByEnrollment.get(submission.enrollment)">
-                        — {{ resultByEnrollment.get(submission.enrollment)?.mark }}/{{ assessment.max_mark }}
-                        ({{ Number(resultByEnrollment.get(submission.enrollment)?.percentage).toFixed(2) }}%)
+                      <template
+                        v-if="
+                          submission.enrollment && resultByEnrollment.get(submission.enrollment)
+                        "
+                      >
+                        — {{ resultByEnrollment.get(submission.enrollment)?.mark }}/{{
+                          assessment.max_mark
+                        }}
+                        ({{
+                          Number(resultByEnrollment.get(submission.enrollment)?.percentage).toFixed(
+                            2,
+                          )
+                        }}%)
                       </template>
                     </span>
                   </template>
