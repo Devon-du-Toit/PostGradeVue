@@ -8,6 +8,7 @@ import {
   createAssessmentResult,
   fetchAssessmentResults,
   updateAssessmentResult,
+  retryResultEmail,
 } from '@/services/results'
 import {
   fetchSubmissions,
@@ -79,8 +80,8 @@ const loadPage = async () => {
 
     for (const student of students.value) {
       const existing = resultData.find(
-        (result) => result.enrollment === student.enrollment,
-      )
+  (result: Result) => result.enrollment === student.enrollment,
+)
       marks[student.enrollment] = existing ? Number(existing.mark) : null
     }
 
@@ -88,7 +89,7 @@ const loadPage = async () => {
       verificationSelections[submission.id] = submission.enrollment
 
       const existingResult = submission.enrollment
-        ? resultData.find((result) => result.enrollment === submission.enrollment)
+        ? resultData.find((result: Result) => result.enrollment === submission.enrollment)
         : undefined
 
       submissionMarks[submission.id] = existingResult
@@ -314,6 +315,52 @@ const saveSubmissionMark = async (submission: Submission) => {
   }
 }
 
+// --- Issue #8: Email Delivery State ---
+const emailRetryResultId = ref<number | null>(null)
+const isRetryingEmail = ref(false)
+const previewEnrollment = ref<number | null>(null)
+
+const confirmEmailRetry = (resultId: number) => {
+  emailRetryResultId.value = resultId
+}
+
+const openPreview = (enrollment: number) => {
+  previewEnrollment.value = enrollment
+}
+
+const closePreview = () => {
+  previewEnrollment.value = null
+}
+
+const cancelEmailRetry = () => {
+  emailRetryResultId.value = null
+}
+
+const executeEmailRetry = async () => {
+  if (!emailRetryResultId.value) return
+
+  isRetryingEmail.value = true
+  error.value = ''
+  successMessage.value = ''
+
+  try {
+    const updatedResult = await retryResultEmail(emailRetryResultId.value)
+
+    // Update the result in our local list to reflect the new email status
+    const index = results.value.findIndex((r) => r.id === updatedResult.id)
+    if (index >= 0) {
+      results.value[index] = updatedResult
+    }
+
+    successMessage.value = `Retry queued for ${updatedResult.student_name}.`
+  } catch {
+    error.value = 'Could not retry email delivery. Please try again later.'
+  } finally {
+    isRetryingEmail.value = false
+    emailRetryResultId.value = null
+  }
+}
+
 // --- Background Polling Logic ---
 let pollingInterval: ReturnType<typeof setInterval> | null = null
 
@@ -409,6 +456,10 @@ onMounted(() => {
           <div class="stat-item">
             <dt>Course weight</dt>
             <dd>{{ assessment.weight }}%</dd>
+          </div>
+          <div class="stat-item">
+            <dt>Email Release Policy</dt>
+            <dd>Manual</dd>
           </div>
         </dl>
       </section>
@@ -585,6 +636,7 @@ onMounted(() => {
                 <th>Name</th>
                 <th>Mark</th>
                 <th>Percentage</th>
+                <th>Email Status</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -612,15 +664,52 @@ onMounted(() => {
                       : '—'
                   }}
                 </td>
+                <td class="email-status-cell">
+                  <template v-if="resultByEnrollment.get(student.enrollment)?.email_status === 'sent'">
+                    <span class="status-badge text-success">Sent</span>
+                  </template>
+                  <template v-else-if="resultByEnrollment.get(student.enrollment)?.email_status === 'failed'">
+                    <span class="status-badge text-error">Failed</span>
+                    <button
+                      class="btn-text btn-retry"
+                      type="button"
+                      :disabled="isRetryingEmail"
+                      @click="confirmEmailRetry(resultByEnrollment.get(student.enrollment)?.id ?? 0)"
+                    >
+                      Retry
+                    </button>
+                    <small
+                      v-if="resultByEnrollment.get(student.enrollment)?.email_error"
+                      class="status-text warning-text"
+                    >
+                      {{ resultByEnrollment.get(student.enrollment)?.email_error }}
+                    </small>
+                  </template>
+                  <template v-else-if="resultByEnrollment.get(student.enrollment)?.email_status === 'queued'">
+                    <span class="status-badge text-warning">Queued</span>
+                  </template>
+                  <template v-else>
+                    <span class="status-badge">Pending</span>
+                  </template>
+                </td>
                 <td>
-                  <button
-                    class="btn-primary"
-                    type="button"
-                    :disabled="savingEnrollment === student.enrollment"
-                    @click="saveMark(student)"
-                  >
-                    {{ savingEnrollment === student.enrollment ? 'Saving…' : 'Save' }}
-                  </button>
+                  <div class="action-buttons">
+                    <button
+                      class="btn-primary"
+                      type="button"
+                      :disabled="savingEnrollment === student.enrollment"
+                      @click="saveMark(student)"
+                    >
+                      {{ savingEnrollment === student.enrollment ? 'Saving…' : 'Save' }}
+                    </button>
+                    <button
+                      class="btn-text preview-btn"
+                      type="button"
+                      @click="openPreview(student.enrollment)"
+                    >
+                      Preview Email
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -631,6 +720,77 @@ onMounted(() => {
      <AlertBox v-if="successMessage" type="success">{{ successMessage }}</AlertBox>
     <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
     </template>
+
+    <div v-if="emailRetryResultId !== null" class="modal-overlay" role="dialog" aria-modal="true">
+      <div class="panel glass-panel modal-content">
+        <h3>Retry Email Delivery?</h3>
+        <p class="warning-text">
+          <strong>Warning:</strong> Are you sure you want to explicitly resend this email?
+          Deliberate retries could result in duplicate emails to the student if the normal delivery was simply delayed by the network.
+        </p>
+
+        <div class="modal-actions">
+          <button class="btn-text" type="button" @click="cancelEmailRetry()">
+            Cancel
+          </button>
+          <button
+            class="btn-primary"
+            type="button"
+            :disabled="isRetryingEmail"
+            @click="executeEmailRetry()"
+          >
+            {{ isRetryingEmail ? 'Sending...' : 'Yes, retry email' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="previewEnrollment !== null"
+      class="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      @click.self="closePreview()"
+    >
+      <div class="panel glass-panel modal-content email-preview-modal" @click.stop>
+        <h3>Email Preview</h3>
+
+        <div class="email-headers">
+          <p>
+            <strong>To:</strong>
+            {{ (studentByEnrollment.get(previewEnrollment) as any)?.email ?? 'student@example.com' }}
+          </p>
+          <p>
+            <strong>Subject:</strong>
+            {{ assessment?.name }}
+          </p>
+        </div>
+
+        <div class="email-body">
+          <p>
+            Hello {{ (studentByEnrollment.get(previewEnrollment) as any)?.first_name ?? 'Student' }},
+          </p>
+
+          <div class="mock-grade-box">
+            <template v-if="resultByEnrollment.get(previewEnrollment)">
+              <span class="mock-mark">
+                {{ resultByEnrollment.get(previewEnrollment)?.mark ?? '—' }} / {{ assessment?.max_mark ?? '—' }}
+              </span>
+              <span class="text-muted">
+                {{ `${Number(resultByEnrollment.get(previewEnrollment)?.percentage).toFixed(2)}%` }}
+              </span>
+            </template>
+            <span v-else class="text-muted">No mark saved yet</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-primary" type="button" @click="closePreview()">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -692,6 +852,59 @@ onMounted(() => {
 .stats-panel {
   padding: 1.5rem 2rem;
   background: rgba(0,0,0,0.2);
+}
+
+.email-status-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.text-muted { color: var(--text-muted); }
+
+.btn-retry-email {
+  color: var(--pg-blue, #3b82f6);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.email-error-text {
+  display: block;
+  color: var(--status-warning);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  max-width: 450px;
+  border: 1px solid var(--status-warning);
+}
+
+.modal-content h3 {
+  color: var(--status-warning);
+  margin-top: 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .stats-grid {
@@ -961,5 +1174,57 @@ select.glass-input option {
   border-radius: var(--radius-md);
   margin-bottom: 2rem;
   font-weight: 500;
+}
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.preview-btn {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.email-preview-modal {
+  max-width: 500px;
+  width: 100%;
+}
+
+.email-headers {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.email-headers p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.email-body {
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.mock-grade-box {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 4px solid var(--accent-green);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mock-mark {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--accent-green);
 }
 </style>
