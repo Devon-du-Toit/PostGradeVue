@@ -1,9 +1,25 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
+import { fetchDashboardStats, type DashboardStats } from '@/services/dashboard'
+import AlertBox from '@/components/AlertBox.vue'
 
 const authStore = useAuthStore()
+const stats = ref<DashboardStats | null>(null)
+const loading = ref(true)
+const error = ref('')
+
+onMounted(async () => {
+  try {
+    stats.value = await fetchDashboardStats()
+  } catch {
+    error.value = 'Could not load live dashboard summaries.'
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <template>
@@ -28,28 +44,43 @@ const authStore = useAuthStore()
         </div>
       </div>
 
+      <AlertBox v-if="error" type="error" class="mb-4">{{ error }}</AlertBox>
+
       <div class="actions">
-        <RouterLink class="action-card" to="/courses">
+        <RouterLink class="action-card glass-panel" to="/courses">
           <span class="action-icon">C</span>
           <div>
             <strong>Courses</strong>
             <span>Manage courses, students, assessments and gradebooks.</span>
           </div>
-          <span class="action-arrow">→</span>
+          <div class="action-meta">
+            <span v-if="loading" class="skeleton-badge">...</span>
+            <span v-else-if="stats" class="count-badge">
+              {{ stats.active_courses }} Active
+            </span>
+            <span class="action-arrow">→</span>
+          </div>
         </RouterLink>
 
-        <RouterLink class="action-card" to="/verification-queue">
+        <!-- Link includes query param for filtered list -->
+        <RouterLink class="action-card glass-panel" to="/verification-queue?status=pending">
           <span class="action-icon">V</span>
           <div>
             <strong>Verification queue</strong>
             <span>Review OCR matches that still need lecturer confirmation.</span>
           </div>
-          <span class="action-arrow">→</span>
+          <div class="action-meta">
+            <span v-if="loading" class="skeleton-badge">...</span>
+            <span v-else-if="stats" class="count-badge warning-badge">
+              {{ stats.pending_verifications }} Pending
+            </span>
+            <span class="action-arrow">→</span>
+          </div>
         </RouterLink>
       </div>
     </section>
-
-    <section class="workflow-card">
+    <!-- Added glass-panel class here -->
+    <section class="workflow-card glass-panel">
       <p class="page-eyebrow">PostGrade workflow</p>
       <div class="workflow-steps">
         <span>Upload</span>
@@ -82,13 +113,23 @@ const authStore = useAuthStore()
 
 .dashboard-hero h1 {
   margin-bottom: 0.65rem;
+  color: var(--text-primary);
+}
+
+.page-eyebrow {
+  color: var(--accent-green);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
 }
 
 .dashboard-subtitle,
 .section-heading p {
   max-width: 650px;
   margin-bottom: 0;
-  color: var(--pg-muted);
+  color: var(--text-secondary);
 }
 
 .dashboard-section {
@@ -101,35 +142,32 @@ const authStore = useAuthStore()
 
 .section-heading h2 {
   margin-bottom: 0.3rem;
+  color: var(--text-primary);
 }
 
 .actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .action-card {
   display: grid;
   min-height: 150px;
   padding: 1.5rem;
-  border: 1px solid var(--pg-border);
-  border-radius: 12px;
   grid-template-columns: auto 1fr auto;
   align-items: start;
-  gap: 1rem;
-  background: #fff;
+  gap: 1.25rem;
   color: inherit;
   text-decoration: none;
-  box-shadow: 0 1px 2px rgba(23, 35, 60, 0.025);
-  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  /* Override the default glass-panel transition to add the transform lift */
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .action-card:hover {
-  border-color: #c9d7f0;
-  color: inherit;
-  box-shadow: var(--pg-shadow);
-  transform: translateY(-2px);
+  border-color: var(--accent-green);
+  background: var(--glass-bg-hover);
+  transform: translateY(-3px);
 }
 
 .action-icon {
@@ -137,9 +175,11 @@ const authStore = useAuthStore()
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: var(--pg-blue-soft);
-  color: var(--pg-blue);
-  font-size: 0.86rem;
+  /* Brand green styling for the icons */
+  background: rgba(91, 166, 91, 0.15);
+  color: var(--accent-green);
+  border: 1px solid var(--glass-border-highlight);
+  font-size: 1rem;
   font-weight: 700;
   place-items: center;
 }
@@ -151,48 +191,55 @@ const authStore = useAuthStore()
 
 .action-card strong {
   margin-bottom: 0.4rem;
-  color: var(--pg-navy);
-  font-size: 1.05rem;
+  color: var(--text-primary);
+  font-size: 1.1rem;
 }
 
 .action-card div > span {
-  color: var(--pg-muted);
-  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
   line-height: 1.55;
 }
 
 .action-arrow {
-  color: #9ba6b8;
+  color: var(--text-muted);
   font-size: 1.2rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.action-card:hover .action-arrow {
+  transform: translateX(4px);
+  color: var(--accent-green);
 }
 
 .workflow-card {
   margin-top: 2.5rem;
-  padding: 1.35rem 1.5rem;
-  border: 1px solid var(--pg-border);
-  border-radius: 12px;
-  background: #fff;
+  padding: 1.5rem 1.75rem;
 }
 
 .workflow-card .page-eyebrow {
-  margin-bottom: 0.8rem;
+  margin-bottom: 1rem;
 }
 
 .workflow-steps {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .workflow-steps span {
-  color: #435069;
-  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
   font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
 }
 
 .workflow-steps i {
-  color: #b0b9c8;
+  color: var(--text-muted);
   font-style: normal;
 }
 
@@ -204,5 +251,47 @@ const authStore = useAuthStore()
   .actions {
     grid-template-columns: 1fr;
   }
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+.action-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.count-badge {
+  background: rgba(91, 166, 91, 0.15);
+  color: var(--accent-green);
+  border: 1px solid var(--glass-border-highlight);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.warning-badge {
+  background: rgba(253, 224, 71, 0.15);
+  color: #fde047;
+  border-color: rgba(253, 224, 71, 0.3);
+}
+
+.skeleton-badge {
+  color: var(--text-muted);
+  font-weight: bold;
+  letter-spacing: 2px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 </style>

@@ -4,6 +4,7 @@ export type SubmissionStatus =
   | 'needs_verification'
   | 'verified'
   | 'marked'
+  | 'processing'
 
 export interface Submission {
   id: number

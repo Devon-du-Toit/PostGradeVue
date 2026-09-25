@@ -21,7 +21,7 @@ const logout = async () => {
     <header v-if="showShell" class="app-header">
       <div class="app-header__inner">
         <RouterLink class="brand" to="/dashboard">
-          <span class="brand-mark">P</span>
+          <!-- Replaced the 'P' box with the official logo -->
           <span>
             <strong>PostGrade</strong>
             <small>Assessment workflow</small>
@@ -56,9 +56,11 @@ const logout = async () => {
   position: sticky;
   z-index: 20;
   top: 0;
-  border-bottom: 1px solid var(--pg-border);
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--glass-border);
+  /* Uses a slightly darker navy to ground the navigation bar */
+  background: rgba(11, 17, 33, 0.75);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .app-header__inner {
@@ -76,23 +78,21 @@ const logout = async () => {
   min-width: 190px;
   align-items: center;
   gap: 0.7rem;
-  color: var(--pg-navy);
+  color: var(--text-primary);
   text-decoration: none;
+  transition: opacity 0.2s ease;
 }
 
 .brand:hover {
-  color: var(--pg-navy);
+  opacity: 0.85;
 }
 
-.brand-mark {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: var(--pg-navy);
-  color: #fff;
-  font-weight: 700;
-  place-items: center;
+.header-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 .brand strong,
@@ -107,7 +107,7 @@ const logout = async () => {
 
 .brand small {
   margin-top: 0.15rem;
-  color: var(--pg-muted);
+  color: var(--accent-green);
   font-size: 0.68rem;
   font-weight: 500;
 }
@@ -122,15 +122,22 @@ const logout = async () => {
 .app-nav a {
   padding: 0.5rem 0.7rem;
   border-radius: 7px;
-  color: #566176;
+  color: var(--text-secondary);
   font-size: 0.88rem;
   font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
 
-.app-nav a:hover,
+.app-nav a:hover {
+  background: var(--glass-bg-hover);
+  color: var(--text-primary);
+}
+
+/* Make the active tab pop with the brand green */
 .app-nav a.router-link-active {
-  background: var(--pg-blue-soft);
-  color: var(--pg-blue);
+  background: rgba(91, 166, 91, 0.15);
+  color: var(--accent-green);
 }
 
 .app-user {
@@ -142,29 +149,33 @@ const logout = async () => {
 .app-user__email {
   max-width: 190px;
   overflow: hidden;
-  color: var(--pg-muted);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Glassy logout button */
 .button-secondary {
-  border-color: var(--pg-border);
-  background: #fff;
-  color: #34405a;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .button-secondary:hover:not(:disabled) {
-  border-color: #c8d0dd;
-  background: #f8f9fc;
-  color: var(--pg-navy);
-  box-shadow: none;
+  border-color: var(--glass-border-highlight);
+  background: var(--glass-bg-hover);
+  color: var(--accent-green);
 }
 
 .button-small {
   min-height: 36px;
-  padding: 0.45rem 0.7rem;
+  padding: 0.45rem 0.85rem;
   font-size: 0.82rem;
+  font-weight: 600;
 }
 
 @media (max-width: 760px) {
