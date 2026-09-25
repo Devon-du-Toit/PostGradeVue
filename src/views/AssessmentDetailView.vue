@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import { fetchAssessment } from '@/services/assessments'
@@ -22,6 +22,13 @@ import type { Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 
+interface QueuedUpload {
+  id: string
+  file: File
+  status: 'pending' | 'uploading' | 'processing' | 'success' | 'error'
+  message?: string
+}
+
 const route = useRoute()
 const assessmentId = Number(route.params.id)
 
@@ -31,10 +38,10 @@ const results = ref<Result[]>([])
 const submissions = ref<Submission[]>([])
 const loading = ref(true)
 const savingEnrollment = ref<number | null>(null)
-const uploading = ref(false)
+const uploadQueue = ref<QueuedUpload[]>([])
 const verifyingSubmissionId = ref<number | null>(null)
 const markingSubmissionId = ref<number | null>(null)
-const selectedSubmissionFile = ref<File | null>(null)
+const isProcessingQueue = ref(false)
 const error = ref('')
 const successMessage = ref('')
 
@@ -88,6 +95,10 @@ const loadPage = async () => {
         ? Number(existingResult.mark)
         : null
     }
+    // Resume polling if there are unfinished submissions on load
+    if (submissions.value.some(s => s.status === 'processing')) {
+      startPolling()
+    }
   } catch {
     error.value = 'Could not load assessment data.'
   } finally {
@@ -139,41 +150,90 @@ const saveMark = async (student: GradebookStudent) => {
   }
 }
 
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB limit
+const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
+
 const handleSubmissionFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
-  selectedSubmissionFile.value = input.files?.[0] ?? null
+  if (!input.files?.length) return
+
+  Array.from(input.files).forEach(file => {
+    // 1. Handle unsupported files
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      uploadQueue.value.push({
+        id: crypto.randomUUID(),
+        file,
+        status: 'error',
+        message: 'Unsupported format. Use PDF, JPG, or PNG.'
+      })
+      return
+    }
+
+    // 2. Handle documented limits (5MB)
+    if (file.size > MAX_FILE_SIZE) {
+      uploadQueue.value.push({
+        id: crypto.randomUUID(),
+        file,
+        status: 'error',
+        message: 'File too large (max 5MB).'
+      })
+      return
+    }
+
+    uploadQueue.value.push({
+      id: crypto.randomUUID(),
+      file,
+      status: 'pending'
+    })
+  })
+
+  input.value = ''
   error.value = ''
-  successMessage.value = ''
 }
 
-const submitSubmission = async () => {
-  if (!selectedSubmissionFile.value) {
-    error.value = 'Choose a submission file first.'
-    return
-  }
-
-  uploading.value = true
-  error.value = ''
-  successMessage.value = ''
-
-  try {
-    const submission = await uploadSubmission(
-      assessmentId,
-      selectedSubmissionFile.value,
-    )
-
-    submissions.value.push(submission)
-    verificationSelections[submission.id] = submission.enrollment
-    submissionMarks[submission.id] = null
-    selectedSubmissionFile.value = null
-    successMessage.value = `Uploaded ${submission.original_filename}.`
-  } catch {
-    error.value = 'Could not upload submission.'
-  } finally {
-    uploading.value = false
-  }
+const removeQueuedFile = (id: string) => {
+  uploadQueue.value = uploadQueue.value.filter(q => q.id !== id)
 }
 
+const processUploadQueue = async () => {
+  isProcessingQueue.value = true
+
+  const pendingUploads = uploadQueue.value.filter(q => q.status === 'pending' || q.status === 'error')
+
+  for (const item of pendingUploads) {
+    item.status = 'uploading'
+    item.message = undefined
+
+    try {
+      const submission = await uploadSubmission(assessmentId, item.file)
+
+      // Update local state
+      item.status = 'success'
+      submissions.value.unshift(submission) // Add to top of table
+      verificationSelections[submission.id] = submission.enrollment
+      submissionMarks[submission.id] = null
+
+      // Trigger background polling if the backend says it is crunching the OCR
+      if (submission.status === 'processing') {
+        startPolling()
+      }
+
+    } catch (e) {
+      const err = e as {
+        response?: {
+          data?: {
+            message?: string
+          }
+        }
+      }
+      item.status = 'error'
+      item.message = err.response?.data?.message || 'Upload failed. Click to retry.'
+    }
+  }
+
+  isProcessingQueue.value = false
+}
 const confirmSubmission = async (submission: Submission) => {
   const enrollment = verificationSelections[submission.id]
 
@@ -254,6 +314,73 @@ const saveSubmissionMark = async (submission: Submission) => {
   }
 }
 
+// --- Background Polling Logic ---
+let pollingInterval: ReturnType<typeof setInterval> | null = null
+
+const startPolling = () => {
+  if (pollingInterval) return
+
+  pollingInterval = setInterval(async () => {
+    // Check if any submission is currently processing
+    const hasProcessing = submissions.value.some(s => s.status === 'processing')
+
+    if (!hasProcessing) {
+      stopPolling()
+      return
+    }
+
+    try {
+      // Fetch latest statuses quietly in the background
+      const latestSubmissions = await fetchSubmissions()
+      const assessmentSubs = latestSubmissions.filter(s => s.assessment === assessmentId)
+
+      // Update our local state with the newly processed data
+     // Update our local state with the newly processed data
+      for (const updated of assessmentSubs) {
+        const index = submissions.value.findIndex(s => s.id === updated.id)
+        const existingSubmission = submissions.value[index]
+
+        // Explicitly check that existingSubmission exists to satisfy TypeScript
+        if (existingSubmission && existingSubmission.status !== updated.status) {
+          submissions.value[index] = updated
+
+          // If it just finished processing, map the new results
+          if (updated.status === 'matched' || updated.status === 'needs_verification') {
+            verificationSelections[updated.id] = updated.enrollment
+          }
+        }
+      }
+    } catch {
+      // Silently ignore polling network errors to prevent spamming the user
+    }
+  }, 3000) // Check every 3 seconds
+}
+
+const stopPolling = () => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+    pollingInterval = null
+  }
+}
+
+// Prevent accidental navigation while uploading
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (isProcessingQueue.value) {
+    e.preventDefault()
+    e.returnValue = 'Uploads are currently in progress. Are you sure you want to leave?'
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+  void loadPage()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+  stopPolling() // Clean up our ML polling interval when we leave the page
+})
+
 onMounted(() => {
   void loadPage()
 })
@@ -295,20 +422,54 @@ onMounted(() => {
         </p>
 
         <div class="upload-controls">
+          <!-- Added 'multiple' attribute -->
           <input
             class="file-input"
             type="file"
+            multiple
             accept=".pdf,image/*"
             @change="handleSubmissionFileChange"
           />
           <button
             class="btn-primary"
             type="button"
-            :disabled="uploading || !selectedSubmissionFile"
-            @click="submitSubmission"
+            :disabled="isProcessingQueue || uploadQueue.length === 0"
+            @click="processUploadQueue"
           >
-            {{ uploading ? 'Uploading and recognizing…' : 'Upload submission' }}
+            {{ isProcessingQueue ? 'Processing queue…' : 'Upload queue' }}
           </button>
+        </div>
+
+        <!-- The Multi-File Queue UI -->
+        <div v-if="uploadQueue.length > 0" class="upload-queue panel glass-panel">
+          <h3>Upload Queue</h3>
+          <ul class="queue-list">
+            <li v-for="item in uploadQueue" :key="item.id" class="queue-item" :class="item.status">
+              <div class="file-info">
+                <strong>{{ item.file.name }}</strong>
+                <span class="file-size">{{ (item.file.size / 1024 / 1024).toFixed(2) }} MB</span>
+              </div>
+
+              <div class="status-info">
+                <span v-if="item.status === 'pending'" class="status-badge">Ready</span>
+                <span v-else-if="item.status === 'uploading'" class="status-badge text-warning">Uploading...</span>
+                <span v-else-if="item.status === 'success'" class="status-badge text-success">Success</span>
+
+                <div v-if="item.status === 'error'" class="error-group">
+                  <span class="status-badge text-error">{{ item.message }}</span>
+                  <button class="btn-text btn-retry" @click="item.status = 'pending'; processUploadQueue()">Retry</button>
+                </div>
+
+                <button
+                  v-if="item.status === 'pending' || item.status === 'error'"
+                  class="btn-text btn-remove"
+                  @click="removeQueuedFile(item.id)"
+                >
+                  ✕
+                </button>
+              </div>
+            </li>
+          </ul>
         </div>
 
         <p v-if="submissions.length === 0" class="empty-state status-text">
@@ -711,4 +872,94 @@ select.glass-input option {
   margin-top: 1rem;
 }
 
+/* Upload Queue Styles */
+.upload-queue {
+  margin: 1.5rem 0 2.5rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.upload-queue h3 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.queue-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.queue-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.queue-item.success { border-color: rgba(34, 197, 94, 0.3); }
+.queue-item.error { border-color: rgba(239, 68, 68, 0.3); }
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.file-info strong { color: var(--text-primary); font-size: 0.95rem; }
+.file-size { color: var(--text-secondary); font-size: 0.85rem; }
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.2);
+}
+
+.text-success { color: #86efac; }
+.text-warning { color: #fde047; }
+.text-error { color: #fca5a5; }
+
+.error-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.btn-text:hover { color: var(--text-primary); }
+.btn-retry { color: var(--pg-blue, #3b82f6); text-decoration: underline; }
+
+.error-box {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 2rem;
+  font-weight: 500;
+}
 </style>
