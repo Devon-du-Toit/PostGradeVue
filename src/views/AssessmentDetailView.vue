@@ -153,9 +153,7 @@ const saveMark = async (student: GradebookStudent) => {
 }
 
 
-// Same limit as the backend (MAX_SUBMISSION_FILE_SIZE_BYTES): a whole
-// multi-page scanned script can be well over 5 MB.
-const MAX_FILE_SIZE = 15 * 1024 * 1024 // 15 MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB limit
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
 const handleSubmissionFileChange = (event: Event) => {
@@ -174,13 +172,13 @@ const handleSubmissionFileChange = (event: Event) => {
       return
     }
 
-    // 2. Handle documented limits (15 MB)
+    // 2. Handle documented limits (5MB)
     if (file.size > MAX_FILE_SIZE) {
       uploadQueue.value.push({
         id: crypto.randomUUID(),
         file,
         status: 'error',
-        message: 'File too large (max 15 MB).'
+        message: 'File too large (max 5MB).'
       })
       return
     }
@@ -335,9 +333,8 @@ const startPolling = () => {
 
     try {
       // Fetch latest statuses quietly in the background
-      // Only this assessment's submissions, filtered on the server. Not just
-      // "processing": a script that finishes changes status and must still be returned.
-      const assessmentSubs = await fetchSubmissions({ assessment: assessmentId })
+      const latestSubmissions = await fetchSubmissions()
+      const assessmentSubs = latestSubmissions.filter(s => s.assessment === assessmentId)
 
       // Update our local state with the newly processed data
      // Update our local state with the newly processed data
@@ -432,7 +429,7 @@ onMounted(() => {
             class="file-input"
             type="file"
             multiple
-            accept=".pdf,.jpg,.jpeg,.png"
+            accept=".pdf,image/*"
             @change="handleSubmissionFileChange"
           />
           <button
