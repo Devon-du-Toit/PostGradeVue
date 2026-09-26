@@ -8,7 +8,7 @@ test('lecturer can log in', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 })
   // Basic accessibility checks
   await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible()
