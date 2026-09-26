@@ -132,12 +132,25 @@ onMounted(() => {
 
           <label>
             Maximum mark
-            <input v-model.number="assessmentForm.max_mark" type="number" min="1" step="0.01" required />
+            <input
+              v-model.number="assessmentForm.max_mark"
+              type="number"
+              min="1"
+              step="0.01"
+              required
+            />
           </label>
 
           <label>
             Weight (%)
-            <input v-model.number="assessmentForm.weight" type="number" min="0" max="100" step="0.01" required />
+            <input
+              v-model.number="assessmentForm.weight"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              required
+            />
           </label>
 
           <label>
@@ -167,8 +180,8 @@ onMounted(() => {
         <h2>Import students</h2>
         <p>
           Upload a CSV with the columns
-          <code>student_number</code>, <code>first_name</code>,
-          <code>last_name</code>, and <code>email</code>.
+          <code>student_number</code>, <code>first_name</code>, <code>last_name</code>, and
+          <code>email</code>.
         </p>
 
         <div class="import-controls">

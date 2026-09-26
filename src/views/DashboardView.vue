@@ -11,9 +11,7 @@ const authStore = useAuthStore()
     <header class="dashboard-hero">
       <div>
         <p class="page-eyebrow">Workspace</p>
-        <h1>
-          Welcome{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}.
-        </h1>
+        <h1>Welcome{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}.</h1>
         <p class="dashboard-subtitle">
           Manage courses, review submission matches and keep assessment results up to date.
         </p>
@@ -122,7 +120,10 @@ const authStore = useAuthStore()
   color: inherit;
   text-decoration: none;
   box-shadow: 0 1px 2px rgba(23, 35, 60, 0.025);
-  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .action-card:hover {

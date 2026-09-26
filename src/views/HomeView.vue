@@ -8,16 +8,8 @@ const authStore = useAuthStore()
   <main>
     <h1>PostGrade</h1>
 
-    <p v-if="authStore.user">
-      Logged in as {{ authStore.user.email }}
-    </p>
+    <p v-if="authStore.user">Logged in as {{ authStore.user.email }}</p>
 
-    <button
-      v-if="authStore.user"
-      type="button"
-      @click="authStore.logout"
-    >
-      Log out
-    </button>
+    <button v-if="authStore.user" type="button" @click="() => authStore.logout()">Log out</button>
   </main>
 </template>

@@ -36,14 +36,23 @@ const login = async () => {
         <p class="page-eyebrow">PostGrade</p>
         <h1>Assessment administration, without the admin burden.</h1>
         <p class="login-intro">
-          Organise classes, recognise scanned submissions, verify students and keep results
-          in one focused workflow.
+          Organise classes, recognise scanned submissions, verify students and keep results in one
+          focused workflow.
         </p>
 
         <div class="feature-list">
-          <div><span>01</span><p><strong>Recognise</strong><br />Match scanned submissions with OCR.</p></div>
-          <div><span>02</span><p><strong>Verify</strong><br />Review uncertain student matches quickly.</p></div>
-          <div><span>03</span><p><strong>Grade</strong><br />Record results and maintain the gradebook.</p></div>
+          <div>
+            <span>01</span>
+            <p><strong>Recognise</strong><br />Match scanned submissions with OCR.</p>
+          </div>
+          <div>
+            <span>02</span>
+            <p><strong>Verify</strong><br />Review uncertain student matches quickly.</p>
+          </div>
+          <div>
+            <span>03</span>
+            <p><strong>Grade</strong><br />Record results and maintain the gradebook.</p>
+          </div>
         </div>
       </div>
     </section>

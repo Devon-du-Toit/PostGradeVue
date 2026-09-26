@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
+import type { AxiosInstance } from 'axios'
 import api from '@/services/api'
 import {
   fetchSubmissions,
@@ -11,8 +11,8 @@ import {
 
 vi.mock('@/services/api', () => ({
   default: {
-    get: vi.fn(),
-    post: vi.fn(),
+    get: vi.fn<AxiosInstance['get']>(),
+    post: vi.fn<AxiosInstance['post']>(),
   },
 }))
 

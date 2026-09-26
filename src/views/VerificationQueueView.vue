@@ -77,9 +77,9 @@ const studentsFor = (submission: Submission) => {
 
 const matchedStudent = (submission: Submission) => {
   if (!submission.enrollment) return null
-  return studentsFor(submission).find(
-    (student) => student.enrollment === submission.enrollment,
-  ) ?? null
+  return (
+    studentsFor(submission).find((student) => student.enrollment === submission.enrollment) ?? null
+  )
 }
 
 onMounted(() => {
@@ -100,9 +100,7 @@ onMounted(() => {
     <p v-else-if="error && submissions.length === 0" class="error">{{ error }}</p>
 
     <section v-else class="panel">
-      <p v-if="submissions.length === 0" class="empty-state">
-        No submissions need verification.
-      </p>
+      <p v-if="submissions.length === 0" class="empty-state">No submissions need verification.</p>
 
       <div v-else class="queue-table-wrap">
         <table class="queue-table">
@@ -119,7 +117,10 @@ onMounted(() => {
               <td>{{ submission.original_filename }}</td>
               <td>
                 <RouterLink :to="`/assessments/${submission.assessment}`">
-                  {{ assessments[submission.assessment]?.name ?? `Assessment ${submission.assessment}` }}
+                  {{
+                    assessments[submission.assessment]?.name ??
+                    `Assessment ${submission.assessment}`
+                  }}
                 </RouterLink>
               </td>
               <td>
@@ -139,7 +140,8 @@ onMounted(() => {
                       :key="student.enrollment"
                       :value="student.enrollment"
                     >
-                      {{ student.student_number }} — {{ student.first_name }} {{ student.last_name }}
+                      {{ student.student_number }} — {{ student.first_name }}
+                      {{ student.last_name }}
                     </option>
                   </select>
                   <button
