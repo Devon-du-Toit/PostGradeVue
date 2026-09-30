@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 import type { Student } from '@/types/student'
 
 export interface ImportRowError {
@@ -21,8 +22,7 @@ export interface ImportResponse {
 }
 
 export const fetchCourseStudents = async (courseId: number) => {
-  const response = await api.get<Student[]>(`courses/${courseId}/students/`)
-  return response.data
+  return fetchAllPages<Student>(`courses/${courseId}/students/`)
 }
 
 export const importCourseStudents = async (

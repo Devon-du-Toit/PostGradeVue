@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 import type { Course, CreateCoursePayload } from '@/types/course'
 
 export interface CourseFilters {
@@ -9,11 +10,7 @@ export interface CourseFilters {
 
 // Added filters and an AbortSignal to handle stale request cancellation
 export const fetchCourses = async (filters: CourseFilters = {}, signal?: AbortSignal) => {
-  const response = await api.get<Course[]>('courses/', {
-    params: filters,
-    signal
-  })
-  return response.data
+  return fetchAllPages<Course>('courses/', { ...filters }, signal)
 }
 
 export const fetchCourse = async (courseId: number) => {
