@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 import type { Result } from '@/types/result'
 import type { Submission } from '@/types/submission'
 
@@ -7,18 +8,20 @@ export interface VerificationFilters {
   status?: string
 }
 
-export const fetchSubmissions = async () => {
-  const response = await api.get<Submission[]>('submissions/')
-  return response.data
+export interface SubmissionFilters {
+  assessment?: number
+  course?: number
+  status?: string
+}
+
+// Filtered on the server: the backend returns only the matching submissions.
+export const fetchSubmissions = async (filters: SubmissionFilters = {}) => {
+  return fetchAllPages<Submission>('submissions/', { ...filters })
 }
 
 // Added filters and AbortSignal support
 export const fetchVerificationQueue = async (filters: VerificationFilters = {}, signal?: AbortSignal) => {
-  const response = await api.get<Submission[]>('submissions/verification-queue/', {
-    params: filters,
-    signal
-  })
-  return response.data
+  return fetchAllPages<Submission>('submissions/verification-queue/', { ...filters }, signal)
 }
 
 export const uploadSubmission = async (assessmentId: number, file: File) => {
