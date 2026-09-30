@@ -12,10 +12,18 @@ test('lecturer can set up course and assessment', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/dashboard$/)
 
-  // Open courses
+    // Open courses
   await page.goto('/courses')
 
-  // Open the synthetic course
+  // Create the synthetic course needed by test
+  await page.getByLabel('Code').fill('E2E101')
+  await page.getByLabel('Name').fill('E2E Test Course')
+  await page.getByLabel('Year').fill('2026')
+  await page.getByLabel('Semester').selectOption('1')
+
+  await page.getByRole('button', { name: 'Create course' }).click()
+
+  // Open the course
   await page.getByText('E2E101').click()
 
   // Import synthetic student class list
@@ -43,7 +51,7 @@ test('lecturer can set up course and assessment', async ({ page }) => {
    const studentSelect = page.locator('.verification-controls select')
     await expect(studentSelect).toBeVisible({ timeout: 60000 })
 
-    await studentSelect.selectOption('1')
+    await studentSelect.selectOption({ label: '12345678 — Test Student' })
 
     const confirmButton = page
     .getByRole('button', { name: /Confirm match|Verify/ })

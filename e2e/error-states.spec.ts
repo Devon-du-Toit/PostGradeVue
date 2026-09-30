@@ -9,11 +9,26 @@ test('upload failure displays an error message', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/dashboard$/)
 
-  // Open the existing synthetic course and assessment
+    // Create the synthetic course needed by test
   await page.goto('/courses')
+
+  await page.getByLabel('Code').fill('E2E101')
+  await page.getByLabel('Name').fill('E2E Test Course')
+  await page.getByLabel('Year').fill('2026')
+  await page.getByLabel('Semester').selectOption('1')
+
+  await page.getByRole('button', { name: 'Create course' }).click()
+
+  // Open the course
   await page.getByText('E2E101').click()
 
+  // Create the assessment needed by test
+  await page.getByPlaceholder('Test 1').fill('E2E Assessment')
+  await page.getByRole('button', { name: 'Create assessment' }).click()
+
+  // Open the assessment
   const assessmentLink = page.getByRole('link', { name: /E2E Assessment/ }).last()
+  await expect(assessmentLink).toBeVisible()
   await assessmentLink.click()
 
   // Simulate an upload failure
@@ -48,6 +63,7 @@ test('login validation displays an error for invalid credentials', async ({ page
   ).toBeVisible()
 })
 
+// Covers missing-session access. Token expiry/refresh is not simulated by this test.
 test('protected page redirects to login when session is missing', async ({ page }) => {
   await page.goto('/login')
 
