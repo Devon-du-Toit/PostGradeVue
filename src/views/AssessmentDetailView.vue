@@ -151,7 +151,9 @@ const saveMark = async (student: GradebookStudent) => {
 }
 
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB limit
+// Same limit as the backend (MAX_SUBMISSION_FILE_SIZE_BYTES): a whole
+// multi-page scanned script can be well over 5 MB.
+const MAX_FILE_SIZE = 15 * 1024 * 1024 // 15 MB
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
 const handleSubmissionFileChange = (event: Event) => {
@@ -170,13 +172,13 @@ const handleSubmissionFileChange = (event: Event) => {
       return
     }
 
-    // 2. Handle documented limits (5MB)
+    // 2. Handle documented limits (15 MB)
     if (file.size > MAX_FILE_SIZE) {
       uploadQueue.value.push({
         id: crypto.randomUUID(),
         file,
         status: 'error',
-        message: 'File too large (max 5MB).'
+        message: 'File too large (max 15 MB).'
       })
       return
     }
@@ -427,7 +429,7 @@ onMounted(() => {
             class="file-input"
             type="file"
             multiple
-            accept=".pdf,image/*"
+            accept=".pdf,.jpg,.jpeg,.png"
             @change="handleSubmissionFileChange"
           />
           <button
