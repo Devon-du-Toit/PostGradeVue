@@ -7,7 +7,9 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    vue(),
+    // Leave absolute paths like "/postgradeLogo.jpg" as-is: they are served
+    // from public/, and turning them into imports breaks the Vitest run.
+    vue({ template: { transformAssetUrls: { includeAbsolute: false } } }),
     vueDevTools(),
   ],
   resolve: {
