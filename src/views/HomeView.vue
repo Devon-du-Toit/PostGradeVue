@@ -18,7 +18,7 @@ const authStore = useAuthStore()
             Go to Dashboard
           </RouterLink>
 
-          <button class="btn-secondary" type="button" @click="authStore.logout">
+          <button class="btn-secondary" type="button" @click="authStore.logout()">
             Log out
           </button>
         </div>
