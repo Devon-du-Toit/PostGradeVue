@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { onMounted, reactive, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { fetchAssessment } from '@/services/assessments'
 import { fetchCourseGradebook } from '@/services/gradebook'
@@ -9,6 +9,9 @@ import type { Assessment } from '@/types/assessment'
 import type { GradebookStudent } from '@/types/gradebook'
 import type { Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
+
+const route = useRoute()
+const router = useRouter()
 
 const submissions = ref<Submission[]>([])
 const assessments = reactive<Record<number, Assessment>>({})
@@ -19,35 +22,78 @@ const verifyingId = ref<number | null>(null)
 const error = ref('')
 const successMessage = ref('')
 
+// 1. URL Syncing: Initialize filters from URL
+const filters = reactive({
+  search: (route.query.search as string) || '',
+  status: (route.query.status as string) || '',
+})
+
+let abortController: AbortController | null = null
+let debounceTimeout: ReturnType<typeof setTimeout> | null = null
+
 const loadQueue = async () => {
   loading.value = true
   error.value = ''
 
+  // 2. Cancel stale requests
+  if (abortController) {
+    abortController.abort()
+  }
+  abortController = new AbortController()
+
   try {
-    const queue = await fetchVerificationQueue()
+    const activeFilters = Object.fromEntries(
+      Object.entries(filters).filter((entry) => entry[1] !== '' && entry[1] !== null)
+    )
+
+    const queue = await fetchVerificationQueue(activeFilters, abortController.signal)
     submissions.value = queue
 
     const assessmentIds = [...new Set(queue.map((submission) => submission.assessment))]
 
     await Promise.all(
       assessmentIds.map(async (assessmentId) => {
-        const assessment = await fetchAssessment(assessmentId)
-        assessments[assessmentId] = assessment
+        // Optimization: Don't re-fetch gradebooks if we already have them for this assessment
+        if (!assessments[assessmentId]) {
+          const assessment = await fetchAssessment(assessmentId)
+          assessments[assessmentId] = assessment
 
-        const gradebook = await fetchCourseGradebook(assessment.course)
-        studentsByAssessment[assessmentId] = gradebook.students
+          const gradebook = await fetchCourseGradebook(assessment.course)
+          studentsByAssessment[assessmentId] = gradebook.students
+        }
       }),
     )
 
     for (const submission of queue) {
       selections[submission.id] = submission.enrollment
     }
-  } catch {
+  } catch (e) {
+    const err = e as { name?: string; code?: string }
+    if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return
+
     error.value = 'Could not load the verification queue.'
+    submissions.value = []
   } finally {
     loading.value = false
   }
 }
+
+// 3. Debounce and sync URL
+watch(
+  filters,
+  (newFilters) => {
+    const query = Object.fromEntries(
+      Object.entries(newFilters).filter((entry) => entry[1] !== '' && entry[1] !== null)
+    )
+    void router.replace({ query })
+
+    if (debounceTimeout) clearTimeout(debounceTimeout)
+    debounceTimeout = setTimeout(() => {
+      void loadQueue()
+    }, 300)
+  },
+  { deep: true }
+)
 
 const verify = async (submission: Submission) => {
   const enrollment = selections[submission.id]
@@ -101,12 +147,25 @@ onMounted(() => {
     <AlertBox v-else-if="error && submissions.length === 0" type="error">{{ error }}</AlertBox>
 
     <!-- Applied glass-panel -->
+<!-- Applied glass-panel -->
     <section v-else class="panel glass-panel">
-      <p v-if="submissions.length === 0" class="empty-state status-text">
-        No submissions need verification.
+
+      <div class="list-header">
+        <div class="filters-bar">
+          <input class="glass-input search-input" v-model="filters.search" placeholder="Search filename or student..." />
+          <select class="glass-input" v-model="filters.status">
+            <option value="">All statuses</option>
+            <option value="pending">Pending verification</option>
+            <option value="verified">Verified</option>
+          </select>
+        </div>
+      </div>
+
+      <p v-if="submissions.length === 0 && !loading" class="empty-state status-text">
+        No submissions found matching those filters.
       </p>
 
-      <div v-else class="queue-table-wrap">
+      <div v-else-if="submissions.length > 0" class="queue-table-wrap">
         <table class="queue-table">
           <thead>
             <tr>
@@ -310,4 +369,29 @@ select.glass-input option {
   margin-top: 2rem;
 }
 
+.list-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.filters-bar {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+.filters-bar > * {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .filters-bar {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

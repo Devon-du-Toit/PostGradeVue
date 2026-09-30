@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { onMounted, reactive, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
-import { useCoursesStore } from '@/stores/courses'
+import { createCourse, fetchCourses } from '@/services/courses'
+import type { Course } from '@/types/course'
 import AlertBox from '@/components/AlertBox.vue'
 
-const coursesStore = useCoursesStore()
-const submitting = ref(false)
+const route = useRoute()
+const router = useRouter()
 
+const submitting = ref(false)
 const form = reactive({
   code: '',
   name: '',
@@ -15,21 +17,85 @@ const form = reactive({
   semester: 1,
 })
 
-const submitCourse = async () => {
-  submitting.value = true
+// --- Search & Filter State ---
+const courses = ref<Course[]>([])
+const loading = ref(true)
+const error = ref('')
+
+// 1. URL Syncing: Initialize filters directly from URL query parameters
+const filters = reactive({
+  search: (route.query.search as string) || '',
+  year: route.query.year ? Number(route.query.year) : '',
+  semester: route.query.semester ? Number(route.query.semester) : '',
+})
+
+let abortController: AbortController | null = null
+let debounceTimeout: ReturnType<typeof setTimeout> | null = null
+
+const loadFilteredCourses = async () => {
+  loading.value = true
+  error.value = ''
+
+  // 2. Stale Response Prevention: Cancel the previous request if it's still running
+  if (abortController) {
+    abortController.abort()
+  }
+  abortController = new AbortController()
 
   try {
-    await coursesStore.addCourse({ ...form })
+// Strip out empty filters before sending to the backend
+    const activeFilters = Object.fromEntries(
+      Object.entries(filters).filter((entry) => entry[1] !== '' && entry[1] !== null)
+    )
+
+    courses.value = await fetchCourses(activeFilters, abortController.signal)
+  } catch (e) {
+    const err = e as { name?: string; code?: string }
+    // If the error is just an abort cancellation from typing fast, ignore it
+    if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return
+
+    error.value = 'Could not load courses.'
+    courses.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// 3. Debouncing: Watch for filter changes, sync the URL, and wait before fetching
+watch(
+  filters,
+ (newFilters) => {
+    const query = Object.fromEntries(
+      Object.entries(newFilters).filter((entry) => entry[1] !== '' && entry[1] !== null)
+    )
+    void router.replace({ query })
+
+    if (debounceTimeout) clearTimeout(debounceTimeout)
+    debounceTimeout = setTimeout(() => {
+      void loadFilteredCourses()
+    }, 300) // 300ms delay
+  },
+  { deep: true }
+)
+
+const submitCourse = async () => {
+  submitting.value = true
+  error.value = ''
+  try {
+    await createCourse({ ...form })
     form.code = ''
     form.name = ''
     form.semester = 1
+    void loadFilteredCourses() // Refresh the list
+  } catch {
+    error.value = 'Could not create course. Please check the values.'
   } finally {
     submitting.value = false
   }
 }
 
 onMounted(() => {
-  void coursesStore.loadCourses()
+  void loadFilteredCourses()
 })
 </script>
 
@@ -75,18 +141,40 @@ onMounted(() => {
         </button>
       </form>
 
-      <AlertBox type="error" v-if="coursesStore.error" class="error">{{ coursesStore.error }}</AlertBox>
+      <AlertBox type="error" v-if="error" class="error">{{ error }}</AlertBox>
     </section>
 
-    <!-- Applied glass-panel to the list container -->
+   <!-- Applied glass-panel to the list container -->
     <section class="panel glass-panel">
-      <h2>Your courses</h2>
+      <div class="list-header">
+        <h2>Your courses</h2>
 
-      <p v-if="coursesStore.loading" class="status-text">Loading courses…</p>
-      <AlertBox type="info" v-else-if="coursesStore.courses.length === 0" class="status-text">No courses yet.</AlertBox>
+        <div class="filters-bar">
+          <input class="glass-input search-input" v-model="filters.search" placeholder="Search course name or code..." />
+          <select class="glass-input" v-model="filters.year">
+            <option value="">All years</option>
+            <option :value="2028">2028</option>
+            <option :value="2027">2027</option>
+            <option :value="2026">2026</option>
+            <option :value="2025">2025</option>
+            <option :value="2024">2024</option>
+          </select>
+          <select class="glass-input" v-model="filters.semester">
+            <option value="">All semesters</option>
+            <option :value="1">Semester 1</option>
+            <option :value="2">Semester 2</option>
+          </select>
+        </div>
+      </div>
+
+      <p v-if="loading" class="status-text">Loading courses…</p>
+      <AlertBox type="error" v-else-if="error" class="status-text">{{ error }}</AlertBox>
+      <AlertBox type="info" v-else-if="courses.length === 0" class="status-text">
+        No courses found matching those filters.
+      </AlertBox>
 
       <ul v-else class="course-list">
-        <li v-for="course in coursesStore.courses" :key="course.id">
+        <li v-for="course in courses" :key="course.id">
           <RouterLink class="course-link" :to="`/courses/${course.id}`">
             <strong class="course-code">{{ course.code }}</strong>
             <span class="course-name">{{ course.name }}</span>
@@ -221,6 +309,37 @@ select.glass-input option {
   }
   .course-meta {
     text-align: left;
+  }
+}
+
+.list-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.list-header h2 {
+  margin-bottom: 0;
+}
+
+.filters-bar {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Forces all inputs in the bar to respect their grid column boundaries */
+.filters-bar > * {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .filters-bar {
+    grid-template-columns: 1fr;
   }
 }
 </style>

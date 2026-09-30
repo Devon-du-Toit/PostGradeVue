@@ -1,9 +1,25 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
+import { fetchDashboardStats, type DashboardStats } from '@/services/dashboard'
+import AlertBox from '@/components/AlertBox.vue'
 
 const authStore = useAuthStore()
+const stats = ref<DashboardStats | null>(null)
+const loading = ref(true)
+const error = ref('')
+
+onMounted(async () => {
+  try {
+    stats.value = await fetchDashboardStats()
+  } catch {
+    error.value = 'Could not load live dashboard summaries.'
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <template>
@@ -28,29 +44,41 @@ const authStore = useAuthStore()
         </div>
       </div>
 
+      <AlertBox v-if="error" type="error" class="mb-4">{{ error }}</AlertBox>
+
       <div class="actions">
-        <!-- Added glass-panel class here -->
         <RouterLink class="action-card glass-panel" to="/courses">
           <span class="action-icon">C</span>
           <div>
             <strong>Courses</strong>
             <span>Manage courses, students, assessments and gradebooks.</span>
           </div>
-          <span class="action-arrow">→</span>
+          <div class="action-meta">
+            <span v-if="loading" class="skeleton-badge">...</span>
+            <span v-else-if="stats" class="count-badge">
+              {{ stats.active_courses }} Active
+            </span>
+            <span class="action-arrow">→</span>
+          </div>
         </RouterLink>
 
-        <!-- Added glass-panel class here -->
-        <RouterLink class="action-card glass-panel" to="/verification-queue">
+        <!-- Link includes query param for filtered list -->
+        <RouterLink class="action-card glass-panel" to="/verification-queue?status=pending">
           <span class="action-icon">V</span>
           <div>
             <strong>Verification queue</strong>
             <span>Review OCR matches that still need lecturer confirmation.</span>
           </div>
-          <span class="action-arrow">→</span>
+          <div class="action-meta">
+            <span v-if="loading" class="skeleton-badge">...</span>
+            <span v-else-if="stats" class="count-badge warning-badge">
+              {{ stats.pending_verifications }} Pending
+            </span>
+            <span class="action-arrow">→</span>
+          </div>
         </RouterLink>
       </div>
     </section>
-
     <!-- Added glass-panel class here -->
     <section class="workflow-card glass-panel">
       <p class="page-eyebrow">PostGrade workflow</p>
@@ -223,5 +251,47 @@ const authStore = useAuthStore()
   .actions {
     grid-template-columns: 1fr;
   }
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+.action-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.count-badge {
+  background: rgba(91, 166, 91, 0.15);
+  color: var(--accent-green);
+  border: 1px solid var(--glass-border-highlight);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.warning-badge {
+  background: rgba(253, 224, 71, 0.15);
+  color: #fde047;
+  border-color: rgba(253, 224, 71, 0.3);
+}
+
+.skeleton-badge {
+  color: var(--text-muted);
+  font-weight: bold;
+  letter-spacing: 2px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 </style>

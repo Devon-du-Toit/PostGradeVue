@@ -37,8 +37,23 @@ describe('submission service', () => {
 
     const result = await fetchVerificationQueue()
 
-    expect(mockedApi.get).toHaveBeenCalledWith('submissions/verification-queue/')
+    expect(mockedApi.get).toHaveBeenCalledWith('submissions/verification-queue/', {
+      params: {},
+      signal: undefined,
+    })
     expect(result).toEqual([{ id: 2 }])
+  })
+
+  it('passes verification queue filters to the API', async () => {
+    mockedApi.get.mockResolvedValueOnce({ data: [] })
+    const controller = new AbortController()
+
+    await fetchVerificationQueue({ search: 'sipho', status: 'matched' }, controller.signal)
+
+    expect(mockedApi.get).toHaveBeenCalledWith('submissions/verification-queue/', {
+      params: { search: 'sipho', status: 'matched' },
+      signal: controller.signal,
+    })
   })
 
   it('uploads a submission with assessment and file', async () => {
