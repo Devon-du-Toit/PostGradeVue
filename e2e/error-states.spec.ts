@@ -48,9 +48,9 @@ test('upload failure displays an error message', async ({ page }) => {
 
   const submissionPath = path.join(process.cwd(), 'e2e', 'submission.png')
   await page.locator('input[type="file"]').setInputFiles(submissionPath)
-  await page.getByRole('button', { name: 'Upload submission' }).click()
+  await page.getByRole('button', { name: 'Upload queue' }).click()
 
-  await expect(page.getByText('Could not upload submission.')).toBeVisible()
+  await expect(page.getByText('Upload failed. Click to retry.')).toBeVisible()
 })
 test('login validation displays an error for invalid credentials', async ({ page }) => {
   await page.goto('/login')
