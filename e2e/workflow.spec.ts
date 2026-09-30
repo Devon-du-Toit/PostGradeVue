@@ -46,6 +46,8 @@ test('lecturer can set up course and assessment', async ({ page }) => {
   await page.locator('input[type="file"]').setInputFiles(submissionPath)
 
   await page.getByRole('button', { name: 'Upload submission' }).click()
+  await page.waitForTimeout(2000)
+  console.log('Page content after upload:', await page.locator('body').innerText())
 
 // Review the recognition result
    const studentSelect = page.locator('.verification-controls select')
