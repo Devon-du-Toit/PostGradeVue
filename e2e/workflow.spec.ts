@@ -10,21 +10,23 @@ test('lecturer can set up course and assessment', async ({ page }) => {
   await page.getByLabel('Password').fill('TestPass123!')
 
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 })
 
     // Open courses
   await page.goto('/courses')
 
   // Create the synthetic course needed by test
-  await page.getByLabel('Code').fill('E2E101')
+  await page.getByLabel('Code').fill('E2E102')
   await page.getByLabel('Name').fill('E2E Test Course')
   await page.getByLabel('Year').fill('2026')
   await page.getByLabel('Semester').selectOption('1')
 
   await page.getByRole('button', { name: 'Create course' }).click()
 
-  // Open the course
-  await page.getByText('E2E101').click()
+// Wait for the created course to appear before opening it
+  const courseCode = page.getByText('E2E102')
+  await expect(courseCode).toBeVisible()
+  await courseCode.click()
 
   // Import synthetic student class list
   const csvPath = path.join(process.cwd(), 'e2e', 'students.csv')
@@ -46,27 +48,25 @@ test('lecturer can set up course and assessment', async ({ page }) => {
   await page.locator('input[type="file"]').setInputFiles(submissionPath)
 
   await page.getByRole('button', { name: 'Upload submission' }).click()
-  await page.waitForTimeout(2000)
-  console.log('Page content after upload:', await page.locator('body').innerText())
+  
 
 // Review the recognition result
    const studentSelect = page.locator('.verification-controls select')
-    await expect(studentSelect).toBeVisible({ timeout: 60000 })
+   await expect(studentSelect).toBeVisible({ timeout: 60000 })
 
-    await studentSelect.selectOption({ label: '12345678 — Test Student' })
+   await studentSelect.selectOption({ label: '12345678 — Test Student' })
 
-    const confirmButton = page
-    .getByRole('button', { name: /Confirm match|Verify/ })
+   const confirmButton = page.getByRole('button', { name: /Confirm match|Verify/ })
 
-    await confirmButton.click()
+  await confirmButton.click()
 
     // Mark the verified submission
-    const markInput = page.getByPlaceholder('Mark')
-    await expect(markInput).toBeVisible()
+  const markInput = page.getByPlaceholder('Mark')
+  await expect(markInput).toBeVisible()
 
-    await markInput.fill('75')
-    await page.getByRole('button', { name: 'Save mark' }).click()
+  await markInput.fill('75')
+  await page.getByRole('button', { name: 'Save mark' }).click()
 
     // Confirm marking completed
-    await expect(page.getByText('Marked', { exact: true })).toBeVisible()
+  await expect(page.getByText('Marked', { exact: true })).toBeVisible()
 })

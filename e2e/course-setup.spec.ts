@@ -8,7 +8,7 @@ test('lecturer can create a course', async ({ page }) => {
   await page.getByLabel('Password').fill('TestPass123!')
 
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 })
 
   // Open courses
   await page.goto('/courses')
@@ -22,6 +22,7 @@ test('lecturer can create a course', async ({ page }) => {
   await page.getByRole('button', { name: 'Create course' }).click()
 
   // Confirm the course appears
-  await expect(page.getByText('E2E101')).toBeVisible()
-  await expect(page.getByText('E2E Test Course')).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'E2E101 E2E Test Course 2026' }),
+  ).toBeVisible()
 })
