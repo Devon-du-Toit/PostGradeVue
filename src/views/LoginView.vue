@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
+import AlertBox from '@/components/AlertBox.vue'
 
 const email = ref('')
 const password = ref('')
@@ -79,7 +80,7 @@ const login = async () => {
             required
           />
 
-          <p v-if="error" class="error error-box">{{ error }}</p>
+          <AlertBox type="error" v-if="error">{{ error }}</AlertBox>
 
           <!-- Applied btn-primary -->
           <button type="submit" class="btn-primary" :disabled="loading">
@@ -214,16 +215,6 @@ form input + label {
 form button {
   width: 100%;
   margin-top: 1.2rem;
-}
-
-.error-box {
-  margin: 0.6rem 0 0;
-  padding: 0.75rem 0.9rem;
-  border: 1px solid var(--status-error);
-  border-radius: var(--radius-md);
-  background: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
-  font-size: 0.86rem;
 }
 
 @media (max-width: 850px) {

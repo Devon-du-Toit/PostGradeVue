@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { useCoursesStore } from '@/stores/courses'
+import AlertBox from '@/components/AlertBox.vue'
 
 const coursesStore = useCoursesStore()
 const submitting = ref(false)
@@ -74,7 +75,7 @@ onMounted(() => {
         </button>
       </form>
 
-      <p v-if="coursesStore.error" class="error">{{ coursesStore.error }}</p>
+      <AlertBox type="error" v-if="coursesStore.error" class="error">{{ coursesStore.error }}</AlertBox>
     </section>
 
     <!-- Applied glass-panel to the list container -->
@@ -82,7 +83,7 @@ onMounted(() => {
       <h2>Your courses</h2>
 
       <p v-if="coursesStore.loading" class="status-text">Loading courses…</p>
-      <p v-else-if="coursesStore.courses.length === 0" class="status-text">No courses yet.</p>
+      <AlertBox type="info" v-else-if="coursesStore.courses.length === 0" class="status-text">No courses yet.</AlertBox>
 
       <ul v-else class="course-list">
         <li v-for="course in coursesStore.courses" :key="course.id">
@@ -210,16 +211,6 @@ select.glass-input option {
   color: var(--text-secondary);
   font-size: 0.9rem;
   text-align: right;
-}
-
-.error {
-  margin-top: 1.25rem;
-  color: #fca5a5;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid var(--status-error);
-  padding: 0.75rem;
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
 }
 
 @media (max-width: 720px) {

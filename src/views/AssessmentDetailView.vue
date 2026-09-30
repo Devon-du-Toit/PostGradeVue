@@ -18,7 +18,9 @@ import {
 import type { Assessment } from '@/types/assessment'
 import type { GradebookStudent } from '@/types/gradebook'
 import type { Result } from '@/types/result'
-import type { Submission, SubmissionStatus } from '@/types/submission'
+import type { Submission } from '@/types/submission'
+import AlertBox from '@/components/AlertBox.vue'
+import StatusBadge from '@/components/StatusBadge.vue'
 
 const route = useRoute()
 const assessmentId = Number(route.params.id)
@@ -47,18 +49,6 @@ const resultByEnrollment = computed(() => {
 const studentByEnrollment = computed(() => {
   return new Map(students.value.map((student) => [student.enrollment, student]))
 })
-
-const statusLabel = (status: SubmissionStatus) => {
-  const labels: Record<SubmissionStatus, string> = {
-    uploaded: 'Uploaded',
-    matched: 'Matched',
-    needs_verification: 'Needs verification',
-    verified: 'Verified',
-    marked: 'Marked',
-  }
-
-  return labels[status]
-}
 
 const loadPage = async () => {
   loading.value = true
@@ -339,9 +329,7 @@ onMounted(() => {
               <tr v-for="submission in submissions" :key="submission.id">
                 <td class="filename-cell">{{ submission.original_filename }}</td>
                 <td>
-                  <span class="status-badge" :data-status="submission.status">
-                    {{ statusLabel(submission.status) }}
-                  </span>
+                  <StatusBadge :status="submission.status" />
                 </td>
                 <td>
                   <template v-if="submission.enrollment">
@@ -479,8 +467,8 @@ onMounted(() => {
         </div>
       </section>
 
-      <p v-if="successMessage" class="success-box">{{ successMessage }}</p>
-      <p v-if="error" class="error-box">{{ error }}</p>
+     <AlertBox v-if="successMessage" type="success">{{ successMessage }}</AlertBox>
+    <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
     </template>
   </main>
 </template>
@@ -688,22 +676,6 @@ select.glass-input option {
   color: var(--text-primary);
 }
 
-/* Status Badges */
-.status-badge {
-  display: inline-block;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-.status-badge[data-status="uploaded"] { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
-.status-badge[data-status="matched"] { background: rgba(34,211,238,0.15); color: #22d3ee; }
-.status-badge[data-status="needs_verification"] { background: rgba(245,158,11,0.15); color: var(--status-warning); }
-.status-badge[data-status="verified"] { background: rgba(168,85,247,0.15); color: #a855f7; }
-.status-badge[data-status="marked"] { background: rgba(91,166,91,0.15); color: var(--accent-green); }
-
 .percentage-muted {
   color: var(--text-secondary);
   font-size: 0.85rem;
@@ -739,23 +711,4 @@ select.glass-input option {
   margin-top: 1rem;
 }
 
-.error-box {
-  margin-top: 1.25rem;
-  color: #fca5a5;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid var(--status-error);
-  padding: 0.85rem;
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-}
-
-.success-box {
-  margin-top: 1.25rem;
-  color: #86efac;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid var(--status-success);
-  padding: 0.85rem;
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-}
 </style>
