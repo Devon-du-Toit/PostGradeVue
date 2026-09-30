@@ -21,6 +21,11 @@
   /* 4. Brand & Action Colors (The exact PostGrade green) */
   --accent-green: #5ba65b;
   --accent-green-hover: #4a8c4a;
+  /* Darker fills for white-text buttons: #3d7a3d is 5.2:1 and #2f6f2f
+     6.1:1 against white (WCAG AA needs 4.5:1). The accent green above
+     stays as the text/border colour, where it reads 6.3:1 on the navy. */
+  --button-green: #3d7a3d;
+  --button-green-hover: #2f6f2f;
   --status-success: #5ba65b;
   --status-warning: #f59e0b;
   --status-error: #ef4444;
@@ -75,7 +80,7 @@ body {
 
 /* Base button styling using the brand green */
 .btn-primary {
-  background: var(--accent-green);
+  background: var(--button-green);
   color: #ffffff;
   border: none;
   padding: var(--space-sm) var(--space-md);
@@ -86,5 +91,11 @@ body {
 }
 
 .btn-primary:hover {
-  background: var(--accent-green-hover);
+  background: var(--button-green-hover);
+}
+/* Accessibility: Ensure keyboard focus is always highly visible */
+*:focus-visible {
+  outline: 2px solid var(--pg-blue, #3b82f6) !important;
+  outline-offset: 2px !important;
+  border-radius: inherit;
 }
