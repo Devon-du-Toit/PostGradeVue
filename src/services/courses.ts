@@ -1,8 +1,18 @@
 import api from '@/services/api'
 import type { Course, CreateCoursePayload } from '@/types/course'
 
-export const fetchCourses = async () => {
-  const response = await api.get<Course[]>('courses/')
+export interface CourseFilters {
+  search?: string
+  year?: number | string
+  semester?: number | string
+}
+
+// Added filters and an AbortSignal to handle stale request cancellation
+export const fetchCourses = async (filters: CourseFilters = {}, signal?: AbortSignal) => {
+  const response = await api.get<Course[]>('courses/', {
+    params: filters,
+    signal
+  })
   return response.data
 }
 

@@ -1,4 +1,10 @@
-export type SubmissionStatus = 'uploaded' | 'matched' | 'needs_verification' | 'verified' | 'marked'
+export type SubmissionStatus =
+  | 'uploaded'
+  | 'matched'
+  | 'needs_verification'
+  | 'verified'
+  | 'marked'
+  | 'processing'
 
 export interface Submission {
   id: number
