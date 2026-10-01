@@ -11,8 +11,8 @@ import {
 
 vi.mock('@/services/api', () => ({
   default: {
-    get: vi.fn(),
-    post: vi.fn(),
+    get: vi.fn<typeof api.get>(),
+    post: vi.fn<typeof api.post>(),
   },
 }))
 
