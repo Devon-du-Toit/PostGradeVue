@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AxiosInstance } from 'axios'
+
 import api from '@/services/api'
 import {
   fetchSubmissions,
