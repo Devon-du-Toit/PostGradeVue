@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import axios from 'axios'
-import router from '@/router'
 
-import api, { baseURL } from '@/services/api'
+import api from '@/services/api'
 import type { User } from '@/types/user'
 
 interface LoginResponse {
@@ -32,6 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     const response = await api.get<User>('auth/me/')
+
     user.value = response.data
   }
 
@@ -50,35 +49,23 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchUser()
   }
 
-  const logout = (force = false) => {
+  const logout = () => {
     user.value = null
     accessToken.value = null
     refreshToken.value = null
 
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
-
-    const currentRoute = router.currentRoute.value
-    if (currentRoute.name !== 'login') {
-      if (force) {
-        // Safe return destination if kicked out by 401
-        router.push({ name: 'login', query: { redirect: currentRoute.fullPath } })
-      } else {
-        router.push({ name: 'login' })
-      }
-    }
   }
 
   const refreshAccessToken = async () => {
     if (!refreshToken.value) {
-      logout(true)
+      logout()
       return null
     }
 
     try {
-      // Use standard axios to completely bypass our interceptors
-      // preventing the infinite 401 loop!
-      const response = await axios.post<RefreshResponse>(`${baseURL}auth/refresh/`, {
+      const response = await api.post<RefreshResponse>('auth/refresh/', {
         refresh: refreshToken.value,
       })
 
@@ -87,7 +74,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return response.data.access
     } catch {
-      logout(true)
+      logout()
       return null
     }
   }

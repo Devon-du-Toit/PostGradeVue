@@ -1,8 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import { useAuthStore } from '@/stores/auth'
 
-// Export baseURL so we can reuse it in auth.ts for the clean refresh call
-export const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/'
+const baseURL = 'http://127.0.0.1:8000/api/'
 
 const api = axios.create({
   baseURL,
@@ -12,13 +10,39 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
 }
 
-let refreshPromise: Promise<string | null> | null = null
+interface RefreshResponse {
+  access: string
+}
+
+let refreshPromise: Promise<string> | null = null
+
+const clearTokens = () => {
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('refreshToken')
+}
+
+const refreshAccessToken = async () => {
+  const refreshToken = localStorage.getItem('refreshToken')
+
+  if (!refreshToken) {
+    clearTokens()
+    throw new Error('No refresh token available')
+  }
+
+  const response = await axios.post<RefreshResponse>(`${baseURL}auth/refresh/`, {
+    refresh: refreshToken,
+  })
+
+  localStorage.setItem('accessToken', response.data.access)
+
+  return response.data.access
+}
 
 api.interceptors.request.use((config) => {
-  const authStore = useAuthStore()
+  const accessToken = localStorage.getItem('accessToken')
 
-  if (authStore.accessToken) {
-    config.headers.Authorization = `Bearer ${authStore.accessToken}`
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`
   }
 
   return config
@@ -34,25 +58,18 @@ api.interceptors.response.use(
     }
 
     originalRequest._retry = true
-    const authStore = useAuthStore()
 
     try {
-      refreshPromise ??= authStore.refreshAccessToken().finally(() => {
+      refreshPromise ??= refreshAccessToken().finally(() => {
         refreshPromise = null
       })
 
-      const newAccessToken = await refreshPromise
+      const accessToken = await refreshPromise
+      originalRequest.headers.Authorization = `Bearer ${accessToken}`
 
-      if (newAccessToken) {
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-        return api(originalRequest)
-      }
-
-      // If newAccessToken is null, refresh failed gracefully
-      authStore.logout(true)
-      return Promise.reject(error)
+      return api(originalRequest)
     } catch (refreshError) {
-      authStore.logout(true)
+      clearTokens()
       return Promise.reject(refreshError)
     }
   },
