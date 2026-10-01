@@ -81,6 +81,10 @@ jobs:
         run: npm ci
 
       - name: Build application
+        # Placeholder: production builds require an API URL (vite.config.ts);
+        # CI only checks that the bundle builds.
+        env:
+          VITE_API_BASE_URL: https://api.example.invalid/api/
         run: npm run build
 
   e2e-tests:
