@@ -18,13 +18,9 @@ interface RefreshResponse {
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
 
-  const accessToken = ref<string | null>(
-    localStorage.getItem('accessToken'),
-  )
+  const accessToken = ref<string | null>(localStorage.getItem('accessToken'))
 
-  const refreshToken = ref<string | null>(
-    localStorage.getItem('refreshToken'),
-  )
+  const refreshToken = ref<string | null>(localStorage.getItem('refreshToken'))
 
   const fetchUser = async () => {
     if (!accessToken.value) {

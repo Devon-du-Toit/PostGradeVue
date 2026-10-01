@@ -6,14 +6,8 @@ export const fetchCourseAssessments = async (courseId: number) => {
   return fetchAllPages<Assessment>(`courses/${courseId}/assessments/`)
 }
 
-export const createAssessment = async (
-  courseId: number,
-  payload: CreateAssessmentPayload,
-) => {
-  const response = await api.post<Assessment>(
-    `courses/${courseId}/assessments/`,
-    payload,
-  )
+export const createAssessment = async (courseId: number, payload: CreateAssessmentPayload) => {
+  const response = await api.post<Assessment>(`courses/${courseId}/assessments/`, payload)
   return response.data
 }
 
