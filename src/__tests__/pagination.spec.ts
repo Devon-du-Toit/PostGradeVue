@@ -5,7 +5,7 @@ import { fetchAllPages, PAGE_SIZE } from '@/services/pagination'
 
 vi.mock('@/services/api', () => ({
   default: {
-    get: vi.fn(),
+    get: vi.fn<typeof api.get>(),
   },
 }))
 
@@ -46,7 +46,7 @@ describe('fetchAllPages', () => {
     expect(items).toEqual([{ id: 1 }, { id: 2 }, { id: 3 }])
     expect(mockedApi.get).toHaveBeenCalledTimes(3)
     const pages = mockedApi.get.mock.calls.map(
-      ([, config]) => (config?.params as { page: number }).page,
+      ([, config]) => (config?.params as { page: number } | undefined)?.page,
     )
     expect(pages).toEqual([1, 2, 3])
   })
