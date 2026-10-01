@@ -3,6 +3,8 @@ import { fetchAllPages } from '@/services/pagination'
 import type { Result } from '@/types/result'
 import type { Submission } from '@/types/submission'
 
+export const UPLOAD_TIMEOUT_MS = 120_000
+
 export interface VerificationFilters {
   search?: string
   status?: string
@@ -29,7 +31,10 @@ export const uploadSubmission = async (assessmentId: number, file: File) => {
   formData.append('assessment', String(assessmentId))
   formData.append('file', file)
 
-  const response = await api.post<Submission>('submissions/', formData)
+  // Up to 15 MB on a slow connection needs longer than the 30 s default.
+  const response = await api.post<Submission>('submissions/', formData, {
+    timeout: UPLOAD_TIMEOUT_MS,
+  })
   return response.data
 }
 

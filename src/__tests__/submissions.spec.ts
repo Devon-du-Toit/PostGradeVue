@@ -5,6 +5,7 @@ import {
   fetchSubmissions,
   fetchVerificationQueue,
   markSubmission,
+  UPLOAD_TIMEOUT_MS,
   uploadSubmission,
   verifySubmission,
 } from '@/services/submissions'
@@ -70,8 +71,9 @@ describe('submission service', () => {
     await uploadSubmission(12, file)
 
     expect(mockedApi.post).toHaveBeenCalledTimes(1)
-    const [url, formData] = mockedApi.post.mock.calls[0]!
+    const [url, formData, config] = mockedApi.post.mock.calls[0]!
     expect(url).toBe('submissions/')
+    expect(config).toEqual({ timeout: UPLOAD_TIMEOUT_MS })
     expect(formData).toBeInstanceOf(FormData)
     expect((formData as FormData).get('assessment')).toBe('12')
     expect((formData as FormData).get('file')).toBe(file)
