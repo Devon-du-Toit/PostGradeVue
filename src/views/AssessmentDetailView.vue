@@ -68,11 +68,13 @@ const loadPage = async () => {
     const [gradebookData, resultData, submissionData] = await Promise.all([
       fetchCourseGradebook(assessmentData.course),
       fetchAssessmentResults(assessmentId),
-      fetchSubmissions(),
+      fetchSubmissions({ assessment: assessmentId }),
     ])
 
     students.value = gradebookData.students
     results.value = resultData
+    // The server filters by assessment (#11); this also keeps the page correct
+    // against a backend that ignores ?assessment= (rollout compatibility).
     submissions.value = submissionData.filter(
       (submission) => submission.assessment === assessmentId,
     )
@@ -333,8 +335,9 @@ const startPolling = () => {
 
     try {
       // Fetch latest statuses quietly in the background
-      const latestSubmissions = await fetchSubmissions()
-      const assessmentSubs = latestSubmissions.filter(s => s.assessment === assessmentId)
+      // Only this assessment's submissions, filtered on the server. Not just
+      // "processing": a script that finishes changes status and must still be returned.
+      const assessmentSubs = await fetchSubmissions({ assessment: assessmentId })
 
       // Update our local state with the newly processed data
      // Update our local state with the newly processed data

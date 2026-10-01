@@ -1,9 +1,9 @@
 import api from '@/services/api'
+import { fetchAllPages } from '@/services/pagination'
 import type { CreateResultPayload, Result, UpdateResultPayload } from '@/types/result'
 
 export const fetchAssessmentResults = async (assessmentId: number) => {
-  const response = await api.get<Result[]>(`assessments/${assessmentId}/results/`)
-  return response.data
+  return fetchAllPages<Result>(`assessments/${assessmentId}/results/`)
 }
 
 export const createAssessmentResult = async (

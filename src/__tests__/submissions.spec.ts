@@ -11,8 +11,8 @@ import {
 
 vi.mock('@/services/api', () => ({
   default: {
-    get: vi.fn<AxiosInstance['get']>(),
-    post: vi.fn<AxiosInstance['post']>(),
+    get: vi.fn<typeof api.get>(),
+    post: vi.fn<typeof api.post>(),
   },
 }))
 
@@ -23,35 +23,42 @@ describe('submission service', () => {
     vi.clearAllMocks()
   })
 
-  it('fetches submissions', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [{ id: 1 }] })
+  const page = <T>(results: T[]) => ({
+    data: { count: results.length, next: null, previous: null, results },
+  })
 
-    const result = await fetchSubmissions()
+  it('fetches only the requested assessment\'s submissions', async () => {
+    mockedApi.get.mockResolvedValueOnce(page([{ id: 1 }]))
 
-    expect(mockedApi.get).toHaveBeenCalledWith('submissions/')
+    const result = await fetchSubmissions({ assessment: 7 })
+
+    expect(mockedApi.get).toHaveBeenCalledWith('submissions/', {
+      params: { assessment: 7, page: 1, page_size: 100 },
+      signal: undefined,
+    })
     expect(result).toEqual([{ id: 1 }])
   })
 
   it('fetches the verification queue', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [{ id: 2 }] })
+    mockedApi.get.mockResolvedValueOnce(page([{ id: 2 }]))
 
     const result = await fetchVerificationQueue()
 
     expect(mockedApi.get).toHaveBeenCalledWith('submissions/verification-queue/', {
-      params: {},
+      params: { page: 1, page_size: 100 },
       signal: undefined,
     })
     expect(result).toEqual([{ id: 2 }])
   })
 
   it('passes verification queue filters to the API', async () => {
-    mockedApi.get.mockResolvedValueOnce({ data: [] })
+    mockedApi.get.mockResolvedValueOnce(page([]))
     const controller = new AbortController()
 
     await fetchVerificationQueue({ search: 'sipho', status: 'matched' }, controller.signal)
 
     expect(mockedApi.get).toHaveBeenCalledWith('submissions/verification-queue/', {
-      params: { search: 'sipho', status: 'matched' },
+      params: { search: 'sipho', status: 'matched', page: 1, page_size: 100 },
       signal: controller.signal,
     })
   })
