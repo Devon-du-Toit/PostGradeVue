@@ -9,7 +9,7 @@ defineProps({
 </script>
 
 <template>
-  <div :class="['alert-box', type]">
+  <div :class="['alert-box', type]" :role="type === 'error' ? 'alert' : 'status'">
     <slot></slot>
   </div>
 </template>

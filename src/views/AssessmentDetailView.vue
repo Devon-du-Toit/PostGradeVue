@@ -319,55 +319,62 @@ const saveSubmissionMark = async (submission: Submission) => {
 }
 
 // --- Background Polling Logic ---
-let pollingInterval: ReturnType<typeof setInterval> | null = null
+let pollingTimeout: ReturnType<typeof setTimeout> | null = null
+let isPolling = false
 
-const startPolling = () => {
-  if (pollingInterval) return
+const poll = async () => {
+  if (!isPolling) return
 
-  pollingInterval = setInterval(async () => {
-    // Check if any submission is currently processing
-    const hasProcessing = submissions.value.some(s => s.status === 'processing')
+  // Check if any submission is currently processing
+  const hasProcessing = submissions.value.some(s => s.status === 'processing')
 
-    if (!hasProcessing) {
-      stopPolling()
-      return
-    }
+  if (!hasProcessing) {
+    stopPolling()
+    return
+  }
 
-    try {
-      // Fetch latest statuses quietly in the background
-      // Only this assessment's submissions, filtered on the server. Not just
-      // "processing": a script that finishes changes status and must still be returned.
-      const assessmentSubs = await fetchSubmissions({ assessment: assessmentId })
+  try {
+    // Fetch latest statuses quietly in the background
+    const latestSubmissions = await fetchSubmissions()
+    const assessmentSubs = latestSubmissions.filter(s => s.assessment === assessmentId)
 
-      // Update our local state with the newly processed data
-     // Update our local state with the newly processed data
-      for (const updated of assessmentSubs) {
-        const index = submissions.value.findIndex(s => s.id === updated.id)
-        const existingSubmission = submissions.value[index]
+    // Update our local state with the newly processed data
+    for (const updated of assessmentSubs) {
+      const index = submissions.value.findIndex(s => s.id === updated.id)
+      const existingSubmission = submissions.value[index]
 
-        // Explicitly check that existingSubmission exists to satisfy TypeScript
-        if (existingSubmission && existingSubmission.status !== updated.status) {
-          submissions.value[index] = updated
+      if (existingSubmission && existingSubmission.status !== updated.status) {
+        submissions.value[index] = updated
 
-          // If it just finished processing, map the new results
-          if (updated.status === 'matched' || updated.status === 'needs_verification') {
-            verificationSelections[updated.id] = updated.enrollment
-          }
+        // If it just finished processing, map the new results
+        if (updated.status === 'matched' || updated.status === 'needs_verification' || updated.status === 'recognition_failed') {
+          verificationSelections[updated.id] = updated.enrollment
         }
       }
-    } catch {
-      // Silently ignore polling network errors to prevent spamming the user
     }
-  }, 3000) // Check every 3 seconds
-}
-
-const stopPolling = () => {
-  if (pollingInterval) {
-    clearInterval(pollingInterval)
-    pollingInterval = null
+  } catch {
+    // Silently ignore polling network errors
+  } finally {
+    // Re-arm the timer ONLY after this cycle has completely finished
+    if (isPolling) {
+      pollingTimeout = setTimeout(poll, 3000)
+    }
   }
 }
 
+const startPolling = () => {
+  if (isPolling) return
+  isPolling = true
+  void poll()
+}
+
+const stopPolling = () => {
+  isPolling = false
+  if (pollingTimeout) {
+    clearTimeout(pollingTimeout)
+    pollingTimeout = null
+  }
+}
 // Prevent accidental navigation while uploading
 const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   if (isProcessingQueue.value) {
@@ -508,7 +515,7 @@ onMounted(() => {
                   <span v-else class="status-text warning-text">Not matched</span>
                 </td>
                 <td>
-                  <template v-if="submission.status === 'matched' || submission.status === 'needs_verification'">
+                  <template v-if="submission.status === 'matched' || submission.status === 'needs_verification' || submission.status === 'recognition_failed'">
                     <div class="verification-controls">
                       <select class="glass-input" v-model.number="verificationSelections[submission.id]">
                         <option :value="null" disabled>Select student</option>
