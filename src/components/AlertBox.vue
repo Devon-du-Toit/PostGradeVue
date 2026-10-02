@@ -3,13 +3,13 @@ defineProps({
   type: {
     type: String,
     default: 'error', // defaults to error since that's what we use most
-    validator: (value: string) => ['error', 'success', 'warning', 'info'].includes(value)
-  }
+    validator: (value: string) => ['error', 'success', 'warning', 'info'].includes(value),
+  },
 })
 </script>
 
 <template>
-  <div :class="['alert-box', type]">
+  <div :class="['alert-box', type]" :role="type === 'error' ? 'alert' : 'status'">
     <slot></slot>
   </div>
 </template>

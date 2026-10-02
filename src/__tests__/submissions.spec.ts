@@ -27,7 +27,7 @@ describe('submission service', () => {
     data: { count: results.length, next: null, previous: null, results },
   })
 
-  it('fetches only the requested assessment\'s submissions', async () => {
+  it("fetches only the requested assessment's submissions", async () => {
     mockedApi.get.mockResolvedValueOnce(page([{ id: 1 }]))
 
     const result = await fetchSubmissions({ assessment: 7 })

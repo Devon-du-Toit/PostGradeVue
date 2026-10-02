@@ -16,7 +16,7 @@
   /* 3. Typography & Contrast (Matching the crisp white "Post" text) */
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #8391a7;
 
   /* 4. Brand & Action Colors (The exact PostGrade green) */
   --accent-green: #5ba65b;
@@ -47,7 +47,11 @@ body {
   background: var(--bg-gradient);
   background-attachment: fixed;
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0.015em;
 }
@@ -69,7 +73,9 @@ body {
   border-radius: var(--radius-md);
   color: var(--text-primary);
   padding: var(--space-sm) var(--space-md);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .glass-input:focus {
@@ -87,7 +93,9 @@ body {
   border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
 }
 
 .btn-primary:hover {
