@@ -475,10 +475,7 @@ onMounted(() => {
                   <span class="status-badge text-error">{{ item.message }}</span>
                   <button
                     class="btn-text btn-retry"
-                    @click="
-                      item.status = 'pending'
-                      processUploadQueue()
-                    "
+                    @click="item.status = 'pending'; processUploadQueue()"
                   >
                     Retry
                   </button>
