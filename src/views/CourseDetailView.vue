@@ -9,7 +9,7 @@ import {
   importCourseStudents,
   removeCourseStudent,
   type ImportRowError,
-  type ImportSummary
+  type ImportSummary,
 } from '@/services/students'
 import type { Assessment } from '@/types/assessment'
 import type { Course } from '@/types/course'
@@ -64,7 +64,7 @@ const loadPage = async () => {
 }
 
 // New state for custom confirmation modal
-const studentToRemove = ref<{id: number, name: string} | null>(null)
+const studentToRemove = ref<{ id: number; name: string } | null>(null)
 const removingStudentId = ref<number | null>(null)
 
 const promptRemoveStudent = (studentId: number, name: string) => {
@@ -84,7 +84,7 @@ const confirmRemoveStudent = async () => {
 
   try {
     await removeCourseStudent(courseId, id)
-    students.value = students.value.filter(s => s.id !== id)
+    students.value = students.value.filter((s) => s.id !== id)
     studentToRemove.value = null
   } catch (e) {
     const err = e as {
@@ -96,7 +96,10 @@ const confirmRemoveStudent = async () => {
       }
     }
 
-    error.value = err.response?.data?.message || err.response?.data?.detail || 'Could not remove student. Please try again.'
+    error.value =
+      err.response?.data?.message ||
+      err.response?.data?.detail ||
+      'Could not remove student. Please try again.'
     studentToRemove.value = null
   } finally {
     removingStudentId.value = null
@@ -117,7 +120,7 @@ const handleFileChange = (event: Event) => {
     reader.onload = (e) => {
       const text = e.target?.result as string
       if (text) {
-        const lines = text.split('\n').filter(line => line.trim().length > 0)
+        const lines = text.split('\n').filter((line) => line.trim().length > 0)
         filePreviewCount.value = Math.max(0, lines.length - 1) // Subtract header
       }
     }
@@ -149,7 +152,7 @@ const importStudents = async () => {
     students.value = await fetchCourseStudents(courseId)
     selectedFile.value = null
     filePreviewCount.value = null
-  }catch (e) {
+  } catch (e) {
     const err = e as {
       response?: {
         data?: {
@@ -225,17 +228,37 @@ onMounted(() => {
           <label>
             Name
             <!-- Applied glass-input -->
-            <input class="glass-input" v-model.trim="assessmentForm.name" required placeholder="Test 1" />
+            <input
+              class="glass-input"
+              v-model.trim="assessmentForm.name"
+              required
+              placeholder="Test 1"
+            />
           </label>
 
           <label>
             Maximum mark
-            <input class="glass-input" v-model.number="assessmentForm.max_mark" type="number" min="1" step="0.01" required />
+            <input
+              class="glass-input"
+              v-model.number="assessmentForm.max_mark"
+              type="number"
+              min="1"
+              step="0.01"
+              required
+            />
           </label>
 
           <label>
             Weight (%)
-            <input class="glass-input" v-model.number="assessmentForm.weight" type="number" min="0" max="100" step="0.01" required />
+            <input
+              class="glass-input"
+              v-model.number="assessmentForm.weight"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              required
+            />
           </label>
 
           <label>
@@ -256,19 +279,21 @@ onMounted(() => {
             <RouterLink class="assessment-link" :to="`/assessments/${assessment.id}`">
               <strong class="assessment-name">{{ assessment.name }}</strong>
               <span class="assessment-date">{{ assessment.date }}</span>
-              <span class="assessment-stats">{{ assessment.max_mark }} marks · {{ assessment.weight }}%</span>
+              <span class="assessment-stats"
+                >{{ assessment.max_mark }} marks · {{ assessment.weight }}%</span
+              >
             </RouterLink>
           </li>
         </ul>
       </section>
 
- <!-- Applied glass-panel -->
+      <!-- Applied glass-panel -->
       <section class="panel glass-panel">
         <h2>Import students</h2>
         <p class="import-instructions">
           Upload a CSV with the columns
-          <code>student_number</code>, <code>first_name</code>,
-          <code>last_name</code>, and <code>email</code>.
+          <code>student_number</code>, <code>first_name</code>, <code>last_name</code>, and
+          <code>email</code>.
           <br />
           <a
             class="csv-template-link"
@@ -355,7 +380,9 @@ onMounted(() => {
                     v-if="false"
                     class="btn-text btn-danger"
                     :disabled="removingStudentId === student.id"
-                    @click="promptRemoveStudent(student.id, `${student.first_name} ${student.last_name}`)"
+                    @click="
+                      promptRemoveStudent(student.id, `${student.first_name} ${student.last_name}`)
+                    "
                   >
                     {{ removingStudentId === student.id ? '...' : 'Remove' }}
                   </button>
@@ -371,12 +398,14 @@ onMounted(() => {
       <div class="panel glass-panel modal-content">
         <h3>Remove Student</h3>
         <p>
-          Are you sure you want to remove <strong>{{ studentToRemove.name }}</strong> from this course?
-          <br><br>
+          Are you sure you want to remove <strong>{{ studentToRemove.name }}</strong> from this
+          course? <br /><br />
           <span class="text-error">Warning: This will also remove any associated grades.</span>
         </p>
         <div class="modal-actions">
-          <button class="btn-text" @click="cancelRemove" :disabled="removingStudentId !== null">Cancel</button>
+          <button class="btn-text" @click="cancelRemove" :disabled="removingStudentId !== null">
+            Cancel
+          </button>
           <button
             class="btn-primary btn-danger-solid"
             :disabled="removingStudentId === studentToRemove.id"
@@ -425,9 +454,15 @@ onMounted(() => {
   margin: 0;
 }
 
-.text-success { color: #86efac; }
-.text-warning { color: #fde047; }
-.text-error { color: #fca5a5; }
+.text-success {
+  color: #86efac;
+}
+.text-warning {
+  color: #fde047;
+}
+.text-error {
+  color: #fca5a5;
+}
 
 .error-table-wrap {
   margin-top: 1rem;
@@ -445,7 +480,9 @@ onMounted(() => {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .back-link:hover {
@@ -561,7 +598,8 @@ onMounted(() => {
   font-size: 1.05rem;
 }
 
-.assessment-date, .assessment-stats {
+.assessment-date,
+.assessment-stats {
   color: var(--text-secondary);
   font-size: 0.9rem;
 }

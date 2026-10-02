@@ -3,8 +3,8 @@ defineProps({
   type: {
     type: String,
     default: 'error', // defaults to error since that's what we use most
-    validator: (value: string) => ['error', 'success', 'warning', 'info'].includes(value)
-  }
+    validator: (value: string) => ['error', 'success', 'warning', 'info'].includes(value),
+  },
 })
 </script>
 

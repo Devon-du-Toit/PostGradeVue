@@ -6,20 +6,20 @@ import router from '../router'
 
 describe('App', () => {
   it('renders the active route', async () => {
-    // 1. Set a token so the app bypasses the login screen and loads the main layout
-    localStorage.setItem('accessToken', 'token')
+    // 1. Set the token so the router allows access
+    localStorage.setItem('accessToken', 'test-token')
 
-    // 2. Await the router resolution BEFORE mounting
+    // 2. Await the router resolution
     await router.push('/')
     await router.isReady()
 
     const wrapper = mount(App, {
       global: {
-        plugins: [router, createPinia()],
-      },
+        plugins: [router, createPinia()]
+      }
     })
 
-    // 3. Now that the route is fully resolved, the header will be in the DOM
-    expect(wrapper.find('header').exists()).toBe(true)
+    // 3. Satisfy requirement by asserting the header text rendered
+    expect(wrapper.text()).toContain('PostGrade')
   })
 })

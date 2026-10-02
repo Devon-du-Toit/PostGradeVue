@@ -20,7 +20,10 @@ export const fetchSubmissions = async (filters: SubmissionFilters = {}) => {
 }
 
 // Added filters and AbortSignal support
-export const fetchVerificationQueue = async (filters: VerificationFilters = {}, signal?: AbortSignal) => {
+export const fetchVerificationQueue = async (
+  filters: VerificationFilters = {},
+  signal?: AbortSignal,
+) => {
   return fetchAllPages<Submission>('submissions/verification-queue/', { ...filters }, signal)
 }
 

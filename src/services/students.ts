@@ -28,16 +28,13 @@ export const fetchCourseStudents = async (courseId: number) => {
 export const importCourseStudents = async (
   courseId: number,
   file: File,
-  updateExisting: boolean = false
+  updateExisting: boolean = false,
 ) => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('update_existing', String(updateExisting))
 
-  const response = await api.post<ImportResponse>(
-    `courses/${courseId}/import-students/`,
-    formData,
-  )
+  const response = await api.post<ImportResponse>(`courses/${courseId}/import-students/`, formData)
 
   return response.data
 }

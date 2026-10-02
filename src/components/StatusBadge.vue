@@ -43,11 +43,32 @@ const label = computed(() => {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
-.status-badge[data-status="uploaded"] { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
-.status-badge[data-status="matched"] { background: rgba(34,211,238,0.15); color: #22d3ee; }
-.status-badge[data-status="needs_verification"] { background: rgba(245,158,11,0.15); color: var(--status-warning); }
-.status-badge[data-status="verified"] { background: rgba(168,85,247,0.15); color: #a855f7; }
-.status-badge[data-status="processing"] { background: rgba(59,130,246,0.15); color: #93c5fd; }
-.status-badge[data-status="recognition_failed"] { background: rgba(239,68,68,0.15); color: #fca5a5; }
-.status-badge[data-status="marked"] { background: rgba(91,166,91,0.15); color: var(--accent-green); }
+.status-badge[data-status='uploaded'] {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+}
+.status-badge[data-status='matched'] {
+  background: rgba(34, 211, 238, 0.15);
+  color: #22d3ee;
+}
+.status-badge[data-status='needs_verification'] {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--status-warning);
+}
+.status-badge[data-status='verified'] {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+.status-badge[data-status='processing'] {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+}
+.status-badge[data-status='recognition_failed'] {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+.status-badge[data-status='marked'] {
+  background: rgba(91, 166, 91, 0.15);
+  color: var(--accent-green);
+}
 </style>
