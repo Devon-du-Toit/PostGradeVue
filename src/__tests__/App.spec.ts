@@ -13,6 +13,6 @@ describe('App', () => {
       }
     })
 
-    expect(wrapper.find('nav').exists()).toBe(true)
+    expect(wrapper.find('header').exists()).toBe(true)
   })
 })
