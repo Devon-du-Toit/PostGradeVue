@@ -1,14 +1,27 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
+
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
 const showShell = computed(() => Boolean(route.meta.requiresAuth))
+const isLightMode = ref(false)
+
+const toggleTheme = () => {
+  isLightMode.value = !isLightMode.value
+  document.body.classList.toggle('light-theme', isLightMode.value)
+  localStorage.setItem('theme', isLightMode.value ? 'light' : 'dark')
+}
+
+onMounted(() => {
+  isLightMode.value = localStorage.getItem('theme') === 'light'
+  document.body.classList.toggle('light-theme', isLightMode.value)
+})
 
 const logout = async () => {
   authStore.logout()
@@ -37,6 +50,14 @@ const logout = async () => {
 
         <div class="app-user">
           <span class="app-user__email">{{ authStore.user?.email }}</span>
+          <button
+            class="button-secondary button-small theme-toggle"
+            type="button"
+            :aria-pressed="isLightMode"
+            @click="toggleTheme"
+          >
+            {{ isLightMode ? '🌙 Dark Mode' : '☀️ Light Mode' }}
+          </button>
           <button class="button-secondary button-small" type="button" @click="logout">
             Log out
           </button>
