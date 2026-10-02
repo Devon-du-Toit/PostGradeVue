@@ -50,8 +50,20 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0.015em;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+body.light-theme {
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-bg-hover: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(15, 23, 42, 0.12);
+  --glass-border-highlight: rgba(91, 166, 91, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.1);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #475569;
+}
 /* Reusable Glass Utility Classes */
 .glass-panel {
   background: var(--glass-bg);
@@ -98,4 +110,28 @@ body {
   outline: 2px solid var(--pg-blue, #3b82f6) !important;
   outline-offset: 2px !important;
   border-radius: inherit;
+}
+
+/* 1. Force ALL paragraphs and spans globally to be very dark gray */
+body.light-theme p,
+body.light-theme span,
+body.light-theme .text-muted,
+body.light-theme .subtitle {
+  color: #1e293b !important;
+}
+
+/* 2. Protect ONLY the main top navigation bar */
+body.light-theme nav a,
+body.light-theme nav p,
+body.light-theme nav span,
+body.light-theme #app > header a,
+body.light-theme #app > header p,
+body.light-theme #app > header span {
+  color: #cbd5e1 !important;
+}
+
+/* 3. Navigation hover state */
+body.light-theme nav a:hover,
+body.light-theme #app > header a:hover {
+  color: #ffffff !important;
 }
