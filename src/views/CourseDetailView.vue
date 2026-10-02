@@ -352,6 +352,7 @@ onMounted(() => {
                 <td class="muted-cell">{{ student.email }}</td>
                 <td class="actions-col">
                   <button
+                    v-if="false"
                     class="btn-text btn-danger"
                     :disabled="removingStudentId === student.id"
                     @click="promptRemoveStudent(student.id, `${student.first_name} ${student.last_name}`)"
