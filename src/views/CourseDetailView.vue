@@ -308,6 +308,7 @@ onMounted(() => {
           <p class="text-error"><strong>Failed:</strong> {{ importSummary.failed }}</p>
         </div>
 
+<<<<<<< HEAD
         <!-- Post-upload Row-level Errors -->
         <div v-if="importErrors.length > 0" class="student-table-wrap error-table-wrap">
           <table class="student-table">
@@ -327,6 +328,10 @@ onMounted(() => {
             </tbody>
           </table>
         </div>
+=======
+        <AlertBox v-if="importMessage" type="success">{{ importMessage }}</AlertBox>
+        <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
+>>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
       </section>
 
       <!-- Applied glass-panel -->
@@ -683,6 +688,7 @@ code {
   margin-top: 2rem;
 }
 
+<<<<<<< HEAD
 .actions-col {
   text-align: right !important;
   width: 90px;
@@ -713,6 +719,8 @@ code {
   cursor: not-allowed;
 }
 
+=======
+>>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
 @media (max-width: 760px) {
   .course-header {
     flex-direction: column;

@@ -22,7 +22,6 @@ const logout = async () => {
       <div class="app-header__inner">
         <RouterLink class="brand" to="/dashboard">
           <!-- Replaced the 'P' box with the official logo -->
-          <img src="/postgradeLogo.jpg" alt="PostGrade Logo" class="header-logo" />
           <span>
             <strong>PostGrade</strong>
             <small>Assessment workflow</small>

@@ -9,9 +9,12 @@ import type { Assessment } from '@/types/assessment'
 import type { GradebookStudent } from '@/types/gradebook'
 import type { Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
+<<<<<<< HEAD
 
 const route = useRoute()
 const router = useRouter()
+=======
+>>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
 
 const submissions = ref<Submission[]>([])
 const assessments = reactive<Record<number, Assessment>>({})
@@ -369,6 +372,7 @@ select.glass-input option {
   margin-top: 2rem;
 }
 
+<<<<<<< HEAD
 .list-header {
   display: flex;
   flex-direction: column;
@@ -394,4 +398,6 @@ select.glass-input option {
     grid-template-columns: 1fr;
   }
 }
+=======
+>>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
 </style>
