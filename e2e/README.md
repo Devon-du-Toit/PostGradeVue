@@ -75,3 +75,5 @@ The email-delivery spec uses the real backend outbox endpoints with synthetic re
 Configure `CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173` and `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend` for the sandbox server. Do not run the mail worker while these tests execute: they assert queued delivery, approval, missing-address errors, provider retries, explicit duplicate confirmation, sent-record restrictions and corrected result versions. No mail is delivered to real addresses.
 
 The theme spec uses synthetic API responses and checks rendered text contrast on six screens. Screenshots are written to the Playwright output directory.
+
+The bubble-recognition spec creates a synthetic form with conflicting written digits and verifies that the selected bubble worker reads only the fills and suggests the enrolled student. It requires the backend bubble capability; it explicitly skips against an older backend where the UI disables that method. Run the recognition worker for this test. No real scripts are used.

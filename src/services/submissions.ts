@@ -1,7 +1,12 @@
 import api from '@/services/api'
 import { fetchAllPages } from '@/services/pagination'
 import type { Result } from '@/types/result'
-import type { Submission } from '@/types/submission'
+import type { RecognitionCapabilities, RecognitionMethod, Submission } from '@/types/submission'
+
+export const fetchRecognitionMethods = async () => {
+  const response = await api.get<RecognitionCapabilities>('submissions/recognition-methods/')
+  return response.data
+}
 
 export const UPLOAD_TIMEOUT_MS = 120_000
 
@@ -29,10 +34,15 @@ export const fetchVerificationQueue = async (
   return fetchAllPages<Submission>('submissions/verification-queue/', { ...filters }, signal)
 }
 
-export const uploadSubmission = async (assessmentId: number, file: File) => {
+export const uploadSubmission = async (
+  assessmentId: number,
+  file: File,
+  method: RecognitionMethod = 'ocr',
+) => {
   const formData = new FormData()
   formData.append('assessment', String(assessmentId))
   formData.append('file', file)
+  formData.append('recognition_method', method)
 
   // Up to 15 MB on a slow connection needs longer than the 30 s default.
   const response = await api.post<Submission>('submissions/', formData, {

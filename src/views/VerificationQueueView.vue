@@ -186,7 +186,7 @@ onMounted(() => {
 
     <header class="page-header">
       <h1>Verification queue</h1>
-      <p>Review OCR matches that still need lecturer confirmation.</p>
+      <p>Review student-number matches that still need lecturer confirmation.</p>
     </header>
 
     <p v-if="loading" class="status-text loading-text">Loading verification queue…</p>
@@ -233,7 +233,7 @@ onMounted(() => {
             <tr>
               <th>File</th>
               <th>Assessment</th>
-              <th>OCR suggestion</th>
+              <th>Recognition suggestion</th>
               <th>Confirm student</th>
             </tr>
           </thead>
