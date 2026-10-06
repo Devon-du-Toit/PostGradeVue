@@ -1,6 +1,6 @@
 import api from '@/services/api'
 import { fetchAllPages } from '@/services/pagination'
-import type { Result } from '@/types/result'
+import type { ScriptEmail } from '@/types/scriptEmail'
 import type { RecognitionCapabilities, RecognitionMethod, Submission } from '@/types/submission'
 
 export const fetchRecognitionMethods = async () => {
@@ -86,9 +86,7 @@ export const verifySubmission = async (submissionId: number, enrollment: number)
   return response.data
 }
 
-export const markSubmission = async (submissionId: number, mark: number) => {
-  const response = await api.post<Result>(`submissions/${submissionId}/mark/`, {
-    mark,
-  })
+export const emailSubmission = async (submissionId: number) => {
+  const response = await api.post<ScriptEmail>(`submissions/${submissionId}/email/`)
   return response.data
 }

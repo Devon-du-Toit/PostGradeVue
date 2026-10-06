@@ -1,6 +1,6 @@
 # PostGradeVue
 
-This template should help get you started developing with Vue 3 in Vite.
+PostGrade Vue supports lecturer sign-up/sign-in, course and class-list setup, script uploads, student verification and tracked email delivery of verified scripts. It no longer collects numeric marks or displays a gradebook.
 
 ## Recommended IDE Setup
 
@@ -94,3 +94,9 @@ The backend bubble-recognition release must be deployed first (including migrati
 ### Accounts and landing page
 
 Opening `/` shows the sign-in form directly; users with a stored session go to the dashboard. New lecturers can follow **Sign up** to `/signup`, enter their name/email/password and confirm the password. Account creation uses the existing Django `POST /api/auth/register/` API and its password/email validation. After success, the sign-in page confirms creation. Registration does not request an elevated role or automatically create a session.
+
+## Verified script delivery
+
+Create an assessment with its name and date. Upload scripts using OCR or filled bubbles, verify the enrolled student, then select **Email script**. The message attaches that verified file; no numeric mark is needed. Inspect delivery status separately, approve when configured, or retry a failed current record. Uncertain delivery requires explicit duplicate-send confirmation.
+
+The backend and frontend changes must be deployed together. The backend must expose course-filtered enrollments, `POST /api/submissions/{id}/email/`, assessment `script-emails/` lists and `script-emails/{id}/approve/`/`retry/`. Old mark/result/gradebook/result-email endpoints are removed. Apply the backend migrations and configure `SCRIPT_EMAIL_RELEASE_POLICY` before starting its mail worker. See the backend DOCS/MARKS_REMOVAL.md runbook for database backup and migration effects.

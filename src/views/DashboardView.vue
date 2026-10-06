@@ -29,7 +29,7 @@ onMounted(async () => {
         <p class="page-eyebrow">Workspace</p>
         <h1>Welcome{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}.</h1>
         <p class="dashboard-subtitle">
-          Manage courses, review submission matches and keep assessment results up to date.
+          Manage courses, review submission matches and return verified scripts to students.
         </p>
       </div>
     </header>
@@ -49,7 +49,7 @@ onMounted(async () => {
           <span class="action-icon">C</span>
           <div>
             <strong>Courses</strong>
-            <span>Manage courses, students, assessments and gradebooks.</span>
+            <span>Manage courses, students, assessments and scripts.</span>
           </div>
           <div class="action-meta">
             <span v-if="loading" class="skeleton-badge">...</span>
@@ -59,11 +59,11 @@ onMounted(async () => {
         </RouterLink>
 
         <!-- Link includes query param for filtered list -->
-        <RouterLink class="action-card glass-panel" to="/verification-queue?status=pending">
+        <RouterLink class="action-card glass-panel" to="/verification-queue">
           <span class="action-icon">V</span>
           <div>
             <strong>Verification queue</strong>
-            <span>Review OCR matches that still need lecturer confirmation.</span>
+            <span>Review student matches that still need lecturer confirmation.</span>
           </div>
           <div class="action-meta">
             <span v-if="loading" class="skeleton-badge">...</span>
@@ -85,9 +85,7 @@ onMounted(async () => {
         <i>→</i>
         <span>Verify</span>
         <i>→</i>
-        <span>Mark</span>
-        <i>→</i>
-        <span>Gradebook</span>
+        <span>Email script</span>
       </div>
     </section>
   </main>

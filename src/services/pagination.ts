@@ -13,7 +13,7 @@ export const PAGE_SIZE = 100
 
 type Params = Record<string, string | number | undefined>
 
-// For views that need the whole list (marks table, class list): page 1 gives
+// For views that need the whole list (submission list, class list): page 1 gives
 // the total, then the remaining pages are fetched in parallel. Pages are
 // requested by number rather than by following `next`, which the server
 // builds as an absolute URL that can carry the wrong scheme behind a proxy.

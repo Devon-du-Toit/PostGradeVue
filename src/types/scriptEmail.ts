@@ -1,16 +1,17 @@
-export type ResultEmailStatus =
+export type ScriptEmailStatus =
   'awaiting_approval' | 'queued' | 'sending' | 'sent' | 'failed' | 'superseded'
 
-export interface ResultEmail {
+export interface ScriptEmail {
   id: number
-  result: number
-  result_version: number
+  submission: number
+  attachment_filename: string
+  submission_version: number
   is_current: boolean
   student_number: string
   recipient: string
   subject: string
   body: string
-  status: ResultEmailStatus
+  status: ScriptEmailStatus
   failure_reason: string
   attempts: number
   max_attempts: number

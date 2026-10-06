@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test('sandbox backend previews, approves, retries and versions result emails', async ({ page }) => {
+test('sandbox backend previews, approves, retries and versions script emails', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel('Email address').fill('e2e.lecturer@example.com')
   await page.getByLabel('Password').fill('TestPass123!')
@@ -16,11 +16,13 @@ test('sandbox backend previews, approves, retries and versions result emails', a
       .filter({ has: page.getByRole('heading', { name: new RegExp(number) }) })
       .first()
   const approval = record('90000001')
-  await expect(approval.getByRole('heading')).toHaveText('90000001 · Result version 1')
+  await expect(approval.getByRole('heading')).toHaveText('90000001 · Script version 1')
   await expect(approval).toContainText('Awaiting approval')
   await approval.getByText('Preview stored email', { exact: true }).click()
   await expect(approval).toContainText('approval@example.invalid')
-  await expect(approval.locator('pre')).toContainText(/75(?:\.00)? \/ 100(?:\.00)?/)
+  await expect(approval.locator('pre')).toContainText(
+    'Your verified script for Email delivery sandbox is attached.',
+  )
   await approval.getByRole('button', { name: 'Approve email', exact: true }).click()
   await expect(approval.locator('.delivery-status')).toHaveText('Queued')
 
@@ -37,16 +39,22 @@ test('sandbox backend previews, approves, retries and versions result emails', a
   await expect(unknown.locator('.delivery-status')).toHaveText('Queued')
   await expect(record('90000005').getByRole('button')).toHaveCount(0)
 
-  // Saving a correction refreshes the outbox independently of mark success.
-  const resultRow = page.locator('tr').filter({ has: page.getByText('90000001', { exact: true }) })
-  await resultRow.locator('input').fill('80')
-  await resultRow.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(page.getByText('Saved mark for approval Synthetic.', { exact: true })).toBeVisible()
-  await expect(approval.getByRole('heading')).toHaveText('90000001 · Result version 2')
-  await approval.getByText('Preview stored email', { exact: true }).click()
-  await expect(approval.locator('pre')).toContainText(/80(?:\.00)? \/ 100(?:\.00)?/)
-  await expect(panel).toContainText('Superseded')
-  await expect(panel).toContainText('Previous mark version')
+  // Verification and explicit delivery require no numeric grade entry.
+  const pending = page
+    .locator('tr')
+    .filter({ has: page.getByText('verify-first.pdf', { exact: true }) })
+  await pending.getByRole('combobox').selectOption({ label: '90000006 — Verify Synthetic' })
+  await pending.getByRole('button', { name: 'Verify', exact: true }).click()
+  await expect(pending.getByRole('button', { name: 'Email script' })).toBeVisible()
+  await pending.getByRole('button', { name: 'Email script' }).click()
+  const verified = record('90000006')
+  await expect(verified).toContainText(/Awaiting approval|Queued/)
+  await verified.getByText('Preview stored email', { exact: true }).click()
+  await expect(verified).toContainText('verify-first.pdf')
+  await pending.getByRole('button', { name: 'Email script' }).click()
+  await expect(panel.locator('.email-record')).toHaveCount(6)
+  await expect(page.locator('input[type="number"]')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Results', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Light Mode' }).click()
   await panel.scrollIntoViewIfNeeded()
   await page.screenshot({ path: test.info().outputPath('email-delivery.png') })

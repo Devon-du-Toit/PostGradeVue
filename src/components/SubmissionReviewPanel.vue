@@ -9,7 +9,7 @@ import {
   retryRecognition,
   verifySubmission,
 } from '@/services/submissions'
-import type { GradebookStudent } from '@/types/gradebook'
+import type { EnrolledStudent } from '@/types/enrollment'
 import type { Submission } from '@/types/submission'
 import {
   canRetryRecognition,
@@ -20,7 +20,7 @@ import {
 
 const props = defineProps<{
   submission: Submission
-  students: GradebookStudent[]
+  students: EnrolledStudent[]
   assessmentName?: string
   hasNext: boolean
 }>()
@@ -51,7 +51,7 @@ const summary = computed(() => summarizeRecognition(evidence.value, props.submis
 const uncertain = computed(() => uncertainPositions(evidence.value))
 const readDigits = computed(() => [...(evidence.value?.raw_candidate ?? '')])
 const suggestedStudent = computed(() =>
-  props.students.find((s) => s.enrollment === evidence.value?.suggested_enrollment),
+  props.students.find((s) => s.id === evidence.value?.suggested_enrollment),
 )
 const canRetry = computed(() => canRetryRecognition(props.submission.status))
 const imageTransform = computed(() => `rotate(${rotation.value}deg) scale(${zoom.value})`)
@@ -263,15 +263,9 @@ onBeforeUnmount(() => {
           <span>Student on this script</span>
           <select v-model.number="selected" class="glass-input" data-test="student-select">
             <option :value="null" disabled>Select student</option>
-            <option
-              v-for="student in students"
-              :key="student.enrollment"
-              :value="student.enrollment"
-            >
+            <option v-for="student in students" :key="student.id" :value="student.id">
               {{ student.student_number }} — {{ student.first_name }} {{ student.last_name }}
-              <template v-if="student.enrollment === suggestedStudent?.enrollment">
-                (suggested)</template
-              >
+              <template v-if="student.id === suggestedStudent?.id"> (suggested)</template>
             </option>
           </select>
         </label>

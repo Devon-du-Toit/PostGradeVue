@@ -12,7 +12,7 @@ test('lecturer can set up course and assessment', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 })
 
-    // Open courses
+  // Open courses
   await page.goto('/courses')
 
   // Create the synthetic course needed by test
@@ -23,7 +23,7 @@ test('lecturer can set up course and assessment', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Create course' }).click()
 
-// Wait for the created course to appear before opening it
+  // Wait for the created course to appear before opening it
   const courseCode = page.getByText('E2E102')
   await expect(courseCode).toBeVisible()
   await courseCode.click()
@@ -48,25 +48,19 @@ test('lecturer can set up course and assessment', async ({ page }) => {
   await page.locator('input[type="file"]').setInputFiles(submissionPath)
 
   await page.getByRole('button', { name: 'Upload queue' }).click()
-  
 
-// Review the recognition result
-   const studentSelect = page.locator('.verification-controls select')
-   await expect(studentSelect).toBeVisible({ timeout: 60000 })
+  // Review the recognition result
+  const studentSelect = page.locator('.verification-controls select')
+  await expect(studentSelect).toBeVisible({ timeout: 60000 })
 
-   await studentSelect.selectOption({ label: '12345678 — Test Student' })
+  await studentSelect.selectOption({ label: '12345678 — Test Student' })
 
-   const confirmButton = page.getByRole('button', { name: /Confirm match|Verify/ })
+  const confirmButton = page.getByRole('button', { name: /Confirm match|Verify/ })
 
   await confirmButton.click()
 
-    // Mark the verified submission
-  const markInput = page.getByPlaceholder('Mark')
-  await expect(markInput).toBeVisible()
-
-  await markInput.fill('75')
-  await page.getByRole('button', { name: 'Save mark' }).click()
-
-    // Confirm marking completed
-  await expect(page.getByText('Marked', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Email script' })).toBeVisible()
+  await page.getByRole('button', { name: 'Email script' }).click()
+  await expect(page.getByRole('heading', { name: 'Script email delivery' })).toBeVisible()
+  await expect(page.locator('input[type="number"]')).toHaveCount(0)
 })

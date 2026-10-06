@@ -5,7 +5,7 @@ import {
   fetchSubmissions,
   fetchRecognitionMethods,
   fetchVerificationQueue,
-  markSubmission,
+  emailSubmission,
   UPLOAD_TIMEOUT_MS,
   uploadSubmission,
   verifySubmission,
@@ -117,13 +117,11 @@ describe('submission service', () => {
     })
   })
 
-  it('marks a verified submission', async () => {
-    mockedApi.post.mockResolvedValueOnce({ data: { id: 5, mark: 42 } })
+  it('requests email delivery of a verified script', async () => {
+    mockedApi.post.mockResolvedValueOnce({ data: { id: 5, submission: 7 } })
 
-    await markSubmission(7, 42)
+    await emailSubmission(7)
 
-    expect(mockedApi.post).toHaveBeenCalledWith('submissions/7/mark/', {
-      mark: 42,
-    })
+    expect(mockedApi.post).toHaveBeenCalledWith('submissions/7/email/')
   })
 })

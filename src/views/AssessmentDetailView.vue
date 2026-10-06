@@ -3,26 +3,20 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import { fetchAssessment } from '@/services/assessments'
-import { fetchCourseGradebook } from '@/services/gradebook'
-import {
-  createAssessmentResult,
-  fetchAssessmentResults,
-  updateAssessmentResult,
-} from '@/services/results'
+import { fetchCourseEnrollments } from '@/services/enrollments'
 import {
   fetchSubmissions,
   fetchRecognitionMethods,
-  markSubmission,
+  emailSubmission,
   uploadSubmission,
   verifySubmission,
 } from '@/services/submissions'
 import type { Assessment } from '@/types/assessment'
-import type { GradebookStudent } from '@/types/gradebook'
-import type { Result } from '@/types/result'
+import type { EnrolledStudent } from '@/types/enrollment'
 import type { RecognitionMethod, Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
-import ResultEmailPanel from '@/components/ResultEmailPanel.vue'
+import ScriptEmailPanel from '@/components/ScriptEmailPanel.vue'
 
 interface QueuedUpload {
   id: string
@@ -36,14 +30,12 @@ const route = useRoute()
 const assessmentId = Number(route.params.id)
 
 const assessment = ref<Assessment | null>(null)
-const students = ref<GradebookStudent[]>([])
-const results = ref<Result[]>([])
+const students = ref<EnrolledStudent[]>([])
 const submissions = ref<Submission[]>([])
 const loading = ref(true)
-const savingEnrollment = ref<number | null>(null)
 const uploadQueue = ref<QueuedUpload[]>([])
 const verifyingSubmissionId = ref<number | null>(null)
-const markingSubmissionId = ref<number | null>(null)
+const emailingSubmissionId = ref<number | null>(null)
 const isProcessingQueue = ref(false)
 const recognitionMethod = ref<RecognitionMethod>('ocr')
 const bubbleAvailable = ref(false)
@@ -64,16 +56,10 @@ const error = ref('')
 const successMessage = ref('')
 const emailRefreshKey = ref(0)
 
-const marks = reactive<Record<number, number | null>>({})
 const verificationSelections = reactive<Record<number, number | null>>({})
-const submissionMarks = reactive<Record<number, number | null>>({})
-
-const resultByEnrollment = computed(() => {
-  return new Map(results.value.map((result) => [result.enrollment, result]))
-})
 
 const studentByEnrollment = computed(() => {
-  return new Map(students.value.map((student) => [student.enrollment, student]))
+  return new Map(students.value.map((student) => [student.id, student]))
 })
 
 const loadPage = async () => {
@@ -84,33 +70,20 @@ const loadPage = async () => {
     const assessmentData = await fetchAssessment(assessmentId)
     assessment.value = assessmentData
 
-    const [gradebookData, resultData, submissionData] = await Promise.all([
-      fetchCourseGradebook(assessmentData.course),
-      fetchAssessmentResults(assessmentId),
+    const [enrollmentData, submissionData] = await Promise.all([
+      fetchCourseEnrollments(assessmentData.course),
       fetchSubmissions({ assessment: assessmentId }),
     ])
 
-    students.value = gradebookData.students
-    results.value = resultData
+    students.value = enrollmentData
     // The server filters by assessment (#11); this also keeps the page correct
     // against a backend that ignores ?assessment= (rollout compatibility).
     submissions.value = submissionData.filter(
       (submission) => submission.assessment === assessmentId,
     )
 
-    for (const student of students.value) {
-      const existing = resultData.find((result) => result.enrollment === student.enrollment)
-      marks[student.enrollment] = existing ? Number(existing.mark) : null
-    }
-
     for (const submission of submissions.value) {
       verificationSelections[submission.id] = submission.enrollment
-
-      const existingResult = submission.enrollment
-        ? resultData.find((result) => result.enrollment === submission.enrollment)
-        : undefined
-
-      submissionMarks[submission.id] = existingResult ? Number(existingResult.mark) : null
     }
     // Resume polling if there are unfinished submissions on load
     if (submissions.value.some((s) => s.status === 'processing')) {
@@ -123,54 +96,7 @@ const loadPage = async () => {
   }
 }
 
-const saveMark = async (student: GradebookStudent) => {
-  const mark = marks[student.enrollment]
-
-  if (typeof mark !== 'number' || Number.isNaN(mark)) {
-    error.value = 'Enter a mark before saving.'
-    return
-  }
-
-  if (assessment.value && (mark < 0 || mark > Number(assessment.value.max_mark))) {
-    error.value = `Mark must be between 0 and ${assessment.value.max_mark}.`
-    return
-  }
-
-  savingEnrollment.value = student.enrollment
-  error.value = ''
-  successMessage.value = ''
-
-  try {
-    const existing = resultByEnrollment.value.get(student.enrollment)
-
-    const saved = existing
-      ? await updateAssessmentResult(existing.id, { mark })
-      : await createAssessmentResult(assessmentId, {
-          enrollment: student.enrollment,
-          mark,
-        })
-
-    const index = results.value.findIndex((result) => result.id === saved.id)
-
-    if (index >= 0) {
-      results.value[index] = saved
-    } else {
-      results.value.push(saved)
-    }
-
-    emailRefreshKey.value += 1
-    marks[student.enrollment] = Number(saved.mark)
-    successMessage.value = `Saved mark for ${student.first_name} ${student.last_name}.`
-  } catch {
-    error.value = 'Could not save mark. Check the value and try again.'
-  } finally {
-    savingEnrollment.value = null
-  }
-}
-
-// Same limit as the backend (MAX_SUBMISSION_FILE_SIZE_BYTES): a whole
-// multi-page scanned script can be well over 5 MB.
-const MAX_FILE_SIZE = 15 * 1024 * 1024 // 15 MB
+const MAX_FILE_SIZE = 15 * 1024 * 1024
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
 const handleSubmissionFileChange = (event: Event) => {
@@ -236,7 +162,6 @@ const processUploadQueue = async () => {
       item.status = 'success'
       submissions.value.unshift(submission) // Add to top of table
       verificationSelections[submission.id] = submission.enrollment
-      submissionMarks[submission.id] = null
 
       // Trigger background polling if the backend says it is crunching the OCR
       if (submission.status === 'processing') {
@@ -279,10 +204,7 @@ const confirmSubmission = async (submission: Submission) => {
 
     verificationSelections[verified.id] = verified.enrollment
 
-    const existingResult = verified.enrollment
-      ? resultByEnrollment.value.get(verified.enrollment)
-      : undefined
-    submissionMarks[verified.id] = existingResult ? Number(existingResult.mark) : null
+    emailRefreshKey.value += 1
 
     successMessage.value = `Verified ${verified.original_filename}.`
   } catch {
@@ -292,47 +214,27 @@ const confirmSubmission = async (submission: Submission) => {
   }
 }
 
-const saveSubmissionMark = async (submission: Submission) => {
-  const mark = submissionMarks[submission.id]
-
-  if (typeof mark !== 'number' || Number.isNaN(mark)) {
-    error.value = 'Enter a mark before marking the submission.'
-    return
-  }
-
-  if (assessment.value && (mark < 0 || mark > Number(assessment.value.max_mark))) {
-    error.value = `Mark must be between 0 and ${assessment.value.max_mark}.`
-    return
-  }
-
-  markingSubmissionId.value = submission.id
+const sendScript = async (submission: Submission) => {
+  emailingSubmissionId.value = submission.id
   error.value = ''
   successMessage.value = ''
-
   try {
-    const savedResult = await markSubmission(submission.id, mark)
-
-    const resultIndex = results.value.findIndex((result) => result.id === savedResult.id)
-    if (resultIndex >= 0) {
-      results.value[resultIndex] = savedResult
-    } else {
-      results.value.push(savedResult)
-    }
-
+    const delivery = await emailSubmission(submission.id)
     emailRefreshKey.value += 1
-    marks[savedResult.enrollment] = Number(savedResult.mark)
-    submissionMarks[submission.id] = Number(savedResult.mark)
-
-    const existingSubmission = submissions.value.find((item) => item.id === submission.id)
-    if (existingSubmission) {
-      existingSubmission.status = 'marked'
-    }
-
-    successMessage.value = `Marked ${submission.original_filename}: ${savedResult.mark}/${assessment.value?.max_mark}.`
-  } catch {
-    error.value = 'Could not mark submission. It must be verified first and the mark must be valid.'
+    successMessage.value =
+      delivery.status === 'failed'
+        ? 'Script delivery needs attention. Check its email status below.'
+        : delivery.status === 'awaiting_approval'
+          ? 'Script email is awaiting approval.'
+          : delivery.status === 'sent'
+            ? 'This verified script has already been emailed.'
+            : 'Script email is scheduled. Check its delivery status below.'
+  } catch (cause) {
+    error.value =
+      (cause as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+      'Could not schedule the script email. Verify the student first.'
   } finally {
-    markingSubmissionId.value = null
+    emailingSubmissionId.value = null
   }
 }
 
@@ -446,22 +348,6 @@ onUnmounted(() => {
         <p class="assessment-date">{{ assessment.date }}</p>
       </header>
 
-      <!-- Glassy stats panel -->
-      <section class="panel glass-panel stats-panel">
-        <dl class="stats-grid">
-          <div class="stat-item">
-            <dt>Maximum mark</dt>
-            <dd>{{ assessment.max_mark }}</dd>
-          </div>
-          <div class="stat-item">
-            <dt>Course weight</dt>
-            <dd>{{ assessment.weight }}%</dd>
-          </div>
-        </dl>
-      </section>
-
-      <ResultEmailPanel :assessment-id="assessmentId" :refresh-key="emailRefreshKey" />
-
       <!-- Submissions Panel -->
       <section class="panel glass-panel">
         <h2>Submissions</h2>
@@ -563,7 +449,7 @@ onUnmounted(() => {
                 <th>File</th>
                 <th>Status</th>
                 <th>Student</th>
-                <th>Verification / mark</th>
+                <th>Verification / delivery</th>
               </tr>
             </thead>
             <tbody>
@@ -592,7 +478,8 @@ onUnmounted(() => {
                     v-if="
                       submission.status === 'matched' ||
                       submission.status === 'needs_verification' ||
-                      submission.status === 'recognition_failed'
+                      submission.status === 'recognition_failed' ||
+                      (submission.status === 'verified' && !submission.enrollment)
                     "
                   >
                     <div class="verification-controls">
@@ -601,11 +488,7 @@ onUnmounted(() => {
                         v-model.number="verificationSelections[submission.id]"
                       >
                         <option :value="null" disabled>Select student</option>
-                        <option
-                          v-for="student in students"
-                          :key="student.enrollment"
-                          :value="student.enrollment"
-                        >
+                        <option v-for="student in students" :key="student.id" :value="student.id">
                           {{ student.student_number }} — {{ student.first_name }}
                           {{ student.last_name }}
                         </option>
@@ -628,49 +511,21 @@ onUnmounted(() => {
                   </template>
 
                   <template v-else-if="submission.status === 'verified'">
-                    <div class="marking-controls">
-                      <input
-                        class="glass-input mark-input"
-                        v-model.number="submissionMarks[submission.id]"
-                        type="number"
-                        min="0"
-                        :max="Number(assessment.max_mark)"
-                        step="0.01"
-                        placeholder="Mark"
-                      />
-                      <span class="max-mark-text">/ {{ assessment.max_mark }}</span>
-                      <button
-                        class="btn-primary"
-                        type="button"
-                        :disabled="markingSubmissionId === submission.id"
-                        @click="saveSubmissionMark(submission)"
-                      >
-                        {{ markingSubmissionId === submission.id ? 'Marking…' : 'Save mark' }}
-                      </button>
-                    </div>
+                    <button
+                      class="btn-primary"
+                      type="button"
+                      :disabled="emailingSubmissionId === submission.id"
+                      @click="sendScript(submission)"
+                    >
+                      {{ emailingSubmissionId === submission.id ? 'Scheduling…' : 'Email script' }}
+                    </button>
                   </template>
 
-                  <template v-else-if="submission.status === 'marked'">
-                    <span class="marked-text">
-                      <template
-                        v-if="
-                          submission.enrollment && resultByEnrollment.get(submission.enrollment)
-                        "
-                      >
-                        <strong>{{ resultByEnrollment.get(submission.enrollment)?.mark }}</strong> /
-                        {{ assessment.max_mark }}
-                        <small class="percentage-muted"
-                          >({{
-                            Number(
-                              resultByEnrollment.get(submission.enrollment)?.percentage,
-                            ).toFixed(2)
-                          }}%)</small
-                        >
-                      </template>
-                    </span>
-                  </template>
-
-                  <span v-else class="status-text">Complete</span>
+                  <span v-else class="status-text">{{
+                    submission.status === 'processing'
+                      ? 'Recognition in progress'
+                      : 'Waiting for recognition'
+                  }}</span>
                 </td>
               </tr>
             </tbody>
@@ -678,63 +533,7 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- Results Panel -->
-      <section class="panel glass-panel">
-        <h2>Results</h2>
-        <p v-if="students.length === 0" class="status-text">
-          No students are enrolled in this course.
-        </p>
-
-        <div v-else class="table-wrap results-wrap">
-          <table class="glass-table">
-            <thead>
-              <tr>
-                <th>Student number</th>
-                <th>Name</th>
-                <th>Mark</th>
-                <th>Percentage</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="student in students" :key="student.enrollment">
-                <td class="student-number">{{ student.student_number }}</td>
-                <td class="student-name">{{ student.first_name }} {{ student.last_name }}</td>
-                <td>
-                  <div class="marking-controls">
-                    <input
-                      class="glass-input mark-input"
-                      v-model.number="marks[student.enrollment]"
-                      type="number"
-                      min="0"
-                      :max="Number(assessment.max_mark)"
-                      step="0.01"
-                    />
-                    <span class="max-mark-text">/ {{ assessment.max_mark }}</span>
-                  </div>
-                </td>
-                <td class="percentage-cell">
-                  {{
-                    resultByEnrollment.get(student.enrollment)
-                      ? `${Number(resultByEnrollment.get(student.enrollment)?.percentage).toFixed(2)}%`
-                      : '—'
-                  }}
-                </td>
-                <td>
-                  <button
-                    class="btn-primary"
-                    type="button"
-                    :disabled="savingEnrollment === student.enrollment"
-                    @click="saveMark(student)"
-                  >
-                    {{ savingEnrollment === student.enrollment ? 'Saving…' : 'Save' }}
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <ScriptEmailPanel :assessment-id="assessmentId" :refresh-key="emailRefreshKey" />
 
       <AlertBox v-if="successMessage" type="success">{{ successMessage }}</AlertBox>
       <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
@@ -856,22 +655,11 @@ onUnmounted(() => {
   border-color: var(--glass-border-highlight);
 }
 
-.verification-controls,
-.marking-controls {
+.verification-controls {
   display: flex;
   flex-wrap: nowrap;
   gap: 0.75rem;
   align-items: center;
-}
-
-.mark-input {
-  width: 90px;
-  text-align: center;
-}
-
-.max-mark-text {
-  color: var(--text-muted);
-  font-size: 0.9rem;
 }
 
 /* Data Tables */
@@ -945,24 +733,6 @@ select.glass-input {
 select.glass-input option {
   background: var(--surface-option);
   color: var(--text-primary);
-}
-
-.percentage-muted {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-}
-
-.percentage-cell {
-  font-weight: 600;
-  color: var(--accent-green) !important;
-}
-
-.marked-text {
-  color: var(--text-primary);
-}
-.marked-text strong {
-  color: var(--accent-green);
-  font-size: 1.1rem;
 }
 
 .status-text {
