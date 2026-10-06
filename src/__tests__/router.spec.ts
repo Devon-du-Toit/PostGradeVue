@@ -1,14 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import router from '../router'
-
-// Bypass JSDOM's broken storage by injecting a fake localStorage
-let mockStorage: Record<string, string> = {}
-
-vi.stubGlobal('localStorage', {
-  getItem: (key: string) => mockStorage[key] || null,
-  setItem: (key: string, value: string) => { mockStorage[key] = value },
-  clear: () => { mockStorage = {} }
-})
 
 describe('router auth guards', () => {
   beforeEach(async () => {

@@ -95,8 +95,11 @@ onMounted(() => {
                 <td class="student-number">{{ student.student_number }}</td>
                 <td v-for="assessment in student.assessments" :key="assessment.assessment">
                   <span v-if="assessment.mark !== null" class="mark-cell">
-                    {{ formatNumber(assessment.mark) }} / <span class="max-mark">{{ formatNumber(assessment.max_mark) }}</span>
-                    <small class="percentage-muted">({{ formatNumber(assessment.percentage, '%') }})</small>
+                    {{ formatNumber(assessment.mark) }} /
+                    <span class="max-mark">{{ formatNumber(assessment.max_mark) }}</span>
+                    <small class="percentage-muted"
+                      >({{ formatNumber(assessment.percentage, '%') }})</small
+                    >
                   </span>
                   <span v-else class="status-text">—</span>
                 </td>
@@ -125,7 +128,9 @@ onMounted(() => {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .back-link:hover {
@@ -250,5 +255,4 @@ onMounted(() => {
 .empty-state {
   margin-top: 0;
 }
-
 </style>

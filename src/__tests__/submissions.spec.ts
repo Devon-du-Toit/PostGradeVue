@@ -28,7 +28,7 @@ describe('submission service', () => {
     data: { count: results.length, next: null, previous: null, results },
   })
 
-  it('fetches only the requested assessment\'s submissions', async () => {
+  it("fetches only the requested assessment's submissions", async () => {
     mockedApi.get.mockResolvedValueOnce(page([{ id: 1 }]))
 
     const result = await fetchSubmissions({ assessment: 7 })
@@ -50,6 +50,18 @@ describe('submission service', () => {
       signal: undefined,
     })
     expect(result).toEqual([{ id: 2 }])
+  })
+
+  it('passes the assessment polling abort signal through to the API', async () => {
+    mockedApi.get.mockResolvedValueOnce(page([]))
+    const controller = new AbortController()
+
+    await fetchSubmissions({ assessment: 7 }, controller.signal)
+
+    expect(mockedApi.get).toHaveBeenCalledWith('submissions/', {
+      params: { assessment: 7, page: 1, page_size: 100 },
+      signal: controller.signal,
+    })
   })
 
   it('passes verification queue filters to the API', async () => {

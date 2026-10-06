@@ -17,12 +17,15 @@ export interface SubmissionFilters {
 }
 
 // Filtered on the server: the backend returns only the matching submissions.
-export const fetchSubmissions = async (filters: SubmissionFilters = {}) => {
-  return fetchAllPages<Submission>('submissions/', { ...filters })
+export const fetchSubmissions = async (filters: SubmissionFilters = {}, signal?: AbortSignal) => {
+  return fetchAllPages<Submission>('submissions/', { ...filters }, signal)
 }
 
 // Added filters and AbortSignal support
-export const fetchVerificationQueue = async (filters: VerificationFilters = {}, signal?: AbortSignal) => {
+export const fetchVerificationQueue = async (
+  filters: VerificationFilters = {},
+  signal?: AbortSignal,
+) => {
   return fetchAllPages<Submission>('submissions/verification-queue/', { ...filters }, signal)
 }
 

@@ -46,7 +46,7 @@ const loadQueue = async () => {
 
   try {
     const activeFilters = Object.fromEntries(
-      Object.entries(filters).filter((entry) => entry[1] !== '' && entry[1] !== null)
+      Object.entries(filters).filter((entry) => entry[1] !== '' && entry[1] !== null),
     )
 
     const queue = await fetchVerificationQueue(activeFilters, abortController.signal)
@@ -86,7 +86,7 @@ watch(
   filters,
   (newFilters) => {
     const query = Object.fromEntries(
-      Object.entries(newFilters).filter((entry) => entry[1] !== '' && entry[1] !== null)
+      Object.entries(newFilters).filter((entry) => entry[1] !== '' && entry[1] !== null),
     )
     void router.replace({ query })
 
@@ -95,7 +95,7 @@ watch(
       void loadQueue()
     }, 300)
   },
-  { deep: true }
+  { deep: true },
 )
 
 const verify = async (submission: Submission) => {
@@ -127,16 +127,18 @@ const studentsFor = (submission: Submission) => {
 
 const matchedStudent = (submission: Submission) => {
   if (!submission.enrollment) return null
-  return studentsFor(submission).find(
-    (student) => student.enrollment === submission.enrollment,
-  ) ?? null
+  return (
+    studentsFor(submission).find((student) => student.enrollment === submission.enrollment) ?? null
+  )
 }
 
 const reviewIndex = computed(() =>
   submissions.value.findIndex((submission) => submission.id === reviewingId.value),
 )
 const reviewing = computed(() => submissions.value[reviewIndex.value] ?? null)
-const hasNext = computed(() => reviewIndex.value >= 0 && reviewIndex.value < submissions.value.length - 1)
+const hasNext = computed(
+  () => reviewIndex.value >= 0 && reviewIndex.value < submissions.value.length - 1,
+)
 
 const openReview = async (submission: Submission) => {
   reviewingId.value = submission.id
@@ -206,10 +208,13 @@ onMounted(() => {
     />
 
     <section v-if="!loading && !(error && submissions.length === 0)" class="panel glass-panel">
-
       <div class="list-header">
         <div class="filters-bar">
-          <input class="glass-input search-input" v-model="filters.search" placeholder="Search filename or student..." />
+          <input
+            class="glass-input search-input"
+            v-model="filters.search"
+            placeholder="Search filename or student..."
+          />
           <select class="glass-input" v-model="filters.status">
             <option value="">All statuses</option>
             <option value="needs_verification">Needs verification</option>
@@ -241,7 +246,10 @@ onMounted(() => {
               <td class="filename-cell">{{ submission.original_filename }}</td>
               <td>
                 <RouterLink class="assessment-link" :to="`/assessments/${submission.assessment}`">
-                  {{ assessments[submission.assessment]?.name ?? `Assessment ${submission.assessment}` }}
+                  {{
+                    assessments[submission.assessment]?.name ??
+                    `Assessment ${submission.assessment}`
+                  }}
                 </RouterLink>
               </td>
               <td class="ocr-cell">
@@ -256,7 +264,11 @@ onMounted(() => {
               </td>
               <td>
                 <div class="verification-controls">
-                  <button class="btn-secondary review-button" type="button" @click="openReview(submission)">
+                  <button
+                    class="btn-secondary review-button"
+                    type="button"
+                    @click="openReview(submission)"
+                  >
                     Review
                   </button>
                   <!-- Applied glass-input and custom dropdown styling -->
@@ -267,7 +279,8 @@ onMounted(() => {
                       :key="student.enrollment"
                       :value="student.enrollment"
                     >
-                      {{ student.student_number }} — {{ student.first_name }} {{ student.last_name }}
+                      {{ student.student_number }} — {{ student.first_name }}
+                      {{ student.last_name }}
                     </option>
                   </select>
 
@@ -305,7 +318,9 @@ onMounted(() => {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .back-link:hover {
@@ -422,7 +437,7 @@ onMounted(() => {
 /* Custom dropdown arrow for table inputs */
 select.glass-input {
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
   background-repeat: no-repeat;
   background-position: right 0.5rem top 50%;
   background-size: 0.65rem auto;
