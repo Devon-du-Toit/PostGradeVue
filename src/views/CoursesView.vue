@@ -257,7 +257,7 @@ select.glass-input {
 }
 /* Style the dropdown options so they are readable */
 select.glass-input option {
-  background: #151f32;
+  background: var(--surface-option);
   color: var(--text-primary);
 }
 

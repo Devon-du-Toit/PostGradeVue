@@ -351,7 +351,7 @@ onMounted(() => {
   overflow-x: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--surface-inset);
 }
 
 .queue-table {
@@ -363,7 +363,7 @@ onMounted(() => {
   padding: 1rem;
   border-bottom: 1px solid var(--glass-border);
   text-align: left;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
   color: var(--accent-green);
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -373,7 +373,7 @@ onMounted(() => {
 
 .queue-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--table-divider);
   text-align: left;
   vertical-align: middle;
   color: var(--text-primary);
@@ -385,7 +385,7 @@ onMounted(() => {
 }
 
 .queue-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-hover);
 }
 
 .filename-cell {
@@ -446,7 +446,7 @@ select.glass-input {
 }
 
 select.glass-input option {
-  background: #151f32;
+  background: var(--surface-option);
   color: var(--text-primary);
 }
 

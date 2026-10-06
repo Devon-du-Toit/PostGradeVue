@@ -445,7 +445,7 @@ onMounted(() => {
   gap: 1.5rem;
   margin-top: 1.5rem;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
   border-radius: var(--radius-md);
   font-size: 0.95rem;
 }
@@ -455,13 +455,13 @@ onMounted(() => {
 }
 
 .text-success {
-  color: #86efac;
+  color: var(--status-success-text);
 }
 .text-warning {
-  color: #fde047;
+  color: var(--status-warning-text);
 }
 .text-error {
-  color: #fca5a5;
+  color: var(--status-error-text);
 }
 
 .error-table-wrap {
@@ -471,7 +471,7 @@ onMounted(() => {
 
 .error-table-wrap th {
   background: rgba(239, 68, 68, 0.15);
-  color: #fca5a5;
+  color: var(--status-error-text);
 }
 
 .back-link {
@@ -578,7 +578,7 @@ onMounted(() => {
   grid-template-columns: minmax(180px, 1.5fr) 1fr 1fr;
   gap: 1rem;
   padding: 1.25rem 1rem;
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--surface-inset);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: inherit;
@@ -624,7 +624,7 @@ onMounted(() => {
 }
 
 code {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--surface-input);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   border: 1px solid var(--glass-border);
@@ -646,7 +646,7 @@ code {
 }
 
 .file-input::file-selector-button {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--surface-input);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -667,7 +667,7 @@ code {
   overflow-x: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--surface-inset);
 }
 
 .student-table {
@@ -679,7 +679,7 @@ code {
   padding: 1rem;
   border-bottom: 1px solid var(--glass-border);
   text-align: left;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
   color: var(--accent-green);
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -689,7 +689,7 @@ code {
 
 .student-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--table-divider);
   text-align: left;
   color: var(--text-primary);
   font-size: 0.95rem;
@@ -700,7 +700,7 @@ code {
 }
 
 .student-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-hover);
 }
 
 .highlight-cell {
@@ -743,7 +743,7 @@ code {
 }
 
 .btn-danger:hover:not(:disabled) {
-  color: #fca5a5;
+  color: var(--status-error-text);
   text-decoration: underline;
 }
 
@@ -802,12 +802,12 @@ code {
 }
 
 .btn-danger-solid {
-  background: rgba(239, 68, 68, 0.8) !important;
+  background: var(--button-danger) !important;
   color: white !important;
   border-color: rgba(239, 68, 68, 1) !important;
 }
 
 .btn-danger-solid:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 1) !important;
+  background: var(--button-danger-hover) !important;
 }
 </style>

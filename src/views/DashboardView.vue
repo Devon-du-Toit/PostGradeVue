@@ -234,7 +234,7 @@ onMounted(async () => {
   font-size: 0.9rem;
   font-weight: 600;
   padding: 0.4rem 0.8rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
 }
@@ -280,7 +280,7 @@ onMounted(async () => {
 
 .warning-badge {
   background: rgba(253, 224, 71, 0.15);
-  color: #fde047;
+  color: var(--status-warning-text);
   border-color: rgba(253, 224, 71, 0.3);
 }
 
