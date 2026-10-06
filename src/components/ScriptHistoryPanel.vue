@@ -76,17 +76,29 @@ const identity = (row: Submission) => {
             ? `Archived ${row.archived_at}`
             : row.superseded_at
               ? `Superseded ${row.superseded_at} by ${rows.find((item) => item.id === row.superseded_by)?.original_filename ?? 'a later script'}`
-              : 'Current active script'
+              : row.is_active === false
+                ? 'Unavailable while class membership is withdrawn or the student is archived'
+                : 'Current active script'
         }}
         · version {{ row.version }} · {{ identity(row) }}
       </p>
-      <button class="btn-secondary" type="button" @click="download(row)">
+      <button
+        class="btn-secondary"
+        type="button"
+        :disabled="row.download_url === null"
+        @click="download(row)"
+      >
         Download original script
       </button>
+      <p v-if="row.download_url === null">
+        No current canonical script is available. Download retained revisions or original pages
+        below.
+      </p>
       <ul v-if="row.file_revisions?.length">
         <li v-for="revision in row.file_revisions" :key="revision.id">
           Version {{ revision.version }} · {{ revision.created_at }} ·
           {{ revision.original_filename }}
+          <span v-if="revision.status"> · {{ revision.status }}</span>
           <span v-if="revision.student_identity?.student_number">
             · {{ revision.student_identity.student_number }}
             {{ revision.student_identity.first_name }}
@@ -100,7 +112,8 @@ const identity = (row: Submission) => {
       <details v-if="row.audit_entries?.length">
         <summary>Verification and lifecycle audit history</summary>
         <p v-for="entry in row.audit_entries" :key="entry.id">
-          {{ entry.timestamp }} · {{ entry.actor === null ? 'System' : 'Lecturer' }} ·
+          {{ entry.timestamp }} ·
+          {{ entry.actor === null ? 'System' : entry.actor_email || 'Lecturer' }} ·
           {{ entry.previous_status }} → {{ entry.new_status }} ·
           {{
             entry.new_identity.student_number ||

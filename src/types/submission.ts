@@ -55,6 +55,7 @@ export interface RecognitionJob {
 }
 
 export interface Submission {
+  is_active?: boolean
   student_identity?: HistoryIdentity
   audit_entries?: HistoryAudit[]
   qr_metadata?: Record<string, string>
@@ -90,6 +91,7 @@ export interface HistoryIdentity {
   last_name?: string
 }
 export interface HistoryAudit {
+  actor_email?: string | null
   id: number
   timestamp: string
   previous_status: string
@@ -101,6 +103,7 @@ export interface HistoryAudit {
 }
 
 export interface FileRevision {
+  status?: string
   student_identity?: HistoryIdentity
   id: number
   version: number

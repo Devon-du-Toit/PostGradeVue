@@ -56,8 +56,9 @@ const confirm = async () => {
     <h2>Course membership and withdrawals</h2>
     <p>
       Withdraw a student from this class while preserving their script and audit history. Other
-      classes and the global student record remain unchanged. Restoring membership makes them
-      available for future verification; it does not reactivate historical scripts.
+      classes and the global student record remain unchanged. Restoring membership makes previously
+      current scripts available again; archived and superseded scripts stay in history. Cancelled
+      email deliveries are not restarted.
     </p>
     <button class="btn-secondary" type="button" :disabled="busy" @click="load">
       Refresh memberships

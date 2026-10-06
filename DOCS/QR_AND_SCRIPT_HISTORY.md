@@ -36,7 +36,8 @@ verification when overriding a sole recognition suggestion.
 The course membership panel lists active and withdrawn enrollments in one
 course-scoped request. Withdrawal and restoration use the enrollment ID, version
 and reason. They preserve the global student record and other classes. Restoration
-does not reactivate historical scripts. The obsolete hidden global-student removal
+makes previously current scripts available again; archived/superseded scripts stay
+in read-only history and cancelled email deliveries are not restarted. The obsolete hidden global-student removal
 flow and references to deleting grades were removed.
 
 **Archive script** uses a reviewed version and reason and retains original files

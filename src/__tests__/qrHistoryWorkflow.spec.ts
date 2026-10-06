@@ -180,7 +180,14 @@ describe('QR review and retained history', () => {
         },
       ],
     }
-    vi.mocked(scripts.fetchScriptHistory).mockResolvedValue([historical])
+    const withdrawn = {
+      ...script(2),
+      grouped_pages: [],
+      enrollment: 99,
+      is_active: false,
+      download_url: null,
+    }
+    vi.mocked(scripts.fetchScriptHistory).mockResolvedValue([historical, withdrawn])
     vi.mocked(scripts.fetchSubmissionRevision).mockResolvedValue(
       new Blob(['original'], { type: 'application/pdf' }),
     )
@@ -193,6 +200,13 @@ describe('QR review and retained history', () => {
     expect(scripts.fetchScriptHistory).toHaveBeenCalledWith(7)
     expect(wrapper.text()).toContain('Archived 2026-10-07')
     expect(wrapper.text()).toContain('00123456 Synthetic Example')
+    expect(wrapper.text()).toContain('Unavailable while class membership is withdrawn')
+    expect(
+      wrapper
+        .findAll('button')
+        .filter((item) => item.text() === 'Download original script')[1]!
+        .attributes('disabled'),
+    ).toBeDefined()
     expect(
       wrapper
         .findAll('button')
