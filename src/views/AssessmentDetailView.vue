@@ -80,9 +80,7 @@ const loadPage = async () => {
     )
 
     for (const student of students.value) {
-      const existing = resultData.find(
-        (result) => result.enrollment === student.enrollment,
-      )
+      const existing = resultData.find((result) => result.enrollment === student.enrollment)
       marks[student.enrollment] = existing ? Number(existing.mark) : null
     }
 
@@ -93,12 +91,10 @@ const loadPage = async () => {
         ? resultData.find((result) => result.enrollment === submission.enrollment)
         : undefined
 
-      submissionMarks[submission.id] = existingResult
-        ? Number(existingResult.mark)
-        : null
+      submissionMarks[submission.id] = existingResult ? Number(existingResult.mark) : null
     }
     // Resume polling if there are unfinished submissions on load
-    if (submissions.value.some(s => s.status === 'processing')) {
+    if (submissions.value.some((s) => s.status === 'processing')) {
       startPolling()
     }
   } catch {
@@ -152,7 +148,6 @@ const saveMark = async (student: GradebookStudent) => {
   }
 }
 
-
 // Same limit as the backend (MAX_SUBMISSION_FILE_SIZE_BYTES): a whole
 // multi-page scanned script can be well over 5 MB.
 const MAX_FILE_SIZE = 15 * 1024 * 1024 // 15 MB
@@ -162,14 +157,14 @@ const handleSubmissionFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
 
-  Array.from(input.files).forEach(file => {
+  Array.from(input.files).forEach((file) => {
     // 1. Handle unsupported files
     if (!ALLOWED_TYPES.includes(file.type)) {
       uploadQueue.value.push({
         id: crypto.randomUUID(),
         file,
         status: 'error',
-        message: 'Unsupported format. Use PDF, JPG, or PNG.'
+        message: 'Unsupported format. Use PDF, JPG, or PNG.',
       })
       return
     }
@@ -180,7 +175,7 @@ const handleSubmissionFileChange = (event: Event) => {
         id: crypto.randomUUID(),
         file,
         status: 'error',
-        message: 'File too large (max 15 MB).'
+        message: 'File too large (max 15 MB).',
       })
       return
     }
@@ -188,7 +183,7 @@ const handleSubmissionFileChange = (event: Event) => {
     uploadQueue.value.push({
       id: crypto.randomUUID(),
       file,
-      status: 'pending'
+      status: 'pending',
     })
   })
 
@@ -197,13 +192,15 @@ const handleSubmissionFileChange = (event: Event) => {
 }
 
 const removeQueuedFile = (id: string) => {
-  uploadQueue.value = uploadQueue.value.filter(q => q.id !== id)
+  uploadQueue.value = uploadQueue.value.filter((q) => q.id !== id)
 }
 
 const processUploadQueue = async () => {
   isProcessingQueue.value = true
 
-  const pendingUploads = uploadQueue.value.filter(q => q.status === 'pending' || q.status === 'error')
+  const pendingUploads = uploadQueue.value.filter(
+    (q) => q.status === 'pending' || q.status === 'error',
+  )
 
   for (const item of pendingUploads) {
     item.status = 'uploading'
@@ -222,7 +219,6 @@ const processUploadQueue = async () => {
       if (submission.status === 'processing') {
         startPolling()
       }
-
     } catch (e) {
       const err = e as {
         response?: {
@@ -263,9 +259,7 @@ const confirmSubmission = async (submission: Submission) => {
     const existingResult = verified.enrollment
       ? resultByEnrollment.value.get(verified.enrollment)
       : undefined
-    submissionMarks[verified.id] = existingResult
-      ? Number(existingResult.mark)
-      : null
+    submissionMarks[verified.id] = existingResult ? Number(existingResult.mark) : null
 
     successMessage.value = `Verified ${verified.original_filename}.`
   } catch {
@@ -319,55 +313,79 @@ const saveSubmissionMark = async (submission: Submission) => {
 }
 
 // --- Background Polling Logic ---
-let pollingInterval: ReturnType<typeof setInterval> | null = null
+let pollingTimeout: ReturnType<typeof setTimeout> | null = null
+let isPolling = false
+let isUnmounted = false
+let pollingController: AbortController | null = null
 
-const startPolling = () => {
-  if (pollingInterval) return
+const poll = async () => {
+  if (!isPolling) return
 
-  pollingInterval = setInterval(async () => {
-    // Check if any submission is currently processing
-    const hasProcessing = submissions.value.some(s => s.status === 'processing')
+  // Check if any submission is currently processing
+  const hasProcessing = submissions.value.some((s) => s.status === 'processing')
 
-    if (!hasProcessing) {
-      stopPolling()
-      return
-    }
+  if (!hasProcessing) {
+    stopPolling()
+    return
+  }
 
-    try {
-      // Fetch latest statuses quietly in the background
-      // Only this assessment's submissions, filtered on the server. Not just
-      // "processing": a script that finishes changes status and must still be returned.
-      const assessmentSubs = await fetchSubmissions({ assessment: assessmentId })
+  const controller = new AbortController()
+  pollingController = controller
+  try {
+    // Ask the server for this assessment only; keep the rollout fallback below.
+    const latestSubmissions = await fetchSubmissions(
+      { assessment: assessmentId },
+      controller.signal,
+    )
+    if (!isPolling || controller.signal.aborted) return
+    const assessmentSubs = latestSubmissions.filter((s) => s.assessment === assessmentId)
 
-      // Update our local state with the newly processed data
-     // Update our local state with the newly processed data
-      for (const updated of assessmentSubs) {
-        const index = submissions.value.findIndex(s => s.id === updated.id)
-        const existingSubmission = submissions.value[index]
+    // Update our local state with the newly processed data
+    for (const updated of assessmentSubs) {
+      const index = submissions.value.findIndex((s) => s.id === updated.id)
+      const existingSubmission = submissions.value[index]
 
-        // Explicitly check that existingSubmission exists to satisfy TypeScript
-        if (existingSubmission && existingSubmission.status !== updated.status) {
-          submissions.value[index] = updated
+      if (existingSubmission && existingSubmission.status !== updated.status) {
+        submissions.value[index] = updated
 
-          // If it just finished processing, map the new results
-          if (updated.status === 'matched' || updated.status === 'needs_verification') {
-            verificationSelections[updated.id] = updated.enrollment
-          }
+        // If it just finished processing, map the new results
+        if (
+          updated.status === 'matched' ||
+          updated.status === 'needs_verification' ||
+          updated.status === 'recognition_failed'
+        ) {
+          verificationSelections[updated.id] = updated.enrollment
         }
       }
-    } catch {
-      // Silently ignore polling network errors to prevent spamming the user
     }
-  }, 3000) // Check every 3 seconds
-}
-
-const stopPolling = () => {
-  if (pollingInterval) {
-    clearInterval(pollingInterval)
-    pollingInterval = null
+  } catch {
+    // Silently ignore polling network errors
+  } finally {
+    pollingController = null
+    // Re-arm only after completion, while this assessment still has work.
+    if (isPolling && submissions.value.some((s) => s.status === 'processing')) {
+      pollingTimeout = setTimeout(poll, 3000)
+    } else {
+      stopPolling()
+    }
   }
 }
 
+const startPolling = () => {
+  if (isPolling || isUnmounted) return
+  isPolling = true
+  void poll()
+}
+
+const stopPolling = () => {
+  isPolling = false
+  pollingController?.abort()
+  pollingController = null
+  if (pollingTimeout) {
+    clearTimeout(pollingTimeout)
+    pollingTimeout = null
+  }
+}
 // Prevent accidental navigation while uploading
 const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   if (isProcessingQueue.value) {
@@ -383,11 +401,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
-  stopPolling() // Clean up our ML polling interval when we leave the page
-})
-
-onMounted(() => {
-  void loadPage()
+  isUnmounted = true
+  stopPolling()
 })
 </script>
 
@@ -397,7 +412,9 @@ onMounted(() => {
     <p v-else-if="error && !assessment" class="error-box">{{ error }}</p>
 
     <template v-else-if="assessment">
-      <RouterLink class="back-link" :to="`/courses/${assessment.course}`">← Back to course</RouterLink>
+      <RouterLink class="back-link" :to="`/courses/${assessment.course}`"
+        >← Back to course</RouterLink
+      >
 
       <header class="page-header">
         <h1>{{ assessment.name }}</h1>
@@ -422,8 +439,8 @@ onMounted(() => {
       <section class="panel glass-panel">
         <h2>Submissions</h2>
         <p class="section-desc">
-          Upload a scanned submission. PostGrade will run recognition automatically and
-          either suggest a student match or place the file into verification.
+          Upload a scanned submission. PostGrade will run recognition automatically and either
+          suggest a student match or place the file into verification.
         </p>
 
         <div class="upload-controls">
@@ -457,12 +474,26 @@ onMounted(() => {
 
               <div class="status-info">
                 <span v-if="item.status === 'pending'" class="status-badge">Ready</span>
-                <span v-else-if="item.status === 'uploading'" class="status-badge text-warning">Uploading...</span>
-                <span v-else-if="item.status === 'success'" class="status-badge text-success">Success</span>
+                <span v-else-if="item.status === 'uploading'" class="status-badge text-warning"
+                  >Uploading...</span
+                >
+                <span v-else-if="item.status === 'success'" class="status-badge text-success"
+                  >Success</span
+                >
 
                 <div v-if="item.status === 'error'" class="error-group">
                   <span class="status-badge text-error">{{ item.message }}</span>
-                  <button class="btn-text btn-retry" @click="item.status = 'pending'; processUploadQueue()">Retry</button>
+                  <button
+                    class="btn-text btn-retry"
+                    @click="
+                      () => {
+                        item.status = 'pending'
+                        processUploadQueue()
+                      }
+                    "
+                  >
+                    Retry
+                  </button>
                 </div>
 
                 <button
@@ -499,8 +530,13 @@ onMounted(() => {
                 </td>
                 <td>
                   <template v-if="submission.enrollment">
-                    <span class="student-number">{{ studentByEnrollment.get(submission.enrollment)?.student_number ?? 'Unknown' }}</span>
-                    <span v-if="studentByEnrollment.get(submission.enrollment)" class="student-name">
+                    <span class="student-number">{{
+                      studentByEnrollment.get(submission.enrollment)?.student_number ?? 'Unknown'
+                    }}</span>
+                    <span
+                      v-if="studentByEnrollment.get(submission.enrollment)"
+                      class="student-name"
+                    >
                       — {{ studentByEnrollment.get(submission.enrollment)?.first_name }}
                       {{ studentByEnrollment.get(submission.enrollment)?.last_name }}
                     </span>
@@ -508,16 +544,26 @@ onMounted(() => {
                   <span v-else class="status-text warning-text">Not matched</span>
                 </td>
                 <td>
-                  <template v-if="submission.status === 'matched' || submission.status === 'needs_verification'">
+                  <template
+                    v-if="
+                      submission.status === 'matched' ||
+                      submission.status === 'needs_verification' ||
+                      submission.status === 'recognition_failed'
+                    "
+                  >
                     <div class="verification-controls">
-                      <select class="glass-input" v-model.number="verificationSelections[submission.id]">
+                      <select
+                        class="glass-input"
+                        v-model.number="verificationSelections[submission.id]"
+                      >
                         <option :value="null" disabled>Select student</option>
                         <option
                           v-for="student in students"
                           :key="student.enrollment"
                           :value="student.enrollment"
                         >
-                          {{ student.student_number }} — {{ student.first_name }} {{ student.last_name }}
+                          {{ student.student_number }} — {{ student.first_name }}
+                          {{ student.last_name }}
                         </option>
                       </select>
                       <button
@@ -562,9 +608,20 @@ onMounted(() => {
 
                   <template v-else-if="submission.status === 'marked'">
                     <span class="marked-text">
-                      <template v-if="submission.enrollment && resultByEnrollment.get(submission.enrollment)">
-                        <strong>{{ resultByEnrollment.get(submission.enrollment)?.mark }}</strong> / {{ assessment.max_mark }}
-                        <small class="percentage-muted">({{ Number(resultByEnrollment.get(submission.enrollment)?.percentage).toFixed(2) }}%)</small>
+                      <template
+                        v-if="
+                          submission.enrollment && resultByEnrollment.get(submission.enrollment)
+                        "
+                      >
+                        <strong>{{ resultByEnrollment.get(submission.enrollment)?.mark }}</strong> /
+                        {{ assessment.max_mark }}
+                        <small class="percentage-muted"
+                          >({{
+                            Number(
+                              resultByEnrollment.get(submission.enrollment)?.percentage,
+                            ).toFixed(2)
+                          }}%)</small
+                        >
                       </template>
                     </span>
                   </template>
@@ -580,7 +637,9 @@ onMounted(() => {
       <!-- Results Panel -->
       <section class="panel glass-panel">
         <h2>Results</h2>
-        <p v-if="students.length === 0" class="status-text">No students are enrolled in this course.</p>
+        <p v-if="students.length === 0" class="status-text">
+          No students are enrolled in this course.
+        </p>
 
         <div v-else class="table-wrap results-wrap">
           <table class="glass-table">
@@ -633,8 +692,8 @@ onMounted(() => {
         </div>
       </section>
 
-     <AlertBox v-if="successMessage" type="success">{{ successMessage }}</AlertBox>
-    <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
+      <AlertBox v-if="successMessage" type="success">{{ successMessage }}</AlertBox>
+      <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
     </template>
   </main>
 </template>
@@ -652,7 +711,9 @@ onMounted(() => {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .back-link:hover {
@@ -696,7 +757,7 @@ onMounted(() => {
 /* Stats panel styling */
 .stats-panel {
   padding: 1.5rem 2rem;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .stats-grid {
@@ -830,7 +891,7 @@ onMounted(() => {
 /* Custom dropdown arrow for verification */
 select.glass-input {
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
   background-repeat: no-repeat;
   background-position: right 0.5rem top 50%;
   background-size: 0.65rem auto;
@@ -909,8 +970,12 @@ select.glass-input option {
   border-radius: var(--radius-md);
 }
 
-.queue-item.success { border-color: rgba(34, 197, 94, 0.3); }
-.queue-item.error { border-color: rgba(239, 68, 68, 0.3); }
+.queue-item.success {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.queue-item.error {
+  border-color: rgba(239, 68, 68, 0.3);
+}
 
 .file-info {
   display: flex;
@@ -918,8 +983,14 @@ select.glass-input option {
   gap: 0.25rem;
 }
 
-.file-info strong { color: var(--text-primary); font-size: 0.95rem; }
-.file-size { color: var(--text-secondary); font-size: 0.85rem; }
+.file-info strong {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+.file-size {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
 
 .status-info {
   display: flex;
@@ -934,12 +1005,18 @@ select.glass-input option {
   letter-spacing: 0.05em;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 
-.text-success { color: #86efac; }
-.text-warning { color: #fde047; }
-.text-error { color: #fca5a5; }
+.text-success {
+  color: #86efac;
+}
+.text-warning {
+  color: #fde047;
+}
+.text-error {
+  color: #fca5a5;
+}
 
 .error-group {
   display: flex;
@@ -955,8 +1032,13 @@ select.glass-input option {
   padding: 0.25rem;
 }
 
-.btn-text:hover { color: var(--text-primary); }
-.btn-retry { color: var(--pg-blue, #3b82f6); text-decoration: underline; }
+.btn-text:hover {
+  color: var(--text-primary);
+}
+.btn-retry {
+  color: var(--pg-blue, #3b82f6);
+  text-decoration: underline;
+}
 
 .error-box {
   background: rgba(239, 68, 68, 0.15);

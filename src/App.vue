@@ -114,7 +114,7 @@ const logout = async () => {
   height: 36px;
   border-radius: 50%;
   border: 1px solid var(--glass-border);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .brand strong,
