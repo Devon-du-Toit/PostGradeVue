@@ -25,7 +25,7 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 api.interceptors.request.use((config) => {
   const authStore = useAuthStore()
 
-  if (authStore.accessToken) {
+  if (authStore.accessToken && !(config.url ?? '').startsWith('auth/password-reset/')) {
     config.headers.Authorization = `Bearer ${authStore.accessToken}`
   }
 
@@ -43,7 +43,9 @@ api.interceptors.response.use(
 
     // A bad password or revoked refresh must never trigger a session refresh.
     if (
-      /^auth\/(login|register|refresh|logout|registration-policy)\//.test(originalRequest.url ?? '')
+      /^auth\/(login|register|refresh|logout|registration-policy|password-reset)\//.test(
+        originalRequest.url ?? '',
+      )
     ) {
       return Promise.reject(error)
     }
