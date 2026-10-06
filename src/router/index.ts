@@ -5,7 +5,6 @@ import DashboardView from '@/views/DashboardView.vue'
 import CoursesView from '@/views/CoursesView.vue'
 import CourseDetailView from '@/views/CourseDetailView.vue'
 import AssessmentDetailView from '@/views/AssessmentDetailView.vue'
-import GradebookView from '@/views/GradebookView.vue'
 import VerificationQueueView from '@/views/VerificationQueueView.vue'
 
 const router = createRouter({
@@ -59,14 +58,6 @@ const router = createRouter({
       path: '/courses/:id',
       name: 'course-detail',
       component: CourseDetailView,
-      meta: {
-        requiresAuth: true,
-      },
-    },
-    {
-      path: '/courses/:id/gradebook',
-      name: 'course-gradebook',
-      component: GradebookView,
       meta: {
         requiresAuth: true,
       },

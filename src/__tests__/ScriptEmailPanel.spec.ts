@@ -1,30 +1,31 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import ResultEmailPanel from '@/components/ResultEmailPanel.vue'
+import ScriptEmailPanel from '@/components/ScriptEmailPanel.vue'
 import {
   approveAssessmentEmails,
-  approveResultEmail,
-  fetchResultEmails,
-  retryResultEmail,
-} from '@/services/resultEmails'
-import type { ResultEmail } from '@/types/resultEmail'
+  approveScriptEmail,
+  fetchScriptEmails,
+  retryScriptEmail,
+} from '@/services/scriptEmails'
+import type { ScriptEmail } from '@/types/scriptEmail'
 
-vi.mock('@/services/resultEmails', () => ({
-  fetchResultEmails: vi.fn<typeof fetchResultEmails>(),
+vi.mock('@/services/scriptEmails', () => ({
+  fetchScriptEmails: vi.fn<typeof fetchScriptEmails>(),
   approveAssessmentEmails: vi.fn<typeof approveAssessmentEmails>(),
-  approveResultEmail: vi.fn<typeof approveResultEmail>(),
-  retryResultEmail: vi.fn<typeof retryResultEmail>(),
+  approveScriptEmail: vi.fn<typeof approveScriptEmail>(),
+  retryScriptEmail: vi.fn<typeof retryScriptEmail>(),
 }))
-const fetch = vi.mocked(fetchResultEmails)
-const record = (overrides: Partial<ResultEmail> = {}): ResultEmail => ({
+const fetch = vi.mocked(fetchScriptEmails)
+const record = (overrides: Partial<ScriptEmail> = {}): ScriptEmail => ({
   id: 11,
-  result: 4,
-  result_version: 1,
+  submission: 4,
+  attachment_filename: 'script.pdf',
+  submission_version: 1,
   is_current: true,
   student_number: '00123456',
   recipient: 'student@example.invalid',
   subject: 'Stored subject',
-  body: 'Stored body\n75 / 100',
+  body: 'Your verified script is attached.',
   status: 'awaiting_approval',
   failure_reason: '',
   attempts: 0,
@@ -39,7 +40,7 @@ const record = (overrides: Partial<ResultEmail> = {}): ResultEmail => ({
 const mounted: ReturnType<typeof mount>[] = []
 const mountPanel = async (records = [record()]) => {
   fetch.mockResolvedValue(records)
-  const wrapper = mount(ResultEmailPanel, { props: { assessmentId: 7, refreshKey: 0 } })
+  const wrapper = mount(ScriptEmailPanel, { props: { assessmentId: 7, refreshKey: 0 } })
   mounted.push(wrapper)
   await flushPromises()
   return wrapper
@@ -47,7 +48,7 @@ const mountPanel = async (records = [record()]) => {
 const button = (wrapper: ReturnType<typeof mount>, text: string) =>
   wrapper.findAll('button').find((item) => item.text() === text)!
 
-describe('ResultEmailPanel', () => {
+describe('ScriptEmailPanel', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.useFakeTimers()
@@ -61,17 +62,17 @@ describe('ResultEmailPanel', () => {
     const wrapper = await mountPanel([record({ recipient: '' })])
     expect(wrapper.text()).toContain('No email address')
     expect(wrapper.text()).toContain('Stored subject')
-    expect(wrapper.find('pre').text()).toBe('Stored body\n75 / 100')
+    expect(wrapper.find('pre').text()).toBe('Your verified script is attached.')
     expect(wrapper.text()).not.toContain('student@example.com')
     expect(wrapper.text()).toContain('Awaiting approval')
   })
   it('approves one email and refreshes the queued status', async () => {
     const wrapper = await mountPanel()
-    vi.mocked(approveResultEmail).mockResolvedValue(record({ status: 'queued' }))
+    vi.mocked(approveScriptEmail).mockResolvedValue(record({ status: 'queued' }))
     fetch.mockResolvedValue([record({ status: 'queued' })])
     await button(wrapper, 'Approve email').trigger('click')
     await flushPromises()
-    expect(approveResultEmail).toHaveBeenCalledWith(11)
+    expect(approveScriptEmail).toHaveBeenCalledWith(11)
     expect(wrapper.text()).toContain('Queued')
     expect(wrapper.text()).not.toContain('Sent:')
   })
@@ -87,12 +88,12 @@ describe('ResultEmailPanel', () => {
       record({ status: 'failed', recipient: '', failure_reason: 'missing_recipient' }),
     ])
     expect(wrapper.text()).toContain('Add the student’s address')
-    vi.mocked(retryResultEmail).mockRejectedValue({
+    vi.mocked(retryScriptEmail).mockRejectedValue({
       response: { data: { detail: 'The student has no email address.' } },
     })
     await button(wrapper, 'Retry failed email').trigger('click')
     await flushPromises()
-    expect(retryResultEmail).toHaveBeenCalledWith(11, false)
+    expect(retryScriptEmail).toHaveBeenCalledWith(11, false)
     expect(wrapper.get('[role="alert"]').text()).toContain('The student has no email address.')
   })
   it('requires deliberate duplicate confirmation only for uncertain delivery', async () => {
@@ -100,12 +101,12 @@ describe('ResultEmailPanel', () => {
       record({ status: 'failed', failure_reason: 'delivery_unknown' }),
     ])
     expect(button(wrapper, 'Confirm resend').attributes('disabled')).toBeDefined()
-    expect(retryResultEmail).not.toHaveBeenCalled()
+    expect(retryScriptEmail).not.toHaveBeenCalled()
     await wrapper.get('input[type="checkbox"]').setValue(true)
-    vi.mocked(retryResultEmail).mockResolvedValue(record({ status: 'queued' }))
+    vi.mocked(retryScriptEmail).mockResolvedValue(record({ status: 'queued' }))
     await button(wrapper, 'Confirm resend').trigger('click')
     await flushPromises()
-    expect(retryResultEmail).toHaveBeenCalledWith(11, true)
+    expect(retryScriptEmail).toHaveBeenCalledWith(11, true)
   })
   it('never offers approval or retry for sent, sending, queued or outdated records', async () => {
     const wrapper = await mountPanel([
@@ -118,19 +119,21 @@ describe('ResultEmailPanel', () => {
     expect(wrapper.findAll('button').map((item) => item.text())).toEqual([
       'Refresh delivery status',
     ])
-    expect(wrapper.text()).toContain('Previous mark version')
+    expect(wrapper.text()).toContain('Previous script version')
   })
-  it('refreshes corrected results when a mark is saved', async () => {
+  it('refreshes changed script deliveries when refreshed', async () => {
     const wrapper = await mountPanel()
-    fetch.mockResolvedValue([record({ result_version: 2, body: 'Corrected result: 80 / 100' })])
+    fetch.mockResolvedValue([
+      record({ submission_version: 2, body: 'Your verified replacement script is attached.' }),
+    ])
     await wrapper.setProps({ refreshKey: 1 })
     await flushPromises()
-    expect(wrapper.text()).toContain('Result version 2')
-    expect(wrapper.text()).toContain('Corrected result: 80 / 100')
+    expect(wrapper.text()).toContain('Script version 2')
+    expect(wrapper.text()).toContain('Your verified replacement script is attached.')
   })
   it('polls pending deliveries without overlapping a slow request and stops on sent', async () => {
     const wrapper = await mountPanel([record({ status: 'queued' })])
-    let finish!: (records: ResultEmail[]) => void
+    let finish!: (records: ScriptEmail[]) => void
     fetch.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -147,7 +150,7 @@ describe('ResultEmailPanel', () => {
   })
   it('ignores a stale refresh and aborts outstanding requests on unmount', async () => {
     const wrapper = await mountPanel()
-    let finish!: (records: ResultEmail[]) => void
+    let finish!: (records: ScriptEmail[]) => void
     fetch.mockImplementationOnce(
       () =>
         new Promise((resolve) => {

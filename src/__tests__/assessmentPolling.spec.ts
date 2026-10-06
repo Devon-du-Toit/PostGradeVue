@@ -2,16 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import AssessmentDetailView from '@/views/AssessmentDetailView.vue'
 import { fetchAssessment } from '@/services/assessments'
-import { fetchCourseGradebook } from '@/services/gradebook'
-import {
-  fetchAssessmentResults,
-  createAssessmentResult,
-  updateAssessmentResult,
-} from '@/services/results'
+import { fetchCourseEnrollments } from '@/services/enrollments'
 import {
   fetchSubmissions,
   fetchRecognitionMethods,
-  markSubmission,
+  emailSubmission,
   uploadSubmission,
   verifySubmission,
 } from '@/services/submissions'
@@ -22,20 +17,15 @@ vi.mock('vue-router', async (importOriginal) => ({
   useRoute: () => ({ params: { id: '7' } }),
 }))
 vi.mock('@/services/assessments', () => ({ fetchAssessment: vi.fn<typeof fetchAssessment>() }))
-vi.mock('@/services/gradebook', () => ({
-  fetchCourseGradebook: vi.fn<typeof fetchCourseGradebook>(),
-}))
-vi.mock('@/services/results', () => ({
-  fetchAssessmentResults: vi.fn<typeof fetchAssessmentResults>(),
-  createAssessmentResult: vi.fn<typeof createAssessmentResult>(),
-  updateAssessmentResult: vi.fn<typeof updateAssessmentResult>(),
+vi.mock('@/services/enrollments', () => ({
+  fetchCourseEnrollments: vi.fn<typeof fetchCourseEnrollments>(),
 }))
 vi.mock('@/services/submissions', () => ({
   fetchRecognitionMethods: vi
     .fn<typeof fetchRecognitionMethods>()
     .mockResolvedValue({ methods: [], bubble_templates: [] }),
   fetchSubmissions: vi.fn<typeof fetchSubmissions>(),
-  markSubmission: vi.fn<typeof markSubmission>(),
+  emailSubmission: vi.fn<typeof emailSubmission>(),
   uploadSubmission: vi.fn<typeof uploadSubmission>(),
   verifySubmission: vi.fn<typeof verifySubmission>(),
 }))
@@ -54,7 +44,7 @@ const fetch = vi.mocked(fetchSubmissions)
 const mounted: ReturnType<typeof mount>[] = []
 const mountPage = async () => {
   const wrapper = mount(AssessmentDetailView, {
-    global: { stubs: { RouterLink: true, ResultEmailPanel: true } },
+    global: { stubs: { RouterLink: true, ScriptEmailPanel: true } },
   })
   mounted.push(wrapper)
   await flushPromises()
@@ -76,19 +66,45 @@ describe('assessment polling', () => {
       id: 7,
       course: 1,
       name: 'Assessment',
-      max_mark: 100,
-      weight: 1,
       date: '',
       created_at: '',
       updated_at: '',
     })
-    vi.mocked(fetchCourseGradebook).mockResolvedValue({ course: 1, students: [] })
-    vi.mocked(fetchAssessmentResults).mockResolvedValue([])
+    vi.mocked(fetchCourseEnrollments).mockResolvedValue([])
     fetch.mockResolvedValue([submission()])
   })
   afterEach(() => {
     mounted.splice(0).forEach((wrapper) => wrapper.unmount())
     vi.useRealTimers()
+  })
+
+  it('emails a verified script without requesting or entering a numeric mark', async () => {
+    fetch.mockResolvedValue([{ ...submission(7, 'verified'), enrollment: 5 }])
+    vi.mocked(fetchCourseEnrollments).mockResolvedValue([
+      {
+        id: 5,
+        course: 1,
+        student: 3,
+        student_number: '00123456',
+        first_name: 'Ava',
+        last_name: 'Example',
+      },
+    ])
+    vi.mocked(emailSubmission).mockResolvedValue({ id: 10, status: 'queued' } as Awaited<
+      ReturnType<typeof emailSubmission>
+    >)
+    const wrapper = await mountPage()
+    expect(wrapper.findAll('input[type="number"]')).toHaveLength(0)
+    expect(wrapper.text()).not.toContain('Maximum mark')
+    expect(wrapper.text()).not.toContain('Results')
+    expect(wrapper.text()).toContain('00123456')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Email script')!
+      .trigger('click')
+    await flushPromises()
+    expect(emailSubmission).toHaveBeenCalledWith(7)
+    expect(wrapper.text()).toContain('Script email is scheduled')
   })
 
   it('captures the selected method per queued file, even if the selector changes', async () => {

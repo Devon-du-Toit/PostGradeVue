@@ -37,8 +37,6 @@ const importErrors = ref<ImportRowError[]>([])
 
 const assessmentForm = reactive({
   name: '',
-  max_mark: 100,
-  weight: 10,
   date: new Date().toISOString().slice(0, 10),
 })
 
@@ -184,8 +182,6 @@ const submitAssessment = async () => {
     const assessment = await createAssessment(courseId, { ...assessmentForm })
     assessments.value.push(assessment)
     assessmentForm.name = ''
-    assessmentForm.max_mark = 100
-    assessmentForm.weight = 10
   } catch {
     error.value = 'Could not create assessment. Check the values and try again.'
   } finally {
@@ -213,10 +209,6 @@ onMounted(() => {
         </div>
         <div class="course-actions">
           <p class="course-meta">{{ course.year }} · Semester {{ course.semester }}</p>
-          <!-- Converted to a glassy button style -->
-          <RouterLink class="gradebook-link btn-primary" :to="`/courses/${courseId}/gradebook`">
-            View gradebook
-          </RouterLink>
         </div>
       </header>
 
@@ -233,31 +225,6 @@ onMounted(() => {
               v-model.trim="assessmentForm.name"
               required
               placeholder="Test 1"
-            />
-          </label>
-
-          <label>
-            Maximum mark
-            <input
-              class="glass-input"
-              v-model.number="assessmentForm.max_mark"
-              type="number"
-              min="1"
-              step="0.01"
-              required
-            />
-          </label>
-
-          <label>
-            Weight (%)
-            <input
-              class="glass-input"
-              v-model.number="assessmentForm.weight"
-              type="number"
-              min="0"
-              max="100"
-              step="0.01"
-              required
             />
           </label>
 
@@ -279,9 +246,6 @@ onMounted(() => {
             <RouterLink class="assessment-link" :to="`/assessments/${assessment.id}`">
               <strong class="assessment-name">{{ assessment.name }}</strong>
               <span class="assessment-date">{{ assessment.date }}</span>
-              <span class="assessment-stats"
-                >{{ assessment.max_mark }} marks · {{ assessment.weight }}%</span
-              >
             </RouterLink>
           </li>
         </ul>
@@ -508,11 +472,6 @@ onMounted(() => {
   margin: 0;
   color: var(--text-secondary);
   font-size: 0.95rem;
-}
-
-.gradebook-link {
-  text-decoration: none;
-  display: inline-block;
 }
 
 .course-code {

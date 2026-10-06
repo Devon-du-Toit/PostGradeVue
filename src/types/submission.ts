@@ -1,11 +1,5 @@
 export type SubmissionStatus =
-  | 'uploaded'
-  | 'processing'
-  | 'matched'
-  | 'needs_verification'
-  | 'recognition_failed'
-  | 'verified'
-  | 'marked'
+  'uploaded' | 'processing' | 'matched' | 'needs_verification' | 'recognition_failed' | 'verified'
 
 export type RecognitionMethod = 'ocr' | 'bubble'
 export interface RecognitionCapabilities {

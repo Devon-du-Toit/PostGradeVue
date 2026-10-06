@@ -9,7 +9,6 @@ const props = defineProps<{
     | 'needs_verification'
     | 'recognition_failed'
     | 'verified'
-    | 'marked'
     | string
 }>()
 
@@ -21,7 +20,6 @@ const label = computed(() => {
     needs_verification: 'Needs verification',
     recognition_failed: 'Recognition failed',
     verified: 'Verified',
-    marked: 'Marked',
   }
   return labels[props.status] || 'Unknown'
 })
@@ -66,9 +64,5 @@ const label = computed(() => {
 .status-badge[data-status='recognition_failed'] {
   background: rgba(239, 68, 68, 0.15);
   color: var(--status-error-text);
-}
-.status-badge[data-status='marked'] {
-  background: rgba(91, 166, 91, 0.15);
-  color: var(--accent-green);
 }
 </style>

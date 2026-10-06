@@ -3,10 +3,10 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { fetchAssessment } from '@/services/assessments'
-import { fetchCourseGradebook } from '@/services/gradebook'
+import { fetchCourseEnrollments } from '@/services/enrollments'
 import { fetchVerificationQueue, verifySubmission } from '@/services/submissions'
 import type { Assessment } from '@/types/assessment'
-import type { GradebookStudent } from '@/types/gradebook'
+import type { EnrolledStudent } from '@/types/enrollment'
 import type { Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
 import SubmissionReviewPanel from '@/components/SubmissionReviewPanel.vue'
@@ -16,7 +16,7 @@ const router = useRouter()
 
 const submissions = ref<Submission[]>([])
 const assessments = reactive<Record<number, Assessment>>({})
-const studentsByAssessment = reactive<Record<number, GradebookStudent[]>>({})
+const studentsByAssessment = reactive<Record<number, EnrolledStudent[]>>({})
 const selections = reactive<Record<number, number | null>>({})
 const loading = ref(true)
 const verifyingId = ref<number | null>(null)
@@ -56,13 +56,12 @@ const loadQueue = async () => {
 
     await Promise.all(
       assessmentIds.map(async (assessmentId) => {
-        // Optimization: Don't re-fetch gradebooks if we already have them for this assessment
+        // Optimization: Don't re-fetch enrollments if we already have them for this assessment
         if (!assessments[assessmentId]) {
           const assessment = await fetchAssessment(assessmentId)
           assessments[assessmentId] = assessment
 
-          const gradebook = await fetchCourseGradebook(assessment.course)
-          studentsByAssessment[assessmentId] = gradebook.students
+          studentsByAssessment[assessmentId] = await fetchCourseEnrollments(assessment.course)
         }
       }),
     )
@@ -127,9 +126,7 @@ const studentsFor = (submission: Submission) => {
 
 const matchedStudent = (submission: Submission) => {
   if (!submission.enrollment) return null
-  return (
-    studentsFor(submission).find((student) => student.enrollment === submission.enrollment) ?? null
-  )
+  return studentsFor(submission).find((student) => student.id === submission.enrollment) ?? null
 }
 
 const reviewIndex = computed(() =>
@@ -276,8 +273,8 @@ onMounted(() => {
                     <option :value="null" disabled>Select student</option>
                     <option
                       v-for="student in studentsFor(submission)"
-                      :key="student.enrollment"
-                      :value="student.enrollment"
+                      :key="student.id"
+                      :value="student.id"
                     >
                       {{ student.student_number }} — {{ student.first_name }}
                       {{ student.last_name }}

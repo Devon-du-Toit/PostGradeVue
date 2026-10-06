@@ -8,7 +8,7 @@ import {
   retryRecognition,
   verifySubmission,
 } from '@/services/submissions'
-import type { GradebookStudent } from '@/types/gradebook'
+import type { EnrolledStudent } from '@/types/enrollment'
 import type { RecognitionEvidence, Submission } from '@/types/submission'
 
 vi.mock('@/services/submissions', () => ({
@@ -25,14 +25,13 @@ const mocked = {
   verify: vi.mocked(verifySubmission),
 }
 
-const student = (enrollment: number, number: string, name: string): GradebookStudent => ({
-  enrollment,
+const student = (enrollment: number, number: string, name: string): EnrolledStudent => ({
+  id: enrollment,
+  course: 1,
   student: enrollment,
   student_number: number,
   first_name: name,
   last_name: 'Test',
-  assessments: [],
-  course_percentage: null,
 })
 
 const students = [student(5, '07279432', 'Anna'), student(6, '35226455', 'Sipho')]
@@ -167,14 +166,17 @@ describe('SubmissionReviewPanel', () => {
 
   it('explains a stale or concurrent change instead of failing silently', async () => {
     mocked.verify.mockRejectedValue({
-      response: { status: 400, data: { detail: 'Cannot change status from marked to verified.' } },
+      response: {
+        status: 400,
+        data: { detail: 'The submission has changed. Reload and try again.' },
+      },
     })
     const wrapper = await mountPanel(submission())
 
     await wrapper.get('[data-test="confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Cannot change status from marked to verified.')
+    expect(wrapper.text()).toContain('The submission has changed. Reload and try again.')
     expect(wrapper.text()).toContain('reload the queue')
     expect(wrapper.emitted('verified')).toBeUndefined()
   })

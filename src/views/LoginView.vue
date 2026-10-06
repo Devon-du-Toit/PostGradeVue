@@ -94,7 +94,7 @@ const login = async () => {
         <img src="/postgradeLogo.jpg" alt="PostGrade Logo" class="login-logo-img" />
         <h1>Assessment administration, without the admin burden.</h1>
         <p class="login-intro">
-          Organise classes, recognise scanned submissions, verify students and keep results in one
+          Organise classes, recognise scanned submissions, verify students and return scripts in one
           focused workflow.
         </p>
 
@@ -109,7 +109,7 @@ const login = async () => {
           </div>
           <div>
             <span>03</span>
-            <p><strong>Grade</strong><br />Record results and maintain the gradebook.</p>
+            <p><strong>Return</strong><br />Email verified scripts to their students.</p>
           </div>
         </div>
       </div>

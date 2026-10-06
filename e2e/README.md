@@ -7,12 +7,14 @@ These Playwright tests provide frontend end-to-end coverage for the main PostGra
 ## Test environment
 
 Frontend:
+
 - PostGradeVue
 - Branch: `issue-10-frontend-ci-e2e`
 - Vue 3 / Vite
 - Playwright with Chromium
 
 Backend:
+
 - PostGradeDjango
 - Local Django test environment at `http://127.0.0.1:8000`
 - PostgreSQL-backed development database
@@ -26,9 +28,11 @@ The frontend uses:
 The E2E tests use synthetic data only.
 
 Lecturer:
+
 - Email: `e2e.lecturer@example.com`
 
 Student:
+
 - Student number: `12345678`
 - Name: Test Student
 - Email: `test.student@example.com`
@@ -72,9 +76,9 @@ Ambiguous bubble-reading behaviour depends on the backend recognition workflow. 
 
 The email-delivery spec uses the real backend outbox endpoints with synthetic records. Before starting the sandbox backend, run migrations, create the E2E lecturer, and run `POSTGRADE_EMAIL_E2E=1 python ../e2e/seed_email_fixtures.py` from the backend checkout (adjust the script path locally). This resets only the designated email scenario records; use a disposable test database. CI seeds these records automatically.
 
-Configure `CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173` and `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend` for the sandbox server. Do not run the mail worker while these tests execute: they assert queued delivery, approval, missing-address errors, provider retries, explicit duplicate confirmation, sent-record restrictions and corrected result versions. No mail is delivered to real addresses.
+Configure `CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173` and `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend` for the sandbox server. Do not run the mail worker while these tests execute: they assert queued delivery, approval, missing-address errors, provider retries, explicit duplicate confirmation, sent-record restrictions and verified script attachments and idempotent delivery requests. No mail is delivered to real addresses.
 
-The theme spec uses synthetic API responses and checks rendered text contrast on six screens. Screenshots are written to the Playwright output directory.
+The theme spec uses synthetic API responses and checks rendered text contrast on five screens. Screenshots are written to the Playwright output directory.
 
 The bubble-recognition spec creates a synthetic form with conflicting written digits and verifies that the selected bubble worker reads only the fills and suggests the enrolled student. It requires the backend bubble capability; it explicitly skips against an older backend where the UI disables that method. Run the recognition worker for this test. No real scripts are used.
 

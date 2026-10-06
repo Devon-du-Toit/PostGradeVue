@@ -3,14 +3,14 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import AlertBox from '@/components/AlertBox.vue'
 import {
   approveAssessmentEmails,
-  approveResultEmail,
-  fetchResultEmails,
-  retryResultEmail,
-} from '@/services/resultEmails'
-import type { ResultEmail, ResultEmailStatus } from '@/types/resultEmail'
+  approveScriptEmail,
+  fetchScriptEmails,
+  retryScriptEmail,
+} from '@/services/scriptEmails'
+import type { ScriptEmail, ScriptEmailStatus } from '@/types/scriptEmail'
 
 const props = defineProps<{ assessmentId: number; refreshKey: number }>()
-const emails = ref<ResultEmail[]>([])
+const emails = ref<ScriptEmail[]>([])
 const loading = ref(false)
 const busy = ref(false)
 const error = ref('')
@@ -19,7 +19,7 @@ const duplicateConfirmed = ref<Record<number, boolean>>({})
 const awaiting = computed(() =>
   emails.value.filter((email) => email.is_current && email.status === 'awaiting_approval'),
 )
-const labels: Record<ResultEmailStatus, string> = {
+const labels: Record<ScriptEmailStatus, string> = {
   awaiting_approval: 'Awaiting approval',
   queued: 'Queued',
   sending: 'Sending',
@@ -30,6 +30,7 @@ const labels: Record<ResultEmailStatus, string> = {
 const reasons: Record<string, string> = {
   missing_recipient: 'No email address. Add the student’s address, then retry.',
   recipient_refused: 'The mail server rejected the address. Check it before retrying.',
+  attachment_unavailable: 'The stored script attachment is unavailable. Contact the administrator.',
   provider_error: 'The mail provider could not deliver this email.',
   delivery_unknown: 'Delivery is uncertain. The student may already have received this email.',
 }
@@ -45,13 +46,13 @@ const load = async () => {
   controller = current
   loading.value = true
   try {
-    const records = await fetchResultEmails(props.assessmentId, current.signal)
+    const records = await fetchScriptEmails(props.assessmentId, current.signal)
     if (disposed || current.signal.aborted) return
     emails.value = records
     error.value = ''
   } catch {
     if (!disposed && !current.signal.aborted)
-      error.value = 'Could not refresh email delivery status. Your saved marks are unaffected.'
+      error.value = 'Could not refresh email delivery status. Your uploaded scripts are unaffected.'
   } finally {
     if (!disposed && controller === current) {
       loading.value = false
@@ -103,11 +104,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="glass-panel email-panel" aria-labelledby="result-emails-heading">
-    <h2 id="result-emails-heading">Result email delivery</h2>
+  <section class="glass-panel email-panel" aria-labelledby="script-emails-heading">
+    <h2 id="script-emails-heading">Script email delivery</h2>
     <p>
-      Saving a mark and sending its email are separate steps. These previews show the exact stored
-      messages. Emails contain result text; scripts are not attached.
+      Use Email script after verifying the student. Each message includes that verified script as an
+      attachment. These previews show the stored messages and attachment names.
     </p>
     <button type="button" class="btn-text" :disabled="loading || busy" @click="load">
       Refresh delivery status
@@ -127,12 +128,12 @@ onUnmounted(() => {
     <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
     <AlertBox v-if="message" type="success">{{ message }}</AlertBox>
     <p v-if="!loading && !error && !emails.length">
-      No email deliveries scheduled. Direct gradebook entries do not schedule a first email.
+      No email deliveries scheduled. Select Email script for a verified submission.
     </p>
     <article v-for="email in emails" :key="email.id" class="email-record" :data-email-id="email.id">
-      <h3>{{ email.student_number }} · Result version {{ email.result_version }}</h3>
+      <h3>{{ email.student_number }} · Script version {{ email.submission_version }}</h3>
       <p class="delivery-status">
-        {{ labels[email.status] }}<span v-if="!email.is_current"> · Previous mark version</span>
+        {{ labels[email.status] }}<span v-if="!email.is_current"> · Previous script version</span>
       </p>
       <p v-if="email.failure_reason" class="failure-reason">
         {{ reasons[email.failure_reason] || email.failure_reason }}
@@ -145,6 +146,7 @@ onUnmounted(() => {
         <summary>Preview stored email</summary>
         <p><strong>To:</strong> {{ email.recipient || 'No email address' }}</p>
         <p><strong>Subject:</strong> {{ email.subject }}</p>
+        <p><strong>Attachment:</strong> {{ email.attachment_filename }}</p>
         <pre>{{ email.body }}</pre>
       </details>
       <button
@@ -152,7 +154,7 @@ onUnmounted(() => {
         class="btn-primary"
         type="button"
         :disabled="loading || busy"
-        @click="act(() => approveResultEmail(email.id), 'Email approved and queued for delivery.')"
+        @click="act(() => approveScriptEmail(email.id), 'Email approved and queued for delivery.')"
       >
         Approve email
       </button>
@@ -171,7 +173,7 @@ onUnmounted(() => {
           "
           @click="
             act(
-              () => retryResultEmail(email.id, Boolean(duplicateConfirmed[email.id])),
+              () => retryScriptEmail(email.id, Boolean(duplicateConfirmed[email.id])),
               'Retry queued. Delivery has not yet been confirmed.',
             )
           "

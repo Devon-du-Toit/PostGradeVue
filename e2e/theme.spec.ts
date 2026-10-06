@@ -10,8 +10,6 @@ test('light theme keeps navigation, forms, tables and statuses readable', async 
     id: 1,
     course: 1,
     name: 'Theme test assessment',
-    max_mark: 100,
-    weight: 1,
     date: '2026-10-06',
   }
   const statuses = [
@@ -21,7 +19,6 @@ test('light theme keeps navigation, forms, tables and statuses readable', async 
     'needs_verification',
     'recognition_failed',
     'verified',
-    'marked',
   ]
   const submissions = statuses.map((status, index) => ({
     id: index + 1,
@@ -40,7 +37,6 @@ test('light theme keeps navigation, forms, tables and statuses readable', async 
       data = { id: 1, email: 'theme@example.com', first_name: 'Theme' }
     else if (path.endsWith('/dashboard/stats/'))
       data = { active_courses: 1, pending_verifications: 2 }
-    else if (path.endsWith('/courses/1/gradebook/')) data = { course: 1, students: [] }
     else if (path.endsWith('/courses/1/')) data = course
     else if (path.endsWith('/courses/')) data = [course]
     else if (path.endsWith('/assessments/1/')) data = assessment
@@ -112,7 +108,6 @@ test('light theme keeps navigation, forms, tables and statuses readable', async 
     '/courses/1',
     '/assessments/1',
     '/verification-queue',
-    '/courses/1/gradebook',
   ]) {
     await page.goto(path)
     await expect(page.locator('body')).toHaveClass('light-theme')
