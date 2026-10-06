@@ -49,7 +49,9 @@ const submission = (assessment = 7, status: Submission['status'] = 'processing')
 const fetch = vi.mocked(fetchSubmissions)
 const mounted: ReturnType<typeof mount>[] = []
 const mountPage = async () => {
-  const wrapper = mount(AssessmentDetailView, { global: { stubs: { RouterLink: true } } })
+  const wrapper = mount(AssessmentDetailView, {
+    global: { stubs: { RouterLink: true, ResultEmailPanel: true } },
+  })
   mounted.push(wrapper)
   await flushPromises()
   return wrapper

@@ -70,6 +70,8 @@ Recognition tests require the compatible PostGradeDjango recognition backend and
 
 Ambiguous bubble-reading behaviour depends on the backend recognition workflow. The main E2E workflow exercises the existing recognition/verification path using synthetic data.
 
-No frontend email-failure display is currently exposed in the reviewed Vue source. Email-failure E2E coverage therefore remains dependent on the corresponding backend/frontend email workflow being available. No new email behaviour was introduced as part of this frontend testing issue.
+The email-delivery spec uses the real backend outbox endpoints with synthetic records. Before starting the sandbox backend, run migrations, create the E2E lecturer, and run `POSTGRADE_EMAIL_E2E=1 python ../e2e/seed_email_fixtures.py` from the backend checkout (adjust the script path locally). This resets only the designated email scenario records; use a disposable test database. CI seeds these records automatically.
 
-Sandbox/test email should be used when the email workflow becomes available; the E2E fixtures must not use real student information.
+Configure `CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173` and `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend` for the sandbox server. Do not run the mail worker while these tests execute: they assert queued delivery, approval, missing-address errors, provider retries, explicit duplicate confirmation, sent-record restrictions and corrected result versions. No mail is delivered to real addresses.
+
+The theme spec uses synthetic API responses and checks rendered text contrast on six screens. Screenshots are written to the Playwright output directory.

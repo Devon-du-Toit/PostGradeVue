@@ -1,3 +1,5 @@
+import type { ResultEmail } from '@/types/resultEmail'
+
 export interface Result {
   id: number
   assessment: number
@@ -8,6 +10,8 @@ export interface Result {
   percentage: number | string
   created_at: string
   updated_at: string
+  version?: number
+  email_delivery?: ResultEmail | null
 }
 
 export interface CreateResultPayload {

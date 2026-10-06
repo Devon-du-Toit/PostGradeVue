@@ -21,6 +21,7 @@ import type { Result } from '@/types/result'
 import type { Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
+import ResultEmailPanel from '@/components/ResultEmailPanel.vue'
 
 interface QueuedUpload {
   id: string
@@ -44,6 +45,7 @@ const markingSubmissionId = ref<number | null>(null)
 const isProcessingQueue = ref(false)
 const error = ref('')
 const successMessage = ref('')
+const emailRefreshKey = ref(0)
 
 const marks = reactive<Record<number, number | null>>({})
 const verificationSelections = reactive<Record<number, number | null>>({})
@@ -139,6 +141,7 @@ const saveMark = async (student: GradebookStudent) => {
       results.value.push(saved)
     }
 
+    emailRefreshKey.value += 1
     marks[student.enrollment] = Number(saved.mark)
     successMessage.value = `Saved mark for ${student.first_name} ${student.last_name}.`
   } catch {
@@ -296,6 +299,7 @@ const saveSubmissionMark = async (submission: Submission) => {
       results.value.push(savedResult)
     }
 
+    emailRefreshKey.value += 1
     marks[savedResult.enrollment] = Number(savedResult.mark)
     submissionMarks[submission.id] = Number(savedResult.mark)
 
@@ -434,6 +438,8 @@ onUnmounted(() => {
           </div>
         </dl>
       </section>
+
+      <ResultEmailPanel :assessment-id="assessmentId" :refresh-key="emailRefreshKey" />
 
       <!-- Submissions Panel -->
       <section class="panel glass-panel">

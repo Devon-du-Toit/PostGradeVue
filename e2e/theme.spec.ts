@@ -52,6 +52,11 @@ test('light theme keeps navigation, forms, tables and statuses readable', async 
   // Measure rendered CSS, including translucent backgrounds composited over
   // ancestor surfaces. Use the darker endpoint of the light body gradient.
   const checkContrast = async () => {
+    // Theme and hover transitions interpolate colors. Measure their settled
+    // state, including inherited colors on asynchronously mounted panels.
+    await page.waitForFunction(() =>
+      document.getAnimations().every((animation) => animation.playState !== 'running'),
+    )
     const failures = await page.evaluate(() => {
       const rgb = (value: string) => (value.match(/[\d.]+/g) ?? []).map(Number)
       const luminance = (value: number[]) =>
