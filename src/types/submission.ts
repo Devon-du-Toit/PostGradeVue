@@ -55,6 +55,7 @@ export interface RecognitionJob {
 }
 
 export interface Submission {
+  version?: number
   id: number
   assessment: number
   recognition_method?: RecognitionMethod

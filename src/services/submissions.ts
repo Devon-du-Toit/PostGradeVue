@@ -74,14 +74,21 @@ export const fetchSubmissionFile = async (submissionId: number, signal?: AbortSi
   return response.data
 }
 
-export const retryRecognition = async (submissionId: number) => {
-  const response = await api.post<Submission>(`submissions/${submissionId}/retry-recognition/`)
+export const retryRecognition = async (submissionId: number, version?: number) => {
+  const response = await api.post<Submission>(`submissions/${submissionId}/retry-recognition/`, {
+    version,
+  })
   return response.data
 }
 
-export const verifySubmission = async (submissionId: number, enrollment: number) => {
+export const verifySubmission = async (
+  submissionId: number,
+  enrollment: number,
+  version?: number,
+) => {
   const response = await api.post<Submission>(`submissions/${submissionId}/verify/`, {
     enrollment,
+    version,
   })
   return response.data
 }

@@ -195,7 +195,7 @@ const confirmSubmission = async (submission: Submission) => {
   successMessage.value = ''
 
   try {
-    const verified = await verifySubmission(submission.id, enrollment)
+    const verified = await verifySubmission(submission.id, enrollment, submission.version)
     const index = submissions.value.findIndex((item) => item.id === verified.id)
 
     if (index >= 0) {

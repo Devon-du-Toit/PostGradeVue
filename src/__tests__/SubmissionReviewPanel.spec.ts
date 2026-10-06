@@ -59,6 +59,7 @@ const recognition = (overrides: Partial<RecognitionEvidence> = {}): RecognitionE
 const submission = (overrides: Partial<Submission> = {}): Submission => ({
   id: 1,
   assessment: 3,
+  version: 7,
   enrollment: 5,
   file: 'submissions/script.pdf',
   original_filename: 'script.pdf',
@@ -150,7 +151,7 @@ describe('SubmissionReviewPanel', () => {
     await wrapper.get('[data-test="confirm"]').trigger('click')
     await flushPromises()
 
-    expect(mocked.verify).toHaveBeenCalledWith(1, 5)
+    expect(mocked.verify).toHaveBeenCalledWith(1, 5, 7)
     expect(wrapper.emitted('verified')).toEqual([[verified]])
   })
 
@@ -208,7 +209,7 @@ describe('SubmissionReviewPanel', () => {
     await failed.get('[data-test="retry"]').trigger('click')
     await flushPromises()
 
-    expect(mocked.retry).toHaveBeenCalledWith(1)
+    expect(mocked.retry).toHaveBeenCalledWith(1, 7)
     expect(failed.emitted('retried')).toEqual([[retried]])
   })
 
