@@ -17,7 +17,7 @@ const authStore = useAuthStore()
 try {
   await authStore.fetchUser()
 } catch {
-  authStore.logout()
+  void authStore.logout()
 }
 
 app.mount('#app')
