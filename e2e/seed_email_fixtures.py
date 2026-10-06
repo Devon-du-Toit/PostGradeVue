@@ -36,9 +36,8 @@ with transaction.atomic(), override_settings(RESULT_EMAIL_RELEASE_POLICY="approv
         enrollment, _ = Enrollment.objects.get_or_create(course=course, student=student)
         result, _ = Result.objects.get_or_create(assessment=assessment, enrollment=enrollment, defaults={"mark": 75})
         ResultEmail.objects.filter(result=result).delete()
-        result.mark = 75
-        result.version = 1
-        result.save()
+        Result.objects.filter(pk=result.pk).update(mark=75, version=1)
+        result.refresh_from_db()
         email = schedule_result_email(result)
         email.status = status
         email.failure_reason = reason
