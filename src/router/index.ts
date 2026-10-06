@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import CoursesView from '@/views/CoursesView.vue'
@@ -15,7 +14,14 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      redirect: () => (localStorage.getItem('accessToken') ? '/dashboard' : '/login'),
+    },
+    {
+      path: '/signup',
+      name: 'signup',
+      component: LoginView,
+      props: { mode: 'signup' },
+      meta: { guestOnly: true },
     },
     {
       path: '/login',
