@@ -4,7 +4,6 @@ import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 
-
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -79,8 +78,8 @@ const logout = async () => {
   z-index: 20;
   top: 0;
   border-bottom: 1px solid var(--glass-border);
-  /* Uses a slightly darker navy to ground the navigation bar */
-  background: rgba(11, 17, 33, 0.75);
+  /* Opaque theme surface keeps navigation contrast stable while scrolling */
+  background: var(--nav-background);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
 }

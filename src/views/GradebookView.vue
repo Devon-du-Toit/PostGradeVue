@@ -167,7 +167,7 @@ onMounted(() => {
   overflow-x: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--surface-inset);
 }
 
 .gradebook-table {
@@ -179,7 +179,7 @@ onMounted(() => {
   padding: 1rem;
   border-bottom: 1px solid var(--glass-border);
   text-align: left;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
   color: var(--text-secondary);
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -194,7 +194,7 @@ onMounted(() => {
 
 .gradebook-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--table-divider);
   text-align: left;
   vertical-align: middle;
   color: var(--text-primary);
@@ -207,7 +207,7 @@ onMounted(() => {
 }
 
 .gradebook-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-hover);
 }
 
 .student-name {

@@ -74,7 +74,7 @@ h1 {
 }
 
 .btn-secondary {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--surface-input);
   border: 1px solid var(--glass-border);
   color: var(--text-secondary);
   padding: var(--space-sm) var(--space-md);
@@ -87,6 +87,6 @@ h1 {
 .btn-secondary:hover {
   background: var(--glass-bg-hover);
   border-color: var(--status-error);
-  color: #fca5a5;
+  color: var(--status-error-text);
 }
 </style>

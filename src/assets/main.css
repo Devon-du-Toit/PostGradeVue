@@ -30,6 +30,24 @@
   --status-warning: #f59e0b;
   --status-error: #ef4444;
 
+  --surface-inset: rgba(0, 0, 0, 0.15);
+  --surface-header: rgba(0, 0, 0, 0.2);
+  --surface-input: rgba(0, 0, 0, 0.25);
+  --surface-input-focus: rgba(0, 0, 0, 0.4);
+  --surface-option: #151f32;
+  --surface-hover: rgba(255, 255, 255, 0.02);
+  --table-divider: rgba(255, 255, 255, 0.05);
+  --status-success-text: #86efac;
+  --status-warning-text: #fde047;
+  --status-error-text: #fca5a5;
+  --status-info-text: #93c5fd;
+  --status-match-text: #22d3ee;
+  --status-verified-text: #c084fc;
+  --pg-blue: #60a5fa;
+  --button-danger: #b91c1c;
+  --button-danger-hover: #991b1b;
+  --nav-background: #0b1121;
+
   /* 5. Standardized Spacing */
   --space-sm: 0.5rem;
   --space-md: 1rem;
@@ -54,7 +72,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0.015em;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 body.light-theme {
@@ -67,6 +87,26 @@ body.light-theme {
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #475569;
+  --accent-green: #286a36;
+  --accent-green-hover: #20582c;
+  --status-success: #166534;
+  --status-warning: #854d0e;
+  --status-error: #b91c1c;
+  --status-success-text: #166534;
+  --status-warning-text: #854d0e;
+  --status-error-text: #b91c1c;
+  --status-info-text: #1d4ed8;
+  --status-match-text: #155e75;
+  --status-verified-text: #6b21a8;
+  --pg-blue: #1d4ed8;
+  --surface-inset: #f1f5f9;
+  --surface-header: #e2e8f0;
+  --surface-input: #ffffff;
+  --surface-input-focus: #ffffff;
+  --surface-option: #ffffff;
+  --surface-hover: #e2e8f0;
+  --table-divider: #cbd5e1;
+  --nav-background: #ffffff;
 }
 /* Reusable Glass Utility Classes */
 .glass-panel {
@@ -80,7 +120,7 @@ body.light-theme {
 }
 
 .glass-input {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--surface-input);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -93,7 +133,7 @@ body.light-theme {
 .glass-input:focus {
   outline: none;
   border-color: var(--accent-green);
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface-input-focus);
 }
 
 /* Base button styling using the brand green */
@@ -120,26 +160,7 @@ body.light-theme {
   border-radius: inherit;
 }
 
-/* 1. Force ALL paragraphs and spans globally to be very dark gray */
-body.light-theme p,
-body.light-theme span,
-body.light-theme .text-muted,
-body.light-theme .subtitle {
-  color: #1e293b !important;
-}
-
-/* 2. Protect ONLY the main top navigation bar */
-body.light-theme nav a,
-body.light-theme nav p,
-body.light-theme nav span,
-body.light-theme #app > header a,
-body.light-theme #app > header p,
-body.light-theme #app > header span {
-  color: #cbd5e1 !important;
-}
-
-/* 3. Navigation hover state */
-body.light-theme nav a:hover,
-body.light-theme #app > header a:hover {
-  color: #ffffff !important;
+.glass-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
 }

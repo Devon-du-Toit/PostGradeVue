@@ -444,7 +444,7 @@ onBeforeUnmount(() => {
   padding: 0.75rem;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--surface-inset);
   overflow: hidden;
 }
 

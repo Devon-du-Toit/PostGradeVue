@@ -757,7 +757,7 @@ onUnmounted(() => {
 /* Stats panel styling */
 .stats-panel {
   padding: 1.5rem 2rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
 }
 
 .stats-grid {
@@ -796,7 +796,7 @@ onUnmounted(() => {
 }
 
 .file-input::file-selector-button {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--surface-input);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -836,7 +836,7 @@ onUnmounted(() => {
   overflow-x: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--surface-inset);
 }
 
 .glass-table {
@@ -848,7 +848,7 @@ onUnmounted(() => {
   padding: 1rem;
   border-bottom: 1px solid var(--glass-border);
   text-align: left;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
   color: var(--accent-green);
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -858,7 +858,7 @@ onUnmounted(() => {
 
 .glass-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--table-divider);
   text-align: left;
   vertical-align: middle;
   color: var(--text-primary);
@@ -870,7 +870,7 @@ onUnmounted(() => {
 }
 
 .glass-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-hover);
 }
 
 .filename-cell {
@@ -899,7 +899,7 @@ select.glass-input {
   min-width: 180px;
 }
 select.glass-input option {
-  background: #151f32;
+  background: var(--surface-option);
   color: var(--text-primary);
 }
 
@@ -942,7 +942,7 @@ select.glass-input option {
 .upload-queue {
   margin: 1.5rem 0 2.5rem;
   padding: 1.5rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
 }
 
 .upload-queue h3 {
@@ -1005,17 +1005,17 @@ select.glass-input option {
   letter-spacing: 0.05em;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
 }
 
 .text-success {
-  color: #86efac;
+  color: var(--status-success-text);
 }
 .text-warning {
-  color: #fde047;
+  color: var(--status-warning-text);
 }
 .text-error {
-  color: #fca5a5;
+  color: var(--status-error-text);
 }
 
 .error-group {
@@ -1043,7 +1043,7 @@ select.glass-input option {
 .error-box {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  color: var(--status-error-text);
   padding: 1.5rem;
   border-radius: var(--radius-md);
   margin-bottom: 2rem;
