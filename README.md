@@ -90,3 +90,7 @@ The router uses HTML5 history mode (`/courses/3`, not `/#/courses/3`). The host 
 On an assessment, choose **Handwritten digits (OCR)** or **Filled bubbles** before selecting files. The upload queue keeps that choice for each file, even if the selector changes for later files. Retries keep the same choice. Bubble processing never reads handwritten digits; it recognizes one filled circle per column and suggests only an exact class enrollment match. Uncertain columns require manual review.
 
 The backend bubble-recognition release must be deployed first (including migrations and the recognition worker). The UI checks `/api/submissions/recognition-methods/` and disables the bubble choice on older backends. The review panel shows the rectified grid, decoded number, ambiguity reasons and per-column readings. The supported layouts currently contain eight columns and rows 0–9.
+
+### Accounts and landing page
+
+Opening `/` shows the sign-in form directly; users with a stored session go to the dashboard. New lecturers can follow **Sign up** to `/signup`, enter their name/email/password and confirm the password. Account creation uses the existing Django `POST /api/auth/register/` API and its password/email validation. After success, the sign-in page confirms creation. Registration does not request an elevated role or automatically create a session.

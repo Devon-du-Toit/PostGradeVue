@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 import AlertBox from '@/components/AlertBox.vue'
+import { registerUser } from '@/services/registration'
+
+const props = withDefaults(defineProps<{ mode?: 'login' | 'signup' }>(), { mode: 'login' })
+const signingUp = computed(() => props.mode === 'signup')
+const firstName = ref('')
+const lastName = ref('')
+const confirmPassword = ref('')
 
 const email = ref('')
 const password = ref('')
@@ -11,9 +18,60 @@ const error = ref('')
 const loading = ref(false)
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
+watch(
+  () => props.mode,
+  () => {
+    error.value = ''
+    password.value = ''
+    confirmPassword.value = ''
+  },
+)
+
+const signup = async () => {
+  if (loading.value) return
+  error.value = ''
+  if (password.value !== confirmPassword.value) {
+    error.value = 'Passwords do not match.'
+    return
+  }
+  loading.value = true
+  try {
+    await registerUser({
+      email: email.value,
+      first_name: firstName.value,
+      last_name: lastName.value,
+      password: password.value,
+    })
+    password.value = ''
+    confirmPassword.value = ''
+    await router.push({ name: 'login', query: { registered: '1' } })
+  } catch (cause) {
+    const data = (cause as { response?: { data?: Record<string, unknown> } }).response?.data
+    const labels: Record<string, string> = {
+      email: 'Email',
+      password: 'Password',
+      first_name: 'First name',
+      last_name: 'Last name',
+    }
+    const messages = data
+      ? Object.entries(data).flatMap(([field, value]) => {
+          const values = Array.isArray(value) ? value : [value]
+          return values
+            .filter((item): item is string => typeof item === 'string')
+            .map((item) => `${labels[field] ? `${labels[field]}: ` : ''}${item}`)
+        })
+      : []
+    error.value = messages.join(' ') || 'Could not create your account. Please try again.'
+  } finally {
+    loading.value = false
+  }
+}
+
 const login = async () => {
+  if (loading.value) return
   error.value = ''
   loading.value = true
 
@@ -43,7 +101,7 @@ const login = async () => {
         <div class="feature-list">
           <div>
             <span>01</span>
-            <p><strong>Recognise</strong><br />Match scanned submissions with OCR.</p>
+            <p><strong>Recognise</strong><br />Read handwritten digits or filled bubbles.</p>
           </div>
           <div>
             <span>02</span>
@@ -60,17 +118,46 @@ const login = async () => {
     <section class="login-form-panel">
       <!-- Applied the new global glass-panel class here -->
       <div class="login-card glass-panel">
-        <p class="page-eyebrow">Welcome back</p>
-        <h2>Sign in to PostGrade</h2>
-        <p class="login-help">Use your lecturer account to continue.</p>
+        <p class="page-eyebrow">{{ signingUp ? 'Welcome to PostGrade' : 'Welcome back' }}</p>
+        <h2>{{ signingUp ? 'Create your account' : 'Sign in to PostGrade' }}</h2>
+        <p class="login-help">
+          {{
+            signingUp
+              ? 'Create a lecturer account to get started.'
+              : 'Use your lecturer account to continue.'
+          }}
+        </p>
+        <AlertBox v-if="!signingUp && route.query.registered === '1'" type="success"
+          >Your account has been created. Sign in to continue.</AlertBox
+        >
 
-        <form @submit.prevent="login">
+        <form @submit.prevent="signingUp ? signup() : login()">
+          <template v-if="signingUp">
+            <label for="first-name">First name</label>
+            <input
+              id="first-name"
+              class="glass-input"
+              v-model.trim="firstName"
+              autocomplete="given-name"
+              maxlength="150"
+              required
+            />
+            <label for="last-name">Last name</label>
+            <input
+              id="last-name"
+              class="glass-input"
+              v-model.trim="lastName"
+              autocomplete="family-name"
+              maxlength="150"
+              required
+            />
+          </template>
           <label for="email">Email address</label>
           <!-- Applied glass-input -->
           <input
             id="email"
             class="glass-input"
-            v-model="email"
+            v-model.trim="email"
             type="email"
             autocomplete="email"
             placeholder="you@university.edu"
@@ -84,24 +171,61 @@ const login = async () => {
             class="glass-input"
             v-model="password"
             type="password"
-            autocomplete="current-password"
+            :autocomplete="signingUp ? 'new-password' : 'current-password'"
+            :aria-describedby="signingUp ? 'password-help' : undefined"
             placeholder="Enter your password"
             required
           />
+          <template v-if="signingUp">
+            <p id="password-help" class="password-help">
+              Use at least 8 characters. Avoid common passwords or personal details.
+            </p>
+            <label for="confirm-password">Confirm password</label>
+            <input
+              id="confirm-password"
+              class="glass-input"
+              v-model="confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              required
+            />
+          </template>
 
           <AlertBox type="error" v-if="error">{{ error }}</AlertBox>
 
           <!-- Applied btn-primary -->
           <button type="submit" class="btn-primary" :disabled="loading">
-            {{ loading ? 'Signing in…' : 'Sign in' }}
+            {{
+              signingUp
+                ? loading
+                  ? 'Creating account…'
+                  : 'Create account'
+                : loading
+                  ? 'Signing in…'
+                  : 'Sign in'
+            }}
           </button>
         </form>
+        <p class="account-link">
+          {{ signingUp ? 'Already have an account?' : 'New to PostGrade?' }}
+          <RouterLink :to="signingUp ? '/login' : '/signup'">{{
+            signingUp ? 'Sign in' : 'Sign up'
+          }}</RouterLink>
+        </p>
       </div>
     </section>
   </main>
 </template>
 
 <style scoped>
+.password-help,
+.account-link {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.account-link a {
+  color: var(--accent-green);
+}
 /* Stripped out all hardcoded backgrounds so the global gradient shows */
 .login-page {
   display: grid;
@@ -237,6 +361,12 @@ form button {
 
   .login-form-panel {
     min-height: 100vh;
+    box-sizing: border-box;
+    padding: 1.25rem;
+  }
+
+  .login-card {
+    padding: 1.5rem;
   }
 }
 </style>
