@@ -82,6 +82,16 @@ const createObjectURL = vi.fn<(blob: Blob) => string>((blob) => `blob:${blob.typ
 const revokeObjectURL = vi.fn<(url: string) => void>()
 
 describe('SubmissionReviewPanel', () => {
+  it('blocks verification of processing or unresolved QR scripts, including keyboard confirmation', async () => {
+    const wrapper = await mountPanel(submission({ qr_review_issues: ['duplicate:P1'] }))
+    expect(wrapper.get('[data-test="confirm"]').attributes('disabled')).toBeDefined()
+    await wrapper.trigger('keydown', { key: 'Enter', ctrlKey: true })
+    expect(mocked.verify).not.toHaveBeenCalled()
+    wrapper.unmount()
+    const processing = await mountPanel(submission({ status: 'processing' }))
+    expect(processing.get('[data-test="confirm"]').attributes('disabled')).toBeDefined()
+    processing.unmount()
+  })
   beforeEach(() => {
     vi.clearAllMocks()
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL }))

@@ -85,12 +85,64 @@ export const verifySubmission = async (
   submissionId: number,
   enrollment: number,
   version?: number,
+  reason?: string,
 ) => {
   const response = await api.post<Submission>(`submissions/${submissionId}/verify/`, {
     enrollment,
     version,
+    ...(reason ? { reason } : {}),
   })
   return response.data
+}
+
+export interface PageReviewPayload {
+  version: number
+  reason: string
+  exclude?: boolean
+  qr_value?: string
+  reviewed_enrollment?: number | null
+  destination_submission?: number
+  destination_version?: number
+}
+
+export const reviewSubmissionPage = async (
+  submission: number,
+  page: number,
+  payload: PageReviewPayload,
+) => {
+  const response = await api.post<Submission>(
+    `submissions/${submission}/pages/${page}/review/`,
+    payload,
+  )
+  return response.data
+}
+export const fetchSubmissionPage = async (submission: number, page: number) => {
+  return (
+    await api.get<Blob>(`submissions/${submission}/pages/${page}/file/`, { responseType: 'blob' })
+  ).data
+}
+export const fetchSubmissionSource = async (submission: number, upload: number) => {
+  return (
+    await api.get<Blob>(`submissions/${submission}/uploads/${upload}/file/`, {
+      responseType: 'blob',
+    })
+  ).data
+}
+export const fetchSubmissionRevision = async (submission: number, revision: number) => {
+  return (
+    await api.get<Blob>(`submissions/${submission}/revisions/${revision}/file/`, {
+      responseType: 'blob',
+    })
+  ).data
+}
+export const fetchHistoryScript = async (submission: number) => {
+  return (await api.get<Blob>(`submissions/${submission}/history-file/`, { responseType: 'blob' }))
+    .data
+}
+export const fetchScriptHistory = (assessment: number) =>
+  fetchAllPages<Submission>('submissions/history/', { assessment })
+export const archiveScript = async (submission: number, version: number, reason: string) => {
+  await api.delete(`submissions/${submission}/`, { data: { version, reason } })
 }
 
 export const emailSubmission = async (submissionId: number) => {

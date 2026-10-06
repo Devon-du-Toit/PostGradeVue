@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import AssessmentDetailView from '@/views/AssessmentDetailView.vue'
-import { fetchAssessment } from '@/services/assessments'
+import { fetchAssessment, updateAssessmentQR } from '@/services/assessments'
 import { fetchCourseEnrollments } from '@/services/enrollments'
 import {
   fetchSubmissions,
@@ -16,7 +16,10 @@ vi.mock('vue-router', async (importOriginal) => ({
   ...(await importOriginal<typeof import('vue-router')>()),
   useRoute: () => ({ params: { id: '7' } }),
 }))
-vi.mock('@/services/assessments', () => ({ fetchAssessment: vi.fn<typeof fetchAssessment>() }))
+vi.mock('@/services/assessments', () => ({
+  fetchAssessment: vi.fn<typeof fetchAssessment>(),
+  updateAssessmentQR: vi.fn<typeof updateAssessmentQR>(),
+}))
 vi.mock('@/services/enrollments', () => ({
   fetchCourseEnrollments: vi.fn<typeof fetchCourseEnrollments>(),
 }))
@@ -132,6 +135,163 @@ describe('assessment polling', () => {
     const wrapper = await mountPage()
     expect(wrapper.get('option[value="bubble"]').attributes('disabled')).toBeDefined()
     expect(wrapper.text()).toContain('Bubble recognition is unavailable')
+  })
+
+  it('offers QR intake configuration only when supported and saves expected printed labels before upload', async () => {
+    fetch.mockResolvedValue([])
+    const legacy = await mountPage()
+    expect(legacy.text()).not.toContain('QR page intake')
+    legacy.unmount()
+    const assessment = {
+      id: 7,
+      course: 1,
+      name: 'Synthetic exam',
+      date: '',
+      created_at: '',
+      updated_at: '',
+      expected_qr_page_labels: [] as string[],
+      qr_test: '',
+    }
+    vi.mocked(fetchAssessment).mockResolvedValue(assessment)
+    vi.mocked(updateAssessmentQR).mockResolvedValue({
+      ...assessment,
+      expected_qr_page_labels: ['P1', 'P3'],
+      qr_test: 'KT2',
+    })
+    const wrapper = await mountPage()
+    const firstFile = wrapper.get('input[type="file"]')
+    Object.defineProperty(firstFile.element, 'files', {
+      value: [new File(['synthetic'], 'qr.pdf', { type: 'application/pdf' })],
+      configurable: true,
+    })
+    await firstFile.trigger('change')
+    const upload = wrapper.findAll('button').find((item) => item.text() === 'Upload queue')!
+    expect(upload.attributes('disabled')).toBeDefined()
+    await wrapper
+      .findAll('select')
+      .find((item) => item.text().includes('Choose the script layout'))!
+      .setValue('qr')
+    expect(upload.attributes('disabled')).toBeDefined()
+    await wrapper.get('input[placeholder="P1, P3"]').setValue('P1, P3')
+    await wrapper.get('input[placeholder="KT2"]').setValue('KT2')
+    await wrapper
+      .findAll('button')
+      .find((item) => item.text() === 'Save QR configuration')!
+      .trigger('submit')
+    await flushPromises()
+    expect(updateAssessmentQR).toHaveBeenCalledWith(7, ['P1', 'P3'], 'KT2')
+    expect(wrapper.text()).toContain('QR intake configuration saved')
+    expect(upload.attributes('disabled')).toBeUndefined()
+  })
+
+  it('replaces the assessment snapshot after a two-group upload without duplicating an existing group', async () => {
+    const group = (id: number, version: number): Submission => ({
+      ...submission(7, 'needs_verification'),
+      id,
+      version,
+      original_filename: `group-${id}.pdf`,
+      qr_metadata: {
+        module: 'CMPG211',
+        date: '20230412',
+        test: 'KT2',
+        test_number: id === 7 ? '#1' : '#2',
+      },
+      grouped_pages: ['P3', 'P1'].map((label, index) => ({
+        id: id * 10 + index,
+        page_label: label,
+        source_page: index + 1,
+        qr_fields: {
+          module: 'CMPG211',
+          date: '20230412',
+          test: 'KT2',
+          page_label: label,
+          test_number: id === 7 ? '#1' : '#2',
+        },
+        qr_status: 'readable',
+        excluded: false,
+        recognition_outcome: 'no_candidate',
+        quality_issues: [],
+        suggested_enrollment: null,
+        linked_enrollment: null,
+        upload_id: 2,
+        download_url: '/api/private/',
+        source_download_url: '/api/private/',
+        review_history: [],
+      })),
+    })
+    fetch
+      .mockResolvedValueOnce([group(7, 1)])
+      .mockResolvedValue([group(7, 2), group(20, 1), submission(8, 'matched')])
+    vi.mocked(uploadSubmission).mockResolvedValue({ ...group(7, 2), upload_group_ids: [7, 20] })
+    const wrapper = await mountPage()
+    const input = wrapper.get('input[type="file"]')
+    const file = new File(['synthetic QR pages'], 'two-groups.pdf', { type: 'application/pdf' })
+    Object.defineProperty(input.element, 'files', { value: [file], configurable: true })
+    await input.trigger('change')
+    await wrapper
+      .findAll('button')
+      .find((item) => item.text() === 'Upload queue')!
+      .trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.glass-table tbody tr')).toHaveLength(2)
+    expect(wrapper.findAll('.glass-table tbody tr')[0]!.text()).toContain('Paper #1 · P1, P3')
+    expect(wrapper.findAll('.glass-table tbody tr')[1]!.text()).toContain('Paper #2 · P1, P3')
+    expect(wrapper.findAll('.qr-page h4').map((heading) => heading.text().slice(0, 2))).toEqual([
+      'P1',
+      'P3',
+      'P1',
+      'P3',
+    ])
+    expect(wrapper.text()).toContain('group-20.pdf')
+    expect(wrapper.text()).not.toContain('script-8.pdf')
+    expect(fetch.mock.calls.every(([filter]) => filter?.assessment === 7)).toBe(true)
+  })
+
+  it('refreshes QR evidence when the version changes while status stays processing', async () => {
+    fetch
+      .mockResolvedValueOnce([{ ...submission(), version: 1 }])
+      .mockResolvedValue([
+        { ...submission(), version: 2, qr_review_issues: ['missing:P3'], updated_at: 'new' },
+      ])
+    const wrapper = await mountPage()
+    expect(wrapper.text()).toContain('missing:P3')
+    expect(wrapper.text()).toContain('Recognition in progress')
+  })
+
+  it('ignores an older in-flight poll after a grouped upload refreshes the assessment', async () => {
+    let finish!: (items: Submission[]) => void
+    fetch
+      .mockResolvedValueOnce([{ ...submission(), version: 1 }])
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve
+          }),
+      )
+      .mockResolvedValue([
+        { ...submission(), version: 2 },
+        { ...submission(7, 'needs_verification'), id: 20, original_filename: 'new-group.pdf' },
+      ])
+    vi.mocked(uploadSubmission).mockResolvedValue({
+      ...submission(),
+      version: 2,
+      upload_group_ids: [7, 20],
+    })
+    const wrapper = await mountPage()
+    const input = wrapper.get('input[type="file"]')
+    const file = new File(['synthetic'], 'additional-pages.pdf', { type: 'application/pdf' })
+    Object.defineProperty(input.element, 'files', { value: [file], configurable: true })
+    await input.trigger('change')
+    await wrapper
+      .findAll('button')
+      .find((item) => item.text() === 'Upload queue')!
+      .trigger('click')
+    await flushPromises()
+    finish([{ ...submission(7, 'matched'), version: 1 }])
+    await flushPromises()
+    expect(wrapper.findAll('.glass-table tbody tr')).toHaveLength(2)
+    expect(wrapper.text()).toContain('new-group.pdf')
+    expect(wrapper.text()).toContain('Recognition in progress')
   })
 
   it('loads once and scopes every poll, even if the backend returns other assessments', async () => {

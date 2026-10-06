@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
-import { fetchAssessment, fetchAssessmentScripts } from '@/services/assessments'
+import { fetchAssessment, fetchAssessmentScripts, updateAssessmentQR } from '@/services/assessments'
 import { fetchCourseEnrollments } from '@/services/enrollments'
 import {
   fetchSubmissions,
@@ -17,6 +17,10 @@ import type { RecognitionMethod, Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import ScriptEmailPanel from '@/components/ScriptEmailPanel.vue'
+import QRPageReviewPanel from '@/components/QRPageReviewPanel.vue'
+import ScriptHistoryPanel from '@/components/ScriptHistoryPanel.vue'
+import ScriptArchiveControl from '@/components/ScriptArchiveControl.vue'
+import { workflowError, orderedScriptPages } from '@/utils/workflow'
 
 interface QueuedUpload {
   id: string
@@ -30,6 +34,69 @@ const route = useRoute()
 const assessmentId = Number(route.params.id)
 
 const assessment = ref<Assessment | null>(null)
+const qrLabels = ref('')
+const qrTest = ref('')
+const savingQR = ref(false)
+const firstUploadChoice = ref<'single' | 'qr' | null>(null)
+const intakeReady = computed(
+  () =>
+    assessment.value?.expected_qr_page_labels === undefined ||
+    Boolean(assessment.value.expected_qr_page_labels.length) ||
+    submissions.value.length > 0 ||
+    firstUploadChoice.value === 'single',
+)
+const historyRefreshKey = ref(0)
+let snapshotGeneration = 0
+const verificationReasons = reactive<Record<number, string>>({})
+const qrBlocked = (submission: Submission) =>
+  submission.status === 'processing' ||
+  submission.qr_group_status === 'manual_review' ||
+  Boolean(submission.qr_review_issues?.length)
+const saveQR = async () => {
+  const labels = qrLabels.value.trim()
+    ? qrLabels.value
+        .trim()
+        .split(/[\s,]+/)
+        .map((value) => value.toUpperCase())
+    : []
+  if (
+    labels.some((label) => !/^P[1-9]\d*$/.test(label)) ||
+    new Set(labels).size !== labels.length
+  ) {
+    error.value = 'Use unique positive page labels such as P1, P3.'
+    return
+  }
+  if (firstUploadChoice.value === 'qr' && !labels.length) {
+    error.value = 'Specify the expected QR page labels before the first grouped upload.'
+    return
+  }
+  savingQR.value = true
+  try {
+    assessment.value = await updateAssessmentQR(assessmentId, labels, qrTest.value.trim())
+    successMessage.value = 'QR intake configuration saved.'
+  } catch (cause) {
+    error.value = workflowError(cause, 'Could not save QR intake configuration.')
+  } finally {
+    savingQR.value = false
+  }
+}
+const refreshSubmissions = async () => {
+  const generation = ++snapshotGeneration
+  try {
+    const latest = await fetchSubmissions({ assessment: assessmentId })
+    if (generation !== snapshotGeneration || isUnmounted) return
+    submissions.value = latest.filter((item) => item.assessment === assessmentId)
+    for (const item of submissions.value) verificationSelections[item.id] = item.enrollment
+    historyRefreshKey.value += 1
+    emailRefreshKey.value += 1
+    if (submissions.value.some((item) => item.status === 'processing')) startPolling()
+  } catch (cause) {
+    error.value = workflowError(
+      cause,
+      'Could not refresh scripts. Reload the assessment before continuing.',
+    )
+  }
+}
 const downloadingScripts = ref(false)
 let exportController: AbortController | undefined
 const downloadScripts = async () => {
@@ -95,6 +162,8 @@ const loadPage = async () => {
   try {
     const assessmentData = await fetchAssessment(assessmentId)
     assessment.value = assessmentData
+    qrLabels.value = assessmentData.expected_qr_page_labels?.join(', ') ?? ''
+    qrTest.value = assessmentData.qr_test ?? ''
 
     const [enrollmentData, submissionData] = await Promise.all([
       fetchCourseEnrollments(assessmentData.course),
@@ -171,6 +240,14 @@ const removeQueuedFile = (id: string) => {
 }
 
 const processUploadQueue = async () => {
+  if (!intakeReady.value) {
+    error.value = 'Choose the first upload layout and save the expected labels for QR grouping.'
+    return
+  }
+  if (savingQR.value) {
+    error.value = 'Wait for the QR configuration to finish saving before uploading.'
+    return
+  }
   isProcessingQueue.value = true
 
   const pendingUploads = uploadQueue.value.filter(
@@ -186,7 +263,8 @@ const processUploadQueue = async () => {
 
       // Update local state
       item.status = 'success'
-      submissions.value.unshift(submission) // Add to top of table
+      if (submission.upload_group_ids?.length) await refreshSubmissions()
+      else submissions.value.unshift(submission)
       verificationSelections[submission.id] = submission.enrollment
 
       // Trigger background polling if the backend says it is crunching the OCR
@@ -194,21 +272,18 @@ const processUploadQueue = async () => {
         startPolling()
       }
     } catch (e) {
-      const err = e as {
-        response?: {
-          data?: {
-            message?: string
-          }
-        }
-      }
       item.status = 'error'
-      item.message = err.response?.data?.message || 'Upload failed. Click to retry.'
+      item.message = workflowError(
+        e,
+        'Upload failed. Check the QR metadata and upload limits, then retry.',
+      )
     }
   }
 
   isProcessingQueue.value = false
 }
 const confirmSubmission = async (submission: Submission) => {
+  if (qrBlocked(submission)) return
   const enrollment = verificationSelections[submission.id]
 
   if (typeof enrollment !== 'number') {
@@ -221,7 +296,12 @@ const confirmSubmission = async (submission: Submission) => {
   successMessage.value = ''
 
   try {
-    const verified = await verifySubmission(submission.id, enrollment, submission.version)
+    const verified = await verifySubmission(
+      submission.id,
+      enrollment,
+      submission.version,
+      verificationReasons[submission.id]?.trim() || undefined,
+    )
     const index = submissions.value.findIndex((item) => item.id === verified.id)
 
     if (index >= 0) {
@@ -233,8 +313,8 @@ const confirmSubmission = async (submission: Submission) => {
     emailRefreshKey.value += 1
 
     successMessage.value = `Verified ${verified.original_filename}.`
-  } catch {
-    error.value = 'Could not verify submission for that student.'
+  } catch (cause) {
+    error.value = workflowError(cause, 'Could not verify submission for that student.')
   } finally {
     verifyingSubmissionId.value = null
   }
@@ -282,6 +362,7 @@ const poll = async () => {
   }
 
   const controller = new AbortController()
+  const generation = snapshotGeneration
   pollingController = controller
   try {
     // Ask the server for this assessment only; keep the rollout fallback below.
@@ -289,7 +370,7 @@ const poll = async () => {
       { assessment: assessmentId },
       controller.signal,
     )
-    if (!isPolling || controller.signal.aborted) return
+    if (!isPolling || controller.signal.aborted || generation !== snapshotGeneration) return
     const assessmentSubs = latestSubmissions.filter((s) => s.assessment === assessmentId)
 
     // Update our local state with the newly processed data
@@ -297,7 +378,12 @@ const poll = async () => {
       const index = submissions.value.findIndex((s) => s.id === updated.id)
       const existingSubmission = submissions.value[index]
 
-      if (existingSubmission && existingSubmission.status !== updated.status) {
+      if (
+        existingSubmission &&
+        (existingSubmission.status !== updated.status ||
+          existingSubmission.version !== updated.version ||
+          existingSubmission.updated_at !== updated.updated_at)
+      ) {
         submissions.value[index] = updated
 
         // If it just finished processing, map the new results
@@ -309,7 +395,11 @@ const poll = async () => {
           verificationSelections[updated.id] = updated.enrollment
         }
       }
+      if (!existingSubmission) submissions.value.push(updated)
     }
+    submissions.value = submissions.value.filter((existing) =>
+      assessmentSubs.some((updated) => updated.id === existing.id),
+    )
   } catch {
     // Silently ignore polling network errors
   } finally {
@@ -376,6 +466,46 @@ onUnmounted(() => {
       </header>
 
       <!-- Submissions Panel -->
+      <section
+        v-if="assessment.expected_qr_page_labels !== undefined && assessment.qr_test !== undefined"
+        class="panel glass-panel"
+      >
+        <h2>QR page intake</h2>
+        <p>
+          Set the printed test code and expected page labels before uploading. Leave labels empty
+          for single-script uploads. QR groups pages, while OCR or bubbles identify the student.
+        </p>
+        <form @submit.prevent="saveQR">
+          <label v-if="!assessment.expected_qr_page_labels.length && submissions.length === 0"
+            >First upload layout<select v-model="firstUploadChoice" class="glass-input">
+              <option :value="null" disabled>Choose the script layout before uploading</option>
+              <option value="qr">QR grouped pages — configure expected labels</option>
+              <option value="single">One complete script per file without QR grouping</option>
+            </select></label
+          >
+          <label
+            >Printed test code<input
+              v-model="qrTest"
+              class="glass-input"
+              placeholder="KT2"
+              :disabled="submissions.some((item) => item.grouped_pages?.length)"
+          /></label>
+          <label
+            >Expected page labels<input
+              v-model="qrLabels"
+              class="glass-input"
+              placeholder="P1, P3"
+              :disabled="submissions.some((item) => item.grouped_pages?.length)"
+          /></label>
+          <button
+            class="btn-primary"
+            type="submit"
+            :disabled="savingQR || submissions.some((item) => item.grouped_pages?.length)"
+          >
+            {{ savingQR ? 'Saving…' : 'Save QR configuration' }}
+          </button>
+        </form>
+      </section>
       <section class="panel glass-panel">
         <h2>Submissions</h2>
         <button
@@ -415,7 +545,7 @@ onUnmounted(() => {
           <button
             class="btn-primary"
             type="button"
-            :disabled="isProcessingQueue || uploadQueue.length === 0"
+            :disabled="isProcessingQueue || savingQR || !intakeReady || uploadQueue.length === 0"
             @click="processUploadQueue"
           >
             {{ isProcessingQueue ? 'Processing queue…' : 'Upload queue' }}
@@ -489,7 +619,18 @@ onUnmounted(() => {
             </thead>
             <tbody>
               <tr v-for="submission in submissions" :key="submission.id">
-                <td class="filename-cell">{{ submission.original_filename }}</td>
+                <td class="filename-cell">
+                  {{ submission.original_filename }}
+                  <p v-if="submission.qr_metadata?.test_number">
+                    Paper {{ submission.qr_metadata.test_number }} ·
+                    {{
+                      orderedScriptPages(submission.grouped_pages)
+                        .filter((page) => !page.excluded)
+                        .map((page) => page.page_label || 'Unreadable label')
+                        .join(', ')
+                    }}
+                  </p>
+                </td>
                 <td>
                   <StatusBadge :status="submission.status" />
                 </td>
@@ -531,7 +672,7 @@ onUnmounted(() => {
                       <button
                         class="btn-primary"
                         type="button"
-                        :disabled="verifyingSubmissionId === submission.id"
+                        :disabled="verifyingSubmissionId === submission.id || qrBlocked(submission)"
                         @click="confirmSubmission(submission)"
                       >
                         {{
@@ -543,13 +684,19 @@ onUnmounted(() => {
                         }}
                       </button>
                     </div>
+                    <label v-if="submission.grouped_pages?.length"
+                      >Identity review reason (required when overriding a suggestion)<input
+                        v-model="verificationReasons[submission.id]"
+                        class="glass-input"
+                        maxlength="1000"
+                    /></label>
                   </template>
 
                   <template v-else-if="submission.status === 'verified'">
                     <button
                       class="btn-primary"
                       type="button"
-                      :disabled="emailingSubmissionId === submission.id"
+                      :disabled="emailingSubmissionId === submission.id || qrBlocked(submission)"
                       @click="sendScript(submission)"
                     >
                       {{ emailingSubmissionId === submission.id ? 'Scheduling…' : 'Email script' }}
@@ -561,12 +708,30 @@ onUnmounted(() => {
                       ? 'Recognition in progress'
                       : 'Waiting for recognition'
                   }}</span>
+                  <p v-if="submission.qr_review_issues?.length" class="warning-text">
+                    Page review required: {{ submission.qr_review_issues.join(', ') }}
+                  </p>
+                  <ScriptArchiveControl
+                    v-if="submission.archived_at !== undefined"
+                    :submission="submission"
+                    @updated="refreshSubmissions"
+                  />
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+        <QRPageReviewPanel
+          v-for="submission in submissions.filter((item) => item.grouped_pages?.length)"
+          :key="submission.id"
+          :submission="submission"
+          :students="students"
+          :groups="submissions"
+          @updated="refreshSubmissions"
+        />
       </section>
+
+      <ScriptHistoryPanel :assessment-id="assessmentId" :refresh-key="historyRefreshKey" />
 
       <ScriptEmailPanel :assessment-id="assessmentId" :refresh-key="emailRefreshKey" />
 

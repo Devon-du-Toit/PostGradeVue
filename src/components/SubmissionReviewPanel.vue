@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 import AlertBox from '@/components/AlertBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
+import QRPageReviewPanel from '@/components/QRPageReviewPanel.vue'
 import {
   fetchRecognitionImage,
   fetchSubmissionFile,
@@ -28,6 +29,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   verified: [submission: Submission]
   retried: [submission: Submission]
+  updated: []
   next: []
   close: []
 }>()
@@ -43,6 +45,13 @@ const zoom = ref(1)
 const rotation = ref(0)
 const busy = ref<'verify' | 'retry' | null>(null)
 const error = ref('')
+const reviewReason = ref('')
+const qrBlocked = computed(
+  () =>
+    props.submission.status === 'processing' ||
+    props.submission.qr_group_status === 'manual_review' ||
+    Boolean(props.submission.qr_review_issues?.length),
+)
 
 let abortController: AbortController | null = null
 
@@ -120,15 +129,18 @@ const describeFailure = (e: unknown, action: string) => {
 }
 
 const confirm = async () => {
-  if (selected.value === null || busy.value) return
+  if (selected.value === null || busy.value || qrBlocked.value) return
   busy.value = 'verify'
   error.value = ''
   try {
-    const verified = await verifySubmission(
-      props.submission.id,
-      selected.value,
-      props.submission.version,
-    )
+    const verified = reviewReason.value.trim()
+      ? await verifySubmission(
+          props.submission.id,
+          selected.value,
+          props.submission.version,
+          reviewReason.value.trim(),
+        )
+      : await verifySubmission(props.submission.id, selected.value, props.submission.version)
     emit('verified', verified)
   } catch (e) {
     error.value = describeFailure(e, 'confirm the student')
@@ -161,6 +173,8 @@ const rotate = () => {
 // Shortcuts: Ctrl+Enter confirm, N next, + / - zoom, R rotate, Esc close.
 // Letter keys are ignored while typing in a field.
 const onKeydown = (event: KeyboardEvent) => {
+  const target = event.target as HTMLElement | null
+  if (target?.closest('.qr-review-form')) return
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault()
     void confirm()
@@ -170,7 +184,6 @@ const onKeydown = (event: KeyboardEvent) => {
     emit('close')
     return
   }
-  const target = event.target as HTMLElement | null
   if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
 
   if (event.key === 'n' && props.hasNext) emit('next')
@@ -179,7 +192,11 @@ const onKeydown = (event: KeyboardEvent) => {
   else if (event.key === 'r') rotate()
 }
 
-watch(() => props.submission.id, resetForSubmission, { immediate: true })
+watch(
+  () => [props.submission.id, props.submission.version, props.submission.updated_at],
+  resetForSubmission,
+  { immediate: true },
+)
 
 onBeforeUnmount(() => {
   abortController?.abort()
@@ -282,7 +299,7 @@ onBeforeUnmount(() => {
             class="btn-primary"
             type="button"
             data-test="confirm"
-            :disabled="selected === null || busy !== null"
+            :disabled="selected === null || busy !== null || qrBlocked"
             @click="confirm"
           >
             {{ busy === 'verify' ? 'Confirming…' : 'Confirm student' }}
@@ -308,6 +325,18 @@ onBeforeUnmount(() => {
         </div>
 
         <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
+        <label v-if="submission.grouped_pages?.length" class="field"
+          >Identity review reason (required when overriding a suggestion)<textarea
+            v-model="reviewReason"
+            class="glass-input"
+            maxlength="1000"
+          />
+        </label>
+        <QRPageReviewPanel
+          :submission="submission"
+          :students="students"
+          @updated="emit('updated')"
+        />
         <p class="shortcuts muted">
           Ctrl+Enter confirm · N next · + / − zoom · R rotate · Esc close
         </p>

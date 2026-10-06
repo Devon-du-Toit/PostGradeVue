@@ -1,4 +1,7 @@
 export interface EnrolledStudent {
+  version?: number
+  withdrawn_at?: string | null
+  withdrawal_reason?: string
   id: number
   course: number
   student: number
