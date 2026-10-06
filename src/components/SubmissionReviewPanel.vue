@@ -124,7 +124,11 @@ const confirm = async () => {
   busy.value = 'verify'
   error.value = ''
   try {
-    const verified = await verifySubmission(props.submission.id, selected.value)
+    const verified = await verifySubmission(
+      props.submission.id,
+      selected.value,
+      props.submission.version,
+    )
     emit('verified', verified)
   } catch (e) {
     error.value = describeFailure(e, 'confirm the student')
@@ -138,7 +142,7 @@ const retry = async () => {
   busy.value = 'retry'
   error.value = ''
   try {
-    emit('retried', await retryRecognition(props.submission.id))
+    emit('retried', await retryRecognition(props.submission.id, props.submission.version))
   } catch (e) {
     error.value = describeFailure(e, 'retry recognition')
   } finally {

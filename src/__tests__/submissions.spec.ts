@@ -110,10 +110,11 @@ describe('submission service', () => {
   it('verifies a submission', async () => {
     mockedApi.post.mockResolvedValueOnce({ data: { id: 4, status: 'verified' } })
 
-    await verifySubmission(4, 9)
+    await verifySubmission(4, 9, 3)
 
     expect(mockedApi.post).toHaveBeenCalledWith('submissions/4/verify/', {
       enrollment: 9,
+      version: 3,
     })
   })
 

@@ -110,7 +110,7 @@ const verify = async (submission: Submission) => {
   successMessage.value = ''
 
   try {
-    const verified = await verifySubmission(submission.id, enrollment)
+    const verified = await verifySubmission(submission.id, enrollment, submission.version)
     submissions.value = submissions.value.filter((item) => item.id !== verified.id)
     successMessage.value = `Verified ${verified.original_filename}.`
   } catch {
