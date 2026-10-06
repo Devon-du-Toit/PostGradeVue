@@ -315,6 +315,8 @@ const saveSubmissionMark = async (submission: Submission) => {
 // --- Background Polling Logic ---
 let pollingTimeout: ReturnType<typeof setTimeout> | null = null
 let isPolling = false
+let isUnmounted = false
+let pollingController: AbortController | null = null
 
 const poll = async () => {
   if (!isPolling) return
@@ -327,9 +329,15 @@ const poll = async () => {
     return
   }
 
+  const controller = new AbortController()
+  pollingController = controller
   try {
-    // Fetch latest statuses quietly in the background
-    const latestSubmissions = await fetchSubmissions()
+    // Ask the server for this assessment only; keep the rollout fallback below.
+    const latestSubmissions = await fetchSubmissions(
+      { assessment: assessmentId },
+      controller.signal,
+    )
+    if (!isPolling || controller.signal.aborted) return
     const assessmentSubs = latestSubmissions.filter((s) => s.assessment === assessmentId)
 
     // Update our local state with the newly processed data
@@ -353,21 +361,26 @@ const poll = async () => {
   } catch {
     // Silently ignore polling network errors
   } finally {
-    // Re-arm the timer ONLY after this cycle has completely finished
-    if (isPolling) {
+    pollingController = null
+    // Re-arm only after completion, while this assessment still has work.
+    if (isPolling && submissions.value.some((s) => s.status === 'processing')) {
       pollingTimeout = setTimeout(poll, 3000)
+    } else {
+      stopPolling()
     }
   }
 }
 
 const startPolling = () => {
-  if (isPolling) return
+  if (isPolling || isUnmounted) return
   isPolling = true
   void poll()
 }
 
 const stopPolling = () => {
   isPolling = false
+  pollingController?.abort()
+  pollingController = null
   if (pollingTimeout) {
     clearTimeout(pollingTimeout)
     pollingTimeout = null
@@ -388,11 +401,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
-  stopPolling() // Clean up our ML polling interval when we leave the page
-})
-
-onMounted(() => {
-  void loadPage()
+  isUnmounted = true
+  stopPolling()
 })
 </script>
 
@@ -475,7 +485,12 @@ onMounted(() => {
                   <span class="status-badge text-error">{{ item.message }}</span>
                   <button
                     class="btn-text btn-retry"
-                    @click="item.status = 'pending'; processUploadQueue()"
+                    @click="
+                      () => {
+                        item.status = 'pending'
+                        processUploadQueue()
+                      }
+                    "
                   >
                     Retry
                   </button>

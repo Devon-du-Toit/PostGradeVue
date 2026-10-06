@@ -5,6 +5,7 @@ import {
   fetchSubmissions,
   fetchVerificationQueue,
   markSubmission,
+  UPLOAD_TIMEOUT_MS,
   uploadSubmission,
   verifySubmission,
 } from '@/services/submissions'
@@ -51,6 +52,18 @@ describe('submission service', () => {
     expect(result).toEqual([{ id: 2 }])
   })
 
+  it('passes the assessment polling abort signal through to the API', async () => {
+    mockedApi.get.mockResolvedValueOnce(page([]))
+    const controller = new AbortController()
+
+    await fetchSubmissions({ assessment: 7 }, controller.signal)
+
+    expect(mockedApi.get).toHaveBeenCalledWith('submissions/', {
+      params: { assessment: 7, page: 1, page_size: 100 },
+      signal: controller.signal,
+    })
+  })
+
   it('passes verification queue filters to the API', async () => {
     mockedApi.get.mockResolvedValueOnce(page([]))
     const controller = new AbortController()
@@ -70,8 +83,9 @@ describe('submission service', () => {
     await uploadSubmission(12, file)
 
     expect(mockedApi.post).toHaveBeenCalledTimes(1)
-    const [url, formData] = mockedApi.post.mock.calls[0]!
+    const [url, formData, config] = mockedApi.post.mock.calls[0]!
     expect(url).toBe('submissions/')
+    expect(config).toEqual({ timeout: UPLOAD_TIMEOUT_MS })
     expect(formData).toBeInstanceOf(FormData)
     expect((formData as FormData).get('assessment')).toBe('12')
     expect((formData as FormData).get('file')).toBe(file)

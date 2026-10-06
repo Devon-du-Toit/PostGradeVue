@@ -39,3 +39,6 @@ __screenshots__/
 *.timestamp-*-*.mjs
 
 test-results/
+
+# Local environment overrides (use .env.example as the template)
+.env

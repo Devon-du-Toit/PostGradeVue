@@ -54,9 +54,33 @@ npm run lint
 ```
 ## Environment Configuration
 
-This project uses Vite environment variables to manage API endpoints across different environments. 
+The app needs one setting: where the Django API is.
 
-1. Create a `.env.local` file in the root directory for local development.
-2. Add your local backend URL:
-VITE_API_BASE_URL=http://127.0.0.1:8000/api/
-3. For production or staging, configure the host environment variables to inject the correct backend URL during the build process. Secrets should never be hardcoded or committed to the repository.
+| Variable | Example | Meaning |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://127.0.0.1:8000/api/` | API root. A trailing `/` is optional. |
+
+**Local development:** copy `.env.example` to `.env.local` (git-ignored). Without it, the app uses `http://127.0.0.1:8000/api/`.
+
+```sh
+cp .env.example .env.local
+```
+
+**Staging / production:** set the variable in the hosting platform's build settings. It is read at **build time** and baked into the bundle, so changing it needs a rebuild.
+
+```sh
+# API on its own domain
+VITE_API_BASE_URL=https://api.postgrade.example.com/api/ npm run build
+# API behind the same domain as the frontend (reverse proxy)
+VITE_API_BASE_URL=/api/ npm run build
+```
+
+A production build **fails** unless the value is an `https://` URL or a same-origin path such as `/api/`, so a forgotten variable can never ship a bundle that calls `localhost`.
+
+The backend must allow the frontend's origin (`CORS_ALLOWED_ORIGINS` in the Django `.env`) and serve HTTPS.
+
+> **No secrets in `VITE_` variables.** Every `VITE_` value ends up in the public JavaScript that any visitor can read.
+
+### Hosting
+
+The router uses HTML5 history mode (`/courses/3`, not `/#/courses/3`). The host must answer every unknown path with `index.html` (an "SPA fallback"); otherwise opening or refreshing a nested page gives a 404. Most static hosts have a setting for this (e.g. a rewrite of `/*` to `/index.html`).
