@@ -11,16 +11,16 @@ const authStore = useAuthStore()
       <h1>PostGrade</h1>
 
       <template v-if="authStore.user">
-        <p class="user-info">Logged in as <strong>{{ authStore.user.email }}</strong></p>
+        <p class="user-info">
+          Logged in as <strong>{{ authStore.user.email }}</strong>
+        </p>
 
         <div class="actions">
           <RouterLink to="/dashboard" class="btn-primary dashboard-link">
             Go to Dashboard
           </RouterLink>
 
-          <button class="btn-secondary" type="button" @click="authStore.logout()">
-            Log out
-          </button>
+          <button class="btn-secondary" type="button" @click="authStore.logout()">Log out</button>
         </div>
       </template>
 
@@ -74,7 +74,7 @@ h1 {
 }
 
 .btn-secondary {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--surface-input);
   border: 1px solid var(--glass-border);
   color: var(--text-secondary);
   padding: var(--space-sm) var(--space-md);
@@ -87,6 +87,6 @@ h1 {
 .btn-secondary:hover {
   background: var(--glass-bg-hover);
   border-color: var(--status-error);
-  color: #fca5a5;
+  color: var(--status-error-text);
 }
 </style>

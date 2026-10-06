@@ -9,7 +9,7 @@ import {
   importCourseStudents,
   removeCourseStudent,
   type ImportRowError,
-  type ImportSummary
+  type ImportSummary,
 } from '@/services/students'
 import type { Assessment } from '@/types/assessment'
 import type { Course } from '@/types/course'
@@ -64,7 +64,7 @@ const loadPage = async () => {
 }
 
 // New state for custom confirmation modal
-const studentToRemove = ref<{id: number, name: string} | null>(null)
+const studentToRemove = ref<{ id: number; name: string } | null>(null)
 const removingStudentId = ref<number | null>(null)
 
 const promptRemoveStudent = (studentId: number, name: string) => {
@@ -84,7 +84,7 @@ const confirmRemoveStudent = async () => {
 
   try {
     await removeCourseStudent(courseId, id)
-    students.value = students.value.filter(s => s.id !== id)
+    students.value = students.value.filter((s) => s.id !== id)
     studentToRemove.value = null
   } catch (e) {
     const err = e as {
@@ -96,7 +96,10 @@ const confirmRemoveStudent = async () => {
       }
     }
 
-    error.value = err.response?.data?.message || err.response?.data?.detail || 'Could not remove student. Please try again.'
+    error.value =
+      err.response?.data?.message ||
+      err.response?.data?.detail ||
+      'Could not remove student. Please try again.'
     studentToRemove.value = null
   } finally {
     removingStudentId.value = null
@@ -117,7 +120,7 @@ const handleFileChange = (event: Event) => {
     reader.onload = (e) => {
       const text = e.target?.result as string
       if (text) {
-        const lines = text.split('\n').filter(line => line.trim().length > 0)
+        const lines = text.split('\n').filter((line) => line.trim().length > 0)
         filePreviewCount.value = Math.max(0, lines.length - 1) // Subtract header
       }
     }
@@ -149,7 +152,7 @@ const importStudents = async () => {
     students.value = await fetchCourseStudents(courseId)
     selectedFile.value = null
     filePreviewCount.value = null
-  }catch (e) {
+  } catch (e) {
     const err = e as {
       response?: {
         data?: {
@@ -225,17 +228,37 @@ onMounted(() => {
           <label>
             Name
             <!-- Applied glass-input -->
-            <input class="glass-input" v-model.trim="assessmentForm.name" required placeholder="Test 1" />
+            <input
+              class="glass-input"
+              v-model.trim="assessmentForm.name"
+              required
+              placeholder="Test 1"
+            />
           </label>
 
           <label>
             Maximum mark
-            <input class="glass-input" v-model.number="assessmentForm.max_mark" type="number" min="1" step="0.01" required />
+            <input
+              class="glass-input"
+              v-model.number="assessmentForm.max_mark"
+              type="number"
+              min="1"
+              step="0.01"
+              required
+            />
           </label>
 
           <label>
             Weight (%)
-            <input class="glass-input" v-model.number="assessmentForm.weight" type="number" min="0" max="100" step="0.01" required />
+            <input
+              class="glass-input"
+              v-model.number="assessmentForm.weight"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              required
+            />
           </label>
 
           <label>
@@ -256,19 +279,21 @@ onMounted(() => {
             <RouterLink class="assessment-link" :to="`/assessments/${assessment.id}`">
               <strong class="assessment-name">{{ assessment.name }}</strong>
               <span class="assessment-date">{{ assessment.date }}</span>
-              <span class="assessment-stats">{{ assessment.max_mark }} marks · {{ assessment.weight }}%</span>
+              <span class="assessment-stats"
+                >{{ assessment.max_mark }} marks · {{ assessment.weight }}%</span
+              >
             </RouterLink>
           </li>
         </ul>
       </section>
 
- <!-- Applied glass-panel -->
+      <!-- Applied glass-panel -->
       <section class="panel glass-panel">
         <h2>Import students</h2>
         <p class="import-instructions">
           Upload a CSV with the columns
-          <code>student_number</code>, <code>first_name</code>,
-          <code>last_name</code>, and <code>email</code>.
+          <code>student_number</code>, <code>first_name</code>, <code>last_name</code>, and
+          <code>email</code>.
           <br />
           <a
             class="csv-template-link"
@@ -308,7 +333,6 @@ onMounted(() => {
           <p class="text-error"><strong>Failed:</strong> {{ importSummary.failed }}</p>
         </div>
 
-<<<<<<< HEAD
         <!-- Post-upload Row-level Errors -->
         <div v-if="importErrors.length > 0" class="student-table-wrap error-table-wrap">
           <table class="student-table">
@@ -328,10 +352,6 @@ onMounted(() => {
             </tbody>
           </table>
         </div>
-=======
-        <AlertBox v-if="importMessage" type="success">{{ importMessage }}</AlertBox>
-        <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
->>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
       </section>
 
       <!-- Applied glass-panel -->
@@ -357,9 +377,12 @@ onMounted(() => {
                 <td class="muted-cell">{{ student.email }}</td>
                 <td class="actions-col">
                   <button
+                    v-if="false"
                     class="btn-text btn-danger"
                     :disabled="removingStudentId === student.id"
-                    @click="promptRemoveStudent(student.id, `${student.first_name} ${student.last_name}`)"
+                    @click="
+                      promptRemoveStudent(student.id, `${student.first_name} ${student.last_name}`)
+                    "
                   >
                     {{ removingStudentId === student.id ? '...' : 'Remove' }}
                   </button>
@@ -375,12 +398,14 @@ onMounted(() => {
       <div class="panel glass-panel modal-content">
         <h3>Remove Student</h3>
         <p>
-          Are you sure you want to remove <strong>{{ studentToRemove.name }}</strong> from this course?
-          <br><br>
+          Are you sure you want to remove <strong>{{ studentToRemove.name }}</strong> from this
+          course? <br /><br />
           <span class="text-error">Warning: This will also remove any associated grades.</span>
         </p>
         <div class="modal-actions">
-          <button class="btn-text" @click="cancelRemove" :disabled="removingStudentId !== null">Cancel</button>
+          <button class="btn-text" @click="cancelRemove" :disabled="removingStudentId !== null">
+            Cancel
+          </button>
           <button
             class="btn-primary btn-danger-solid"
             :disabled="removingStudentId === studentToRemove.id"
@@ -420,7 +445,7 @@ onMounted(() => {
   gap: 1.5rem;
   margin-top: 1.5rem;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
   border-radius: var(--radius-md);
   font-size: 0.95rem;
 }
@@ -429,9 +454,15 @@ onMounted(() => {
   margin: 0;
 }
 
-.text-success { color: #86efac; }
-.text-warning { color: #fde047; }
-.text-error { color: #fca5a5; }
+.text-success {
+  color: var(--status-success-text);
+}
+.text-warning {
+  color: var(--status-warning-text);
+}
+.text-error {
+  color: var(--status-error-text);
+}
 
 .error-table-wrap {
   margin-top: 1rem;
@@ -440,7 +471,7 @@ onMounted(() => {
 
 .error-table-wrap th {
   background: rgba(239, 68, 68, 0.15);
-  color: #fca5a5;
+  color: var(--status-error-text);
 }
 
 .back-link {
@@ -449,7 +480,9 @@ onMounted(() => {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .back-link:hover {
@@ -545,7 +578,7 @@ onMounted(() => {
   grid-template-columns: minmax(180px, 1.5fr) 1fr 1fr;
   gap: 1rem;
   padding: 1.25rem 1rem;
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--surface-inset);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: inherit;
@@ -565,7 +598,8 @@ onMounted(() => {
   font-size: 1.05rem;
 }
 
-.assessment-date, .assessment-stats {
+.assessment-date,
+.assessment-stats {
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
@@ -590,7 +624,7 @@ onMounted(() => {
 }
 
 code {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--surface-input);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   border: 1px solid var(--glass-border);
@@ -612,7 +646,7 @@ code {
 }
 
 .file-input::file-selector-button {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--surface-input);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -633,7 +667,7 @@ code {
   overflow-x: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--surface-inset);
 }
 
 .student-table {
@@ -645,7 +679,7 @@ code {
   padding: 1rem;
   border-bottom: 1px solid var(--glass-border);
   text-align: left;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
   color: var(--accent-green);
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -655,7 +689,7 @@ code {
 
 .student-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--table-divider);
   text-align: left;
   color: var(--text-primary);
   font-size: 0.95rem;
@@ -666,7 +700,7 @@ code {
 }
 
 .student-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-hover);
 }
 
 .highlight-cell {
@@ -688,7 +722,6 @@ code {
   margin-top: 2rem;
 }
 
-<<<<<<< HEAD
 .actions-col {
   text-align: right !important;
   width: 90px;
@@ -710,7 +743,7 @@ code {
 }
 
 .btn-danger:hover:not(:disabled) {
-  color: #fca5a5;
+  color: var(--status-error-text);
   text-decoration: underline;
 }
 
@@ -719,8 +752,6 @@ code {
   cursor: not-allowed;
 }
 
-=======
->>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
 @media (max-width: 760px) {
   .course-header {
     flex-direction: column;
@@ -771,12 +802,12 @@ code {
 }
 
 .btn-danger-solid {
-  background: rgba(239, 68, 68, 0.8) !important;
+  background: var(--button-danger) !important;
   color: white !important;
   border-color: rgba(239, 68, 68, 1) !important;
 }
 
 .btn-danger-solid:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 1) !important;
+  background: var(--button-danger-hover) !important;
 }
 </style>

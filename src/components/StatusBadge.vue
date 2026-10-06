@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 
 const props = defineProps<{
-<<<<<<< HEAD
   status:
     | 'uploaded'
     | 'processing'
@@ -12,23 +11,15 @@ const props = defineProps<{
     | 'verified'
     | 'marked'
     | string
-=======
-  status: 'uploaded' | 'matched' | 'needs_verification' | 'verified' | 'marked' | string
->>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
 }>()
 
 const label = computed(() => {
   const labels: Record<string, string> = {
     uploaded: 'Uploaded',
-<<<<<<< HEAD
     processing: 'Processing',
     matched: 'Matched',
     needs_verification: 'Needs verification',
     recognition_failed: 'Recognition failed',
-=======
-    matched: 'Matched',
-    needs_verification: 'Needs verification',
->>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
     verified: 'Verified',
     marked: 'Marked',
   }
@@ -52,14 +43,32 @@ const label = computed(() => {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
-.status-badge[data-status="uploaded"] { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
-.status-badge[data-status="matched"] { background: rgba(34,211,238,0.15); color: #22d3ee; }
-.status-badge[data-status="needs_verification"] { background: rgba(245,158,11,0.15); color: var(--status-warning); }
-.status-badge[data-status="verified"] { background: rgba(168,85,247,0.15); color: #a855f7; }
-<<<<<<< HEAD
-.status-badge[data-status="processing"] { background: rgba(59,130,246,0.15); color: #93c5fd; }
-.status-badge[data-status="recognition_failed"] { background: rgba(239,68,68,0.15); color: #fca5a5; }
-=======
->>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
-.status-badge[data-status="marked"] { background: rgba(91,166,91,0.15); color: var(--accent-green); }
+.status-badge[data-status='uploaded'] {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+}
+.status-badge[data-status='matched'] {
+  background: rgba(34, 211, 238, 0.15);
+  color: var(--status-match-text);
+}
+.status-badge[data-status='needs_verification'] {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--status-warning);
+}
+.status-badge[data-status='verified'] {
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--status-verified-text);
+}
+.status-badge[data-status='processing'] {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--status-info-text);
+}
+.status-badge[data-status='recognition_failed'] {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--status-error-text);
+}
+.status-badge[data-status='marked'] {
+  background: rgba(91, 166, 91, 0.15);
+  color: var(--accent-green);
+}
 </style>

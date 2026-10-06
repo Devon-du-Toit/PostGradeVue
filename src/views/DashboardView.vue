@@ -27,9 +27,7 @@ onMounted(async () => {
     <header class="dashboard-hero">
       <div>
         <p class="page-eyebrow">Workspace</p>
-        <h1>
-          Welcome{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}.
-        </h1>
+        <h1>Welcome{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}.</h1>
         <p class="dashboard-subtitle">
           Manage courses, review submission matches and keep assessment results up to date.
         </p>
@@ -55,9 +53,7 @@ onMounted(async () => {
           </div>
           <div class="action-meta">
             <span v-if="loading" class="skeleton-badge">...</span>
-            <span v-else-if="stats" class="count-badge">
-              {{ stats.active_courses }} Active
-            </span>
+            <span v-else-if="stats" class="count-badge"> {{ stats.active_courses }} Active </span>
             <span class="action-arrow">→</span>
           </div>
         </RouterLink>
@@ -161,7 +157,10 @@ onMounted(async () => {
   color: inherit;
   text-decoration: none;
   /* Override the default glass-panel transition to add the transform lift */
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .action-card:hover {
@@ -204,7 +203,9 @@ onMounted(async () => {
 .action-arrow {
   color: var(--text-muted);
   font-size: 1.2rem;
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
 }
 
 .action-card:hover .action-arrow {
@@ -233,7 +234,7 @@ onMounted(async () => {
   font-size: 0.9rem;
   font-weight: 600;
   padding: 0.4rem 0.8rem;
-  background: rgba(0,0,0,0.2);
+  background: var(--surface-header);
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
 }
@@ -279,7 +280,7 @@ onMounted(async () => {
 
 .warning-badge {
   background: rgba(253, 224, 71, 0.15);
-  color: #fde047;
+  color: var(--status-warning-text);
   border-color: rgba(253, 224, 71, 0.3);
 }
 
@@ -291,7 +292,12 @@ onMounted(async () => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 </style>

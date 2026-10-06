@@ -2,17 +2,12 @@
 import { onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
-<<<<<<< HEAD
 import { createCourse, fetchCourses } from '@/services/courses'
 import type { Course } from '@/types/course'
 import AlertBox from '@/components/AlertBox.vue'
 
 const route = useRoute()
 const router = useRouter()
-=======
-import { useCoursesStore } from '@/stores/courses'
-import AlertBox from '@/components/AlertBox.vue'
->>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
 
 const submitting = ref(false)
 const form = reactive({
@@ -48,9 +43,9 @@ const loadFilteredCourses = async () => {
   abortController = new AbortController()
 
   try {
-// Strip out empty filters before sending to the backend
+    // Strip out empty filters before sending to the backend
     const activeFilters = Object.fromEntries(
-      Object.entries(filters).filter((entry) => entry[1] !== '' && entry[1] !== null)
+      Object.entries(filters).filter((entry) => entry[1] !== '' && entry[1] !== null),
     )
 
     courses.value = await fetchCourses(activeFilters, abortController.signal)
@@ -69,9 +64,9 @@ const loadFilteredCourses = async () => {
 // 3. Debouncing: Watch for filter changes, sync the URL, and wait before fetching
 watch(
   filters,
- (newFilters) => {
+  (newFilters) => {
     const query = Object.fromEntries(
-      Object.entries(newFilters).filter((entry) => entry[1] !== '' && entry[1] !== null)
+      Object.entries(newFilters).filter((entry) => entry[1] !== '' && entry[1] !== null),
     )
     void router.replace({ query })
 
@@ -80,7 +75,7 @@ watch(
       void loadFilteredCourses()
     }, 300) // 300ms delay
   },
-  { deep: true }
+  { deep: true },
 )
 
 const submitCourse = async () => {
@@ -124,7 +119,12 @@ onMounted(() => {
 
         <label>
           Name
-          <input class="glass-input" v-model.trim="form.name" required placeholder="Advanced Physics" />
+          <input
+            class="glass-input"
+            v-model.trim="form.name"
+            required
+            placeholder="Advanced Physics"
+          />
         </label>
 
         <label>
@@ -146,21 +146,20 @@ onMounted(() => {
         </button>
       </form>
 
-<<<<<<< HEAD
       <AlertBox type="error" v-if="error" class="error">{{ error }}</AlertBox>
-=======
-      <AlertBox type="error" v-if="coursesStore.error" class="error">{{ coursesStore.error }}</AlertBox>
->>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
     </section>
 
-   <!-- Applied glass-panel to the list container -->
+    <!-- Applied glass-panel to the list container -->
     <section class="panel glass-panel">
       <div class="list-header">
         <h2>Your courses</h2>
 
-<<<<<<< HEAD
         <div class="filters-bar">
-          <input class="glass-input search-input" v-model="filters.search" placeholder="Search course name or code..." />
+          <input
+            class="glass-input search-input"
+            v-model="filters.search"
+            placeholder="Search course name or code..."
+          />
           <select class="glass-input" v-model="filters.year">
             <option value="">All years</option>
             <option :value="2028">2028</option>
@@ -182,10 +181,6 @@ onMounted(() => {
       <AlertBox type="info" v-else-if="courses.length === 0" class="status-text">
         No courses found matching those filters.
       </AlertBox>
-=======
-      <p v-if="coursesStore.loading" class="status-text">Loading courses…</p>
-      <AlertBox type="info" v-else-if="coursesStore.courses.length === 0" class="status-text">No courses yet.</AlertBox>
->>>>>>> 053ee3a (refactor: extract shared UI components and remove starter code (Issue #9))
 
       <ul v-else class="course-list">
         <li v-for="course in courses" :key="course.id">
@@ -255,14 +250,14 @@ button {
 /* Custom styling to make the <select> dropdown arrow match the dark glass theme */
 select.glass-input {
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
   background-repeat: no-repeat;
   background-position: right 0.75rem top 50%;
   background-size: 0.65rem auto;
 }
 /* Style the dropdown options so they are readable */
 select.glass-input option {
-  background: #151f32;
+  background: var(--surface-option);
   color: var(--text-primary);
 }
 

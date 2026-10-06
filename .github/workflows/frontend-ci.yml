@@ -81,6 +81,10 @@ jobs:
         run: npm ci
 
       - name: Build application
+        # Placeholder: production builds require an API URL (vite.config.ts);
+        # CI only checks that the bundle builds.
+        env:
+          VITE_API_BASE_URL: https://api.example.invalid/api/
         run: npm run build
 
   e2e-tests:
@@ -164,6 +168,19 @@ jobs:
           User = get_user_model();
           User.objects.create_user(email='e2e.lecturer@example.com', password='TestPass123!')"
 
+      - name: Seed sandbox email scenarios
+        working-directory: backend
+        env:
+          DB_NAME: postgrade
+          DB_USER: postgrade_user
+          DB_PASSWORD: postgrade_password
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DEBUG: 'True'
+          SECRET_KEY: e2e-ci-secret-key
+          POSTGRADE_EMAIL_E2E: '1'
+        run: python ../e2e/seed_email_fixtures.py
+
       - name: Start Django backend
         working-directory: backend
         env:
@@ -173,6 +190,8 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
           DEBUG: 'True'
+          CORS_ALLOWED_ORIGINS: http://127.0.0.1:5173
+          EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
           SECRET_KEY: e2e-ci-secret-key
         run: python manage.py runserver 127.0.0.1:8000 &
 

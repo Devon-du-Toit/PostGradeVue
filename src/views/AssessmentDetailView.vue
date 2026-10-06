@@ -8,7 +8,6 @@ import {
   createAssessmentResult,
   fetchAssessmentResults,
   updateAssessmentResult,
-  retryResultEmail,
 } from '@/services/results'
 import {
   fetchSubmissions,
@@ -22,6 +21,7 @@ import type { Result } from '@/types/result'
 import type { Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
+import ResultEmailPanel from '@/components/ResultEmailPanel.vue'
 
 interface QueuedUpload {
   id: string
@@ -45,6 +45,7 @@ const markingSubmissionId = ref<number | null>(null)
 const isProcessingQueue = ref(false)
 const error = ref('')
 const successMessage = ref('')
+const emailRefreshKey = ref(0)
 
 const marks = reactive<Record<number, number | null>>({})
 const verificationSelections = reactive<Record<number, number | null>>({})
@@ -81,9 +82,7 @@ const loadPage = async () => {
     )
 
     for (const student of students.value) {
-      const existing = resultData.find(
-  (result: Result) => result.enrollment === student.enrollment,
-)
+      const existing = resultData.find((result) => result.enrollment === student.enrollment)
       marks[student.enrollment] = existing ? Number(existing.mark) : null
     }
 
@@ -91,15 +90,13 @@ const loadPage = async () => {
       verificationSelections[submission.id] = submission.enrollment
 
       const existingResult = submission.enrollment
-        ? resultData.find((result: Result) => result.enrollment === submission.enrollment)
+        ? resultData.find((result) => result.enrollment === submission.enrollment)
         : undefined
 
-      submissionMarks[submission.id] = existingResult
-        ? Number(existingResult.mark)
-        : null
+      submissionMarks[submission.id] = existingResult ? Number(existingResult.mark) : null
     }
     // Resume polling if there are unfinished submissions on load
-    if (submissions.value.some(s => s.status === 'processing')) {
+    if (submissions.value.some((s) => s.status === 'processing')) {
       startPolling()
     }
   } catch {
@@ -144,6 +141,7 @@ const saveMark = async (student: GradebookStudent) => {
       results.value.push(saved)
     }
 
+    emailRefreshKey.value += 1
     marks[student.enrollment] = Number(saved.mark)
     successMessage.value = `Saved mark for ${student.first_name} ${student.last_name}.`
   } catch {
@@ -152,7 +150,6 @@ const saveMark = async (student: GradebookStudent) => {
     savingEnrollment.value = null
   }
 }
-
 
 // Same limit as the backend (MAX_SUBMISSION_FILE_SIZE_BYTES): a whole
 // multi-page scanned script can be well over 5 MB.
@@ -163,14 +160,14 @@ const handleSubmissionFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
 
-  Array.from(input.files).forEach(file => {
+  Array.from(input.files).forEach((file) => {
     // 1. Handle unsupported files
     if (!ALLOWED_TYPES.includes(file.type)) {
       uploadQueue.value.push({
         id: crypto.randomUUID(),
         file,
         status: 'error',
-        message: 'Unsupported format. Use PDF, JPG, or PNG.'
+        message: 'Unsupported format. Use PDF, JPG, or PNG.',
       })
       return
     }
@@ -181,7 +178,7 @@ const handleSubmissionFileChange = (event: Event) => {
         id: crypto.randomUUID(),
         file,
         status: 'error',
-        message: 'File too large (max 15 MB).'
+        message: 'File too large (max 15 MB).',
       })
       return
     }
@@ -189,7 +186,7 @@ const handleSubmissionFileChange = (event: Event) => {
     uploadQueue.value.push({
       id: crypto.randomUUID(),
       file,
-      status: 'pending'
+      status: 'pending',
     })
   })
 
@@ -198,13 +195,15 @@ const handleSubmissionFileChange = (event: Event) => {
 }
 
 const removeQueuedFile = (id: string) => {
-  uploadQueue.value = uploadQueue.value.filter(q => q.id !== id)
+  uploadQueue.value = uploadQueue.value.filter((q) => q.id !== id)
 }
 
 const processUploadQueue = async () => {
   isProcessingQueue.value = true
 
-  const pendingUploads = uploadQueue.value.filter(q => q.status === 'pending' || q.status === 'error')
+  const pendingUploads = uploadQueue.value.filter(
+    (q) => q.status === 'pending' || q.status === 'error',
+  )
 
   for (const item of pendingUploads) {
     item.status = 'uploading'
@@ -223,7 +222,6 @@ const processUploadQueue = async () => {
       if (submission.status === 'processing') {
         startPolling()
       }
-
     } catch (e) {
       const err = e as {
         response?: {
@@ -264,9 +262,7 @@ const confirmSubmission = async (submission: Submission) => {
     const existingResult = verified.enrollment
       ? resultByEnrollment.value.get(verified.enrollment)
       : undefined
-    submissionMarks[verified.id] = existingResult
-      ? Number(existingResult.mark)
-      : null
+    submissionMarks[verified.id] = existingResult ? Number(existingResult.mark) : null
 
     successMessage.value = `Verified ${verified.original_filename}.`
   } catch {
@@ -303,6 +299,7 @@ const saveSubmissionMark = async (submission: Submission) => {
       results.value.push(savedResult)
     }
 
+    emailRefreshKey.value += 1
     marks[savedResult.enrollment] = Number(savedResult.mark)
     submissionMarks[submission.id] = Number(savedResult.mark)
 
@@ -319,101 +316,80 @@ const saveSubmissionMark = async (submission: Submission) => {
   }
 }
 
-// --- Issue #8: Email Delivery State ---
-const emailRetryResultId = ref<number | null>(null)
-const isRetryingEmail = ref(false)
-const previewEnrollment = ref<number | null>(null)
+// --- Background Polling Logic ---
+let pollingTimeout: ReturnType<typeof setTimeout> | null = null
+let isPolling = false
+let isUnmounted = false
+let pollingController: AbortController | null = null
 
-const confirmEmailRetry = (resultId: number) => {
-  emailRetryResultId.value = resultId
-}
+const poll = async () => {
+  if (!isPolling) return
 
-const openPreview = (enrollment: number) => {
-  previewEnrollment.value = enrollment
-}
+  // Check if any submission is currently processing
+  const hasProcessing = submissions.value.some((s) => s.status === 'processing')
 
-const closePreview = () => {
-  previewEnrollment.value = null
-}
+  if (!hasProcessing) {
+    stopPolling()
+    return
+  }
 
-const cancelEmailRetry = () => {
-  emailRetryResultId.value = null
-}
-
-const executeEmailRetry = async () => {
-  if (!emailRetryResultId.value) return
-
-  isRetryingEmail.value = true
-  error.value = ''
-  successMessage.value = ''
-
+  const controller = new AbortController()
+  pollingController = controller
   try {
-    const updatedResult = await retryResultEmail(emailRetryResultId.value)
+    // Ask the server for this assessment only; keep the rollout fallback below.
+    const latestSubmissions = await fetchSubmissions(
+      { assessment: assessmentId },
+      controller.signal,
+    )
+    if (!isPolling || controller.signal.aborted) return
+    const assessmentSubs = latestSubmissions.filter((s) => s.assessment === assessmentId)
 
-    // Update the result in our local list to reflect the new email status
-    const index = results.value.findIndex((r) => r.id === updatedResult.id)
-    if (index >= 0) {
-      results.value[index] = updatedResult
+    // Update our local state with the newly processed data
+    for (const updated of assessmentSubs) {
+      const index = submissions.value.findIndex((s) => s.id === updated.id)
+      const existingSubmission = submissions.value[index]
+
+      if (existingSubmission && existingSubmission.status !== updated.status) {
+        submissions.value[index] = updated
+
+        // If it just finished processing, map the new results
+        if (
+          updated.status === 'matched' ||
+          updated.status === 'needs_verification' ||
+          updated.status === 'recognition_failed'
+        ) {
+          verificationSelections[updated.id] = updated.enrollment
+        }
+      }
     }
-
-    successMessage.value = `Retry queued for ${updatedResult.student_name}.`
   } catch {
-    error.value = 'Could not retry email delivery. Please try again later.'
+    // Silently ignore polling network errors
   } finally {
-    isRetryingEmail.value = false
-    emailRetryResultId.value = null
+    pollingController = null
+    // Re-arm only after completion, while this assessment still has work.
+    if (isPolling && submissions.value.some((s) => s.status === 'processing')) {
+      pollingTimeout = setTimeout(poll, 3000)
+    } else {
+      stopPolling()
+    }
   }
 }
 
-// --- Background Polling Logic ---
-let pollingInterval: ReturnType<typeof setInterval> | null = null
-
 const startPolling = () => {
-  if (pollingInterval) return
-
-  pollingInterval = setInterval(async () => {
-    // Check if any submission is currently processing
-    const hasProcessing = submissions.value.some(s => s.status === 'processing')
-
-    if (!hasProcessing) {
-      stopPolling()
-      return
-    }
-
-    try {
-      // Fetch latest statuses quietly in the background
-      const latestSubmissions = await fetchSubmissions()
-      const assessmentSubs = latestSubmissions.filter(s => s.assessment === assessmentId)
-
-      // Update our local state with the newly processed data
-     // Update our local state with the newly processed data
-      for (const updated of assessmentSubs) {
-        const index = submissions.value.findIndex(s => s.id === updated.id)
-        const existingSubmission = submissions.value[index]
-
-        // Explicitly check that existingSubmission exists to satisfy TypeScript
-        if (existingSubmission && existingSubmission.status !== updated.status) {
-          submissions.value[index] = updated
-
-          // If it just finished processing, map the new results
-          if (updated.status === 'matched' || updated.status === 'needs_verification') {
-            verificationSelections[updated.id] = updated.enrollment
-          }
-        }
-      }
-    } catch {
-      // Silently ignore polling network errors to prevent spamming the user
-    }
-  }, 3000) // Check every 3 seconds
+  if (isPolling || isUnmounted) return
+  isPolling = true
+  void poll()
 }
 
 const stopPolling = () => {
-  if (pollingInterval) {
-    clearInterval(pollingInterval)
-    pollingInterval = null
+  isPolling = false
+  pollingController?.abort()
+  pollingController = null
+  if (pollingTimeout) {
+    clearTimeout(pollingTimeout)
+    pollingTimeout = null
   }
 }
-
 // Prevent accidental navigation while uploading
 const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   if (isProcessingQueue.value) {
@@ -429,11 +405,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
-  stopPolling() // Clean up our ML polling interval when we leave the page
-})
-
-onMounted(() => {
-  void loadPage()
+  isUnmounted = true
+  stopPolling()
 })
 </script>
 
@@ -443,7 +416,9 @@ onMounted(() => {
     <p v-else-if="error && !assessment" class="error-box">{{ error }}</p>
 
     <template v-else-if="assessment">
-      <RouterLink class="back-link" :to="`/courses/${assessment.course}`">← Back to course</RouterLink>
+      <RouterLink class="back-link" :to="`/courses/${assessment.course}`"
+        >← Back to course</RouterLink
+      >
 
       <header class="page-header">
         <h1>{{ assessment.name }}</h1>
@@ -461,19 +436,17 @@ onMounted(() => {
             <dt>Course weight</dt>
             <dd>{{ assessment.weight }}%</dd>
           </div>
-          <div class="stat-item">
-            <dt>Email Release Policy</dt>
-            <dd>Manual</dd>
-          </div>
         </dl>
       </section>
+
+      <ResultEmailPanel :assessment-id="assessmentId" :refresh-key="emailRefreshKey" />
 
       <!-- Submissions Panel -->
       <section class="panel glass-panel">
         <h2>Submissions</h2>
         <p class="section-desc">
-          Upload a scanned submission. PostGrade will run recognition automatically and
-          either suggest a student match or place the file into verification.
+          Upload a scanned submission. PostGrade will run recognition automatically and either
+          suggest a student match or place the file into verification.
         </p>
 
         <div class="upload-controls">
@@ -507,12 +480,26 @@ onMounted(() => {
 
               <div class="status-info">
                 <span v-if="item.status === 'pending'" class="status-badge">Ready</span>
-                <span v-else-if="item.status === 'uploading'" class="status-badge text-warning">Uploading...</span>
-                <span v-else-if="item.status === 'success'" class="status-badge text-success">Success</span>
+                <span v-else-if="item.status === 'uploading'" class="status-badge text-warning"
+                  >Uploading...</span
+                >
+                <span v-else-if="item.status === 'success'" class="status-badge text-success"
+                  >Success</span
+                >
 
                 <div v-if="item.status === 'error'" class="error-group">
                   <span class="status-badge text-error">{{ item.message }}</span>
-                  <button class="btn-text btn-retry" @click="item.status = 'pending'; processUploadQueue()">Retry</button>
+                  <button
+                    class="btn-text btn-retry"
+                    @click="
+                      () => {
+                        item.status = 'pending'
+                        processUploadQueue()
+                      }
+                    "
+                  >
+                    Retry
+                  </button>
                 </div>
 
                 <button
@@ -549,8 +536,13 @@ onMounted(() => {
                 </td>
                 <td>
                   <template v-if="submission.enrollment">
-                    <span class="student-number">{{ studentByEnrollment.get(submission.enrollment)?.student_number ?? 'Unknown' }}</span>
-                    <span v-if="studentByEnrollment.get(submission.enrollment)" class="student-name">
+                    <span class="student-number">{{
+                      studentByEnrollment.get(submission.enrollment)?.student_number ?? 'Unknown'
+                    }}</span>
+                    <span
+                      v-if="studentByEnrollment.get(submission.enrollment)"
+                      class="student-name"
+                    >
                       — {{ studentByEnrollment.get(submission.enrollment)?.first_name }}
                       {{ studentByEnrollment.get(submission.enrollment)?.last_name }}
                     </span>
@@ -558,16 +550,26 @@ onMounted(() => {
                   <span v-else class="status-text warning-text">Not matched</span>
                 </td>
                 <td>
-                  <template v-if="submission.status === 'matched' || submission.status === 'needs_verification'">
+                  <template
+                    v-if="
+                      submission.status === 'matched' ||
+                      submission.status === 'needs_verification' ||
+                      submission.status === 'recognition_failed'
+                    "
+                  >
                     <div class="verification-controls">
-                      <select class="glass-input" v-model.number="verificationSelections[submission.id]">
+                      <select
+                        class="glass-input"
+                        v-model.number="verificationSelections[submission.id]"
+                      >
                         <option :value="null" disabled>Select student</option>
                         <option
                           v-for="student in students"
                           :key="student.enrollment"
                           :value="student.enrollment"
                         >
-                          {{ student.student_number }} — {{ student.first_name }} {{ student.last_name }}
+                          {{ student.student_number }} — {{ student.first_name }}
+                          {{ student.last_name }}
                         </option>
                       </select>
                       <button
@@ -612,9 +614,20 @@ onMounted(() => {
 
                   <template v-else-if="submission.status === 'marked'">
                     <span class="marked-text">
-                      <template v-if="submission.enrollment && resultByEnrollment.get(submission.enrollment)">
-                        <strong>{{ resultByEnrollment.get(submission.enrollment)?.mark }}</strong> / {{ assessment.max_mark }}
-                        <small class="percentage-muted">({{ Number(resultByEnrollment.get(submission.enrollment)?.percentage).toFixed(2) }}%)</small>
+                      <template
+                        v-if="
+                          submission.enrollment && resultByEnrollment.get(submission.enrollment)
+                        "
+                      >
+                        <strong>{{ resultByEnrollment.get(submission.enrollment)?.mark }}</strong> /
+                        {{ assessment.max_mark }}
+                        <small class="percentage-muted"
+                          >({{
+                            Number(
+                              resultByEnrollment.get(submission.enrollment)?.percentage,
+                            ).toFixed(2)
+                          }}%)</small
+                        >
                       </template>
                     </span>
                   </template>
@@ -630,7 +643,9 @@ onMounted(() => {
       <!-- Results Panel -->
       <section class="panel glass-panel">
         <h2>Results</h2>
-        <p v-if="students.length === 0" class="status-text">No students are enrolled in this course.</p>
+        <p v-if="students.length === 0" class="status-text">
+          No students are enrolled in this course.
+        </p>
 
         <div v-else class="table-wrap results-wrap">
           <table class="glass-table">
@@ -640,7 +655,6 @@ onMounted(() => {
                 <th>Name</th>
                 <th>Mark</th>
                 <th>Percentage</th>
-                <th>Email Status</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -668,52 +682,15 @@ onMounted(() => {
                       : '—'
                   }}
                 </td>
-                <td class="email-status-cell">
-                  <template v-if="resultByEnrollment.get(student.enrollment)?.email_status === 'sent'">
-                    <span class="status-badge text-success">Sent</span>
-                  </template>
-                  <template v-else-if="resultByEnrollment.get(student.enrollment)?.email_status === 'failed'">
-                    <span class="status-badge text-error">Failed</span>
-                    <button
-                      class="btn-text btn-retry"
-                      type="button"
-                      :disabled="isRetryingEmail"
-                      @click="confirmEmailRetry(resultByEnrollment.get(student.enrollment)?.id ?? 0)"
-                    >
-                      Retry
-                    </button>
-                    <small
-                      v-if="resultByEnrollment.get(student.enrollment)?.email_error"
-                      class="status-text warning-text"
-                    >
-                      {{ resultByEnrollment.get(student.enrollment)?.email_error }}
-                    </small>
-                  </template>
-                  <template v-else-if="resultByEnrollment.get(student.enrollment)?.email_status === 'queued'">
-                    <span class="status-badge text-warning">Queued</span>
-                  </template>
-                  <template v-else>
-                    <span class="status-badge">Pending</span>
-                  </template>
-                </td>
                 <td>
-                  <div class="action-buttons">
-                    <button
-                      class="btn-primary"
-                      type="button"
-                      :disabled="savingEnrollment === student.enrollment"
-                      @click="saveMark(student)"
-                    >
-                      {{ savingEnrollment === student.enrollment ? 'Saving…' : 'Save' }}
-                    </button>
-                    <button
-                      class="btn-text preview-btn"
-                      type="button"
-                      @click="openPreview(student.enrollment)"
-                    >
-                      Preview Email
-                    </button>
-                  </div>
+                  <button
+                    class="btn-primary"
+                    type="button"
+                    :disabled="savingEnrollment === student.enrollment"
+                    @click="saveMark(student)"
+                  >
+                    {{ savingEnrollment === student.enrollment ? 'Saving…' : 'Save' }}
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -721,80 +698,9 @@ onMounted(() => {
         </div>
       </section>
 
-     <AlertBox v-if="successMessage" type="success">{{ successMessage }}</AlertBox>
-    <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
+      <AlertBox v-if="successMessage" type="success">{{ successMessage }}</AlertBox>
+      <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
     </template>
-
-    <div v-if="emailRetryResultId !== null" class="modal-overlay" role="dialog" aria-modal="true">
-      <div class="panel glass-panel modal-content">
-        <h3>Retry Email Delivery?</h3>
-        <p class="warning-text">
-          <strong>Warning:</strong> Are you sure you want to explicitly resend this email?
-          Deliberate retries could result in duplicate emails to the student if the normal delivery was simply delayed by the network.
-        </p>
-
-        <div class="modal-actions">
-          <button class="btn-text" type="button" @click="cancelEmailRetry()">
-            Cancel
-          </button>
-          <button
-            class="btn-primary"
-            type="button"
-            :disabled="isRetryingEmail"
-            @click="executeEmailRetry()"
-          >
-            {{ isRetryingEmail ? 'Sending...' : 'Yes, retry email' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div
-      v-if="previewEnrollment !== null"
-      class="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      @click.self="closePreview()"
-    >
-      <div class="panel glass-panel modal-content email-preview-modal" @click.stop>
-        <h3>Email Preview</h3>
-
-        <div class="email-headers">
-          <p>
-            <strong>To:</strong>
-            {{ (studentByEnrollment.get(previewEnrollment) as any)?.email ?? 'student@example.com' }}
-          </p>
-          <p>
-            <strong>Subject:</strong>
-            {{ assessment?.name }}
-          </p>
-        </div>
-
-        <div class="email-body">
-          <p>
-            Hello {{ (studentByEnrollment.get(previewEnrollment) as any)?.first_name ?? 'Student' }},
-          </p>
-
-          <div class="mock-grade-box">
-            <template v-if="resultByEnrollment.get(previewEnrollment)">
-              <span class="mock-mark">
-                {{ resultByEnrollment.get(previewEnrollment)?.mark ?? '—' }} / {{ assessment?.max_mark ?? '—' }}
-              </span>
-              <span class="text-muted">
-                {{ `${Number(resultByEnrollment.get(previewEnrollment)?.percentage).toFixed(2)}%` }}
-              </span>
-            </template>
-            <span v-else class="text-muted">No mark saved yet</span>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn-primary" type="button" @click="closePreview()">
-            Done
-          </button>
-        </div>
-      </div>
-    </div>
   </main>
 </template>
 
@@ -811,7 +717,9 @@ onMounted(() => {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .back-link:hover {
@@ -855,60 +763,7 @@ onMounted(() => {
 /* Stats panel styling */
 .stats-panel {
   padding: 1.5rem 2rem;
-  background: rgba(0,0,0,0.2);
-}
-
-.email-status-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.text-muted { color: var(--text-muted); }
-
-.btn-retry-email {
-  color: var(--pg-blue, #3b82f6);
-  font-size: 0.8rem;
-  text-decoration: underline;
-  padding: 0;
-}
-
-.email-error-text {
-  display: block;
-  color: var(--status-warning);
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  max-width: 450px;
-  border: 1px solid var(--status-warning);
-}
-
-.modal-content h3 {
-  color: var(--status-warning);
-  margin-top: 0;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  background: var(--surface-header);
 }
 
 .stats-grid {
@@ -947,7 +802,7 @@ onMounted(() => {
 }
 
 .file-input::file-selector-button {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--surface-input);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -987,7 +842,7 @@ onMounted(() => {
   overflow-x: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--surface-inset);
 }
 
 .glass-table {
@@ -999,7 +854,7 @@ onMounted(() => {
   padding: 1rem;
   border-bottom: 1px solid var(--glass-border);
   text-align: left;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
   color: var(--accent-green);
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -1009,7 +864,7 @@ onMounted(() => {
 
 .glass-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--table-divider);
   text-align: left;
   vertical-align: middle;
   color: var(--text-primary);
@@ -1021,7 +876,7 @@ onMounted(() => {
 }
 
 .glass-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-hover);
 }
 
 .filename-cell {
@@ -1042,7 +897,7 @@ onMounted(() => {
 /* Custom dropdown arrow for verification */
 select.glass-input {
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
   background-repeat: no-repeat;
   background-position: right 0.5rem top 50%;
   background-size: 0.65rem auto;
@@ -1050,7 +905,7 @@ select.glass-input {
   min-width: 180px;
 }
 select.glass-input option {
-  background: #151f32;
+  background: var(--surface-option);
   color: var(--text-primary);
 }
 
@@ -1093,7 +948,7 @@ select.glass-input option {
 .upload-queue {
   margin: 1.5rem 0 2.5rem;
   padding: 1.5rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-header);
 }
 
 .upload-queue h3 {
@@ -1121,8 +976,12 @@ select.glass-input option {
   border-radius: var(--radius-md);
 }
 
-.queue-item.success { border-color: rgba(34, 197, 94, 0.3); }
-.queue-item.error { border-color: rgba(239, 68, 68, 0.3); }
+.queue-item.success {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.queue-item.error {
+  border-color: rgba(239, 68, 68, 0.3);
+}
 
 .file-info {
   display: flex;
@@ -1130,8 +989,14 @@ select.glass-input option {
   gap: 0.25rem;
 }
 
-.file-info strong { color: var(--text-primary); font-size: 0.95rem; }
-.file-size { color: var(--text-secondary); font-size: 0.85rem; }
+.file-info strong {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+.file-size {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
 
 .status-info {
   display: flex;
@@ -1146,12 +1011,18 @@ select.glass-input option {
   letter-spacing: 0.05em;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  background: rgba(0,0,0,0.2);
+  background: var(--surface-header);
 }
 
-.text-success { color: #86efac; }
-.text-warning { color: #fde047; }
-.text-error { color: #fca5a5; }
+.text-success {
+  color: var(--status-success-text);
+}
+.text-warning {
+  color: var(--status-warning-text);
+}
+.text-error {
+  color: var(--status-error-text);
+}
 
 .error-group {
   display: flex;
@@ -1167,68 +1038,21 @@ select.glass-input option {
   padding: 0.25rem;
 }
 
-.btn-text:hover { color: var(--text-primary); }
-.btn-retry { color: var(--pg-blue, #3b82f6); text-decoration: underline; }
+.btn-text:hover {
+  color: var(--text-primary);
+}
+.btn-retry {
+  color: var(--pg-blue, #3b82f6);
+  text-decoration: underline;
+}
 
 .error-box {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  color: var(--status-error-text);
   padding: 1.5rem;
   border-radius: var(--radius-md);
   margin-bottom: 2rem;
   font-weight: 500;
-}
-.action-buttons {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.preview-btn {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.email-preview-modal {
-  max-width: 500px;
-  width: 100%;
-}
-
-.email-headers {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 1rem;
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  border-bottom: 1px solid var(--glass-border);
-}
-
-.email-headers p {
-  margin: 0.25rem 0;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.email-body {
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
-  color: var(--text-primary);
-  line-height: 1.6;
-}
-
-.mock-grade-box {
-  margin: 1.5rem 0;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-left: 4px solid var(--accent-green);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.mock-mark {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--accent-green);
 }
 </style>

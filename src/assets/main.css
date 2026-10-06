@@ -16,7 +16,7 @@
   /* 3. Typography & Contrast (Matching the crisp white "Post" text) */
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #8391a7;
 
   /* 4. Brand & Action Colors (The exact PostGrade green) */
   --accent-green: #5ba65b;
@@ -29,6 +29,24 @@
   --status-success: #5ba65b;
   --status-warning: #f59e0b;
   --status-error: #ef4444;
+
+  --surface-inset: rgba(0, 0, 0, 0.15);
+  --surface-header: rgba(0, 0, 0, 0.2);
+  --surface-input: rgba(0, 0, 0, 0.25);
+  --surface-input-focus: rgba(0, 0, 0, 0.4);
+  --surface-option: #151f32;
+  --surface-hover: rgba(255, 255, 255, 0.02);
+  --table-divider: rgba(255, 255, 255, 0.05);
+  --status-success-text: #86efac;
+  --status-warning-text: #fde047;
+  --status-error-text: #fca5a5;
+  --status-info-text: #93c5fd;
+  --status-match-text: #22d3ee;
+  --status-verified-text: #c084fc;
+  --pg-blue: #60a5fa;
+  --button-danger: #b91c1c;
+  --button-danger-hover: #991b1b;
+  --nav-background: #0b1121;
 
   /* 5. Standardized Spacing */
   --space-sm: 0.5rem;
@@ -47,11 +65,49 @@ body {
   background: var(--bg-gradient);
   background-attachment: fixed;
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0.015em;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
+body.light-theme {
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-bg-hover: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(15, 23, 42, 0.12);
+  --glass-border-highlight: rgba(91, 166, 91, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.1);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #475569;
+  --accent-green: #286a36;
+  --accent-green-hover: #20582c;
+  --status-success: #166534;
+  --status-warning: #854d0e;
+  --status-error: #b91c1c;
+  --status-success-text: #166534;
+  --status-warning-text: #854d0e;
+  --status-error-text: #b91c1c;
+  --status-info-text: #1d4ed8;
+  --status-match-text: #155e75;
+  --status-verified-text: #6b21a8;
+  --pg-blue: #1d4ed8;
+  --surface-inset: #f1f5f9;
+  --surface-header: #e2e8f0;
+  --surface-input: #ffffff;
+  --surface-input-focus: #ffffff;
+  --surface-option: #ffffff;
+  --surface-hover: #e2e8f0;
+  --table-divider: #cbd5e1;
+  --nav-background: #ffffff;
+}
 /* Reusable Glass Utility Classes */
 .glass-panel {
   background: var(--glass-bg);
@@ -64,18 +120,20 @@ body {
 }
 
 .glass-input {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--surface-input);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   padding: var(--space-sm) var(--space-md);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .glass-input:focus {
   outline: none;
   border-color: var(--accent-green);
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface-input-focus);
 }
 
 /* Base button styling using the brand green */
@@ -87,7 +145,9 @@ body {
   border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
 }
 
 .btn-primary:hover {
@@ -98,4 +158,9 @@ body {
   outline: 2px solid var(--pg-blue, #3b82f6) !important;
   outline-offset: 2px !important;
   border-radius: inherit;
+}
+
+.glass-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
 }
