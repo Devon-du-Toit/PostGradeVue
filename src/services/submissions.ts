@@ -38,6 +38,34 @@ export const uploadSubmission = async (assessmentId: number, file: File) => {
   return response.data
 }
 
+export const fetchSubmission = async (submissionId: number) => {
+  const response = await api.get<Submission>(`submissions/${submissionId}/`)
+  return response.data
+}
+
+// Protected files need the login token, which <img src> can't send, so they
+// are fetched as blobs and shown through object URLs.
+export const fetchRecognitionImage = async (submissionId: number, signal?: AbortSignal) => {
+  const response = await api.get<Blob>(`submissions/${submissionId}/recognition-image/`, {
+    responseType: 'blob',
+    signal,
+  })
+  return response.data
+}
+
+export const fetchSubmissionFile = async (submissionId: number, signal?: AbortSignal) => {
+  const response = await api.get<Blob>(`submissions/${submissionId}/file/`, {
+    responseType: 'blob',
+    signal,
+  })
+  return response.data
+}
+
+export const retryRecognition = async (submissionId: number) => {
+  const response = await api.post<Submission>(`submissions/${submissionId}/retry-recognition/`)
+  return response.data
+}
+
 export const verifySubmission = async (submissionId: number, enrollment: number) => {
   const response = await api.post<Submission>(`submissions/${submissionId}/verify/`, {
     enrollment,
