@@ -7,6 +7,19 @@ export type SubmissionStatus =
   | 'verified'
   | 'marked'
 
+export type RecognitionMethod = 'ocr' | 'bubble'
+export interface RecognitionCapabilities {
+  methods: { value: RecognitionMethod; label: string }[]
+  bubble_templates: string[]
+}
+export interface BubbleColumnScore {
+  column: number
+  scores: number[]
+  digit: number | null
+  margin: number
+  reason: 'multiple' | 'empty' | 'unreadable' | null
+}
+
 export type RecognitionOutcome =
   'matched' | 'no_match' | 'no_candidate' | 'region_not_found' | 'image_unusable' | 'error'
 
@@ -22,6 +35,8 @@ export interface RecognitionEvidence {
   method: 'ocr' | 'bubble'
   outcome: RecognitionOutcome
   processing_version: string
+  template_version?: string
+  column_scores?: BubbleColumnScore[]
   raw_text: string
   // Ambiguous positions are written as "X". A string: keeps leading zeros.
   raw_candidate: string
@@ -48,6 +63,7 @@ export interface RecognitionJob {
 export interface Submission {
   id: number
   assessment: number
+  recognition_method?: RecognitionMethod
   enrollment: number | null
   file: string
   original_filename: string

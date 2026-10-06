@@ -84,3 +84,9 @@ The backend must allow the frontend's origin (`CORS_ALLOWED_ORIGINS` in the Djan
 ### Hosting
 
 The router uses HTML5 history mode (`/courses/3`, not `/#/courses/3`). The host must answer every unknown path with `index.html` (an "SPA fallback"); otherwise opening or refreshing a nested page gives a 404. Most static hosts have a setting for this (e.g. a rewrite of `/*` to `/index.html`).
+
+### Student-number recognition method
+
+On an assessment, choose **Handwritten digits (OCR)** or **Filled bubbles** before selecting files. The upload queue keeps that choice for each file, even if the selector changes for later files. Retries keep the same choice. Bubble processing never reads handwritten digits; it recognizes one filled circle per column and suggests only an exact class enrollment match. Uncertain columns require manual review.
+
+The backend bubble-recognition release must be deployed first (including migrations and the recognition worker). The UI checks `/api/submissions/recognition-methods/` and disables the bubble choice on older backends. The review panel shows the rectified grid, decoded number, ambiguity reasons and per-column readings. The supported layouts currently contain eight columns and rows 0–9.

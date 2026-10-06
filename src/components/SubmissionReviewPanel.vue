@@ -219,6 +219,42 @@ onBeforeUnmount(() => {
           <li v-for="detail in summary.details" :key="detail">{{ detail }}</li>
         </ul>
 
+        <details
+          v-if="
+            submission.recognition?.method === 'bubble' &&
+            submission.recognition.column_scores?.length
+          "
+        >
+          <summary>Bubble column readings</summary>
+          <p>Only filled bubbles are read. Written digits above the grid are ignored.</p>
+          <table class="bubble-columns">
+            <thead>
+              <tr>
+                <th>Column</th>
+                <th>Digit</th>
+                <th>Reading</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="column in submission.recognition.column_scores" :key="column.column">
+                <td>{{ column.column }}</td>
+                <td>{{ column.digit ?? 'Uncertain' }}</td>
+                <td>
+                  {{
+                    column.reason === 'multiple'
+                      ? 'Multiple filled bubbles'
+                      : column.reason === 'empty'
+                        ? 'No filled bubble'
+                        : column.reason === 'unreadable'
+                          ? 'Uncertain marks'
+                          : 'One clear fill'
+                  }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+
         <p v-if="evidence?.raw_text" class="raw-text">
           Text found: <q>{{ evidence.raw_text }}</q>
         </p>
@@ -334,6 +370,14 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.bubble-columns {
+  width: 100%;
+  text-align: left;
+}
+.bubble-columns th,
+.bubble-columns td {
+  padding: 0.3rem;
+}
 .review-panel {
   padding: 1.5rem;
   margin-bottom: 2rem;

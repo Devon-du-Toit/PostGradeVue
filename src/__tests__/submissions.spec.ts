@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import api from '@/services/api'
 import {
   fetchSubmissions,
+  fetchRecognitionMethods,
   fetchVerificationQueue,
   markSubmission,
   UPLOAD_TIMEOUT_MS,
@@ -89,6 +90,21 @@ describe('submission service', () => {
     expect(formData).toBeInstanceOf(FormData)
     expect((formData as FormData).get('assessment')).toBe('12')
     expect((formData as FormData).get('file')).toBe(file)
+    expect((formData as FormData).get('recognition_method')).toBe('ocr')
+  })
+
+  it('uploads bubbles with an explicit method instead of OCR', async () => {
+    const file = new File(['example'], 'bubbles.pdf', { type: 'application/pdf' })
+    mockedApi.post.mockResolvedValueOnce({ data: { id: 3 } })
+    await uploadSubmission(12, file, 'bubble')
+    expect((mockedApi.post.mock.calls[0]![1] as FormData).get('recognition_method')).toBe('bubble')
+  })
+
+  it('checks advertised recognition methods before offering bubbles', async () => {
+    const methods = { methods: [{ value: 'ocr' }, { value: 'bubble' }], bubble_templates: [] }
+    mockedApi.get.mockResolvedValueOnce({ data: methods })
+    expect(await fetchRecognitionMethods()).toEqual(methods)
+    expect(mockedApi.get).toHaveBeenCalledWith('submissions/recognition-methods/')
   })
 
   it('verifies a submission', async () => {

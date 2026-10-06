@@ -10,6 +10,7 @@ import {
 } from '@/services/results'
 import {
   fetchSubmissions,
+  fetchRecognitionMethods,
   markSubmission,
   uploadSubmission,
   verifySubmission,
@@ -30,6 +31,9 @@ vi.mock('@/services/results', () => ({
   updateAssessmentResult: vi.fn<typeof updateAssessmentResult>(),
 }))
 vi.mock('@/services/submissions', () => ({
+  fetchRecognitionMethods: vi
+    .fn<typeof fetchRecognitionMethods>()
+    .mockResolvedValue({ methods: [], bubble_templates: [] }),
   fetchSubmissions: vi.fn<typeof fetchSubmissions>(),
   markSubmission: vi.fn<typeof markSubmission>(),
   uploadSubmission: vi.fn<typeof uploadSubmission>(),
@@ -61,6 +65,13 @@ describe('assessment polling', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.resetAllMocks()
+    vi.mocked(fetchRecognitionMethods).mockResolvedValue({
+      methods: [
+        { value: 'ocr', label: 'OCR' },
+        { value: 'bubble', label: 'Filled bubbles' },
+      ],
+      bubble_templates: [],
+    })
     vi.mocked(fetchAssessment).mockResolvedValue({
       id: 7,
       course: 1,
@@ -78,6 +89,33 @@ describe('assessment polling', () => {
   afterEach(() => {
     mounted.splice(0).forEach((wrapper) => wrapper.unmount())
     vi.useRealTimers()
+  })
+
+  it('captures the selected method per queued file, even if the selector changes', async () => {
+    fetch.mockResolvedValue([])
+    const wrapper = await mountPage()
+    const selector = wrapper.get('.recognition-method-label select')
+    await selector.setValue('bubble')
+    const input = wrapper.get('input[type="file"]')
+    const file = new File(['synthetic'], 'bubbles.pdf', { type: 'application/pdf' })
+    Object.defineProperty(input.element, 'files', { value: [file], configurable: true })
+    await input.trigger('change')
+    await selector.setValue('ocr')
+    vi.mocked(uploadSubmission).mockResolvedValue(submission(7, 'needs_verification'))
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Upload queue')!
+      .trigger('click')
+    await flushPromises()
+    expect(uploadSubmission).toHaveBeenCalledWith(7, file, 'bubble')
+  })
+
+  it('does not offer bubble processing when the backend has no method capability', async () => {
+    fetch.mockResolvedValue([])
+    vi.mocked(fetchRecognitionMethods).mockRejectedValue(new Error('not deployed'))
+    const wrapper = await mountPage()
+    expect(wrapper.get('option[value="bubble"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('Bubble recognition is unavailable')
   })
 
   it('loads once and scopes every poll, even if the backend returns other assessments', async () => {

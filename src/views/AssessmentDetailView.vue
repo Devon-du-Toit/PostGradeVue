@@ -11,6 +11,7 @@ import {
 } from '@/services/results'
 import {
   fetchSubmissions,
+  fetchRecognitionMethods,
   markSubmission,
   uploadSubmission,
   verifySubmission,
@@ -18,7 +19,7 @@ import {
 import type { Assessment } from '@/types/assessment'
 import type { GradebookStudent } from '@/types/gradebook'
 import type { Result } from '@/types/result'
-import type { Submission } from '@/types/submission'
+import type { RecognitionMethod, Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import ResultEmailPanel from '@/components/ResultEmailPanel.vue'
@@ -26,6 +27,7 @@ import ResultEmailPanel from '@/components/ResultEmailPanel.vue'
 interface QueuedUpload {
   id: string
   file: File
+  recognitionMethod: RecognitionMethod
   status: 'pending' | 'uploading' | 'processing' | 'success' | 'error'
   message?: string
 }
@@ -43,6 +45,21 @@ const uploadQueue = ref<QueuedUpload[]>([])
 const verifyingSubmissionId = ref<number | null>(null)
 const markingSubmissionId = ref<number | null>(null)
 const isProcessingQueue = ref(false)
+const recognitionMethod = ref<RecognitionMethod>('ocr')
+const bubbleAvailable = ref(false)
+const methodMessage = ref('')
+const loadRecognitionMethods = async () => {
+  try {
+    const capabilities = await fetchRecognitionMethods()
+    bubbleAvailable.value = capabilities.methods.some((method) => method.value === 'bubble')
+    if (!bubbleAvailable.value)
+      methodMessage.value =
+        'Bubble recognition is unavailable. Use handwritten digits or try again later.'
+  } catch {
+    methodMessage.value =
+      'Bubble recognition is unavailable. Use handwritten digits or try again later.'
+  }
+}
 const error = ref('')
 const successMessage = ref('')
 const emailRefreshKey = ref(0)
@@ -166,6 +183,7 @@ const handleSubmissionFileChange = (event: Event) => {
       uploadQueue.value.push({
         id: crypto.randomUUID(),
         file,
+        recognitionMethod: recognitionMethod.value,
         status: 'error',
         message: 'Unsupported format. Use PDF, JPG, or PNG.',
       })
@@ -177,6 +195,7 @@ const handleSubmissionFileChange = (event: Event) => {
       uploadQueue.value.push({
         id: crypto.randomUUID(),
         file,
+        recognitionMethod: recognitionMethod.value,
         status: 'error',
         message: 'File too large (max 15 MB).',
       })
@@ -186,6 +205,7 @@ const handleSubmissionFileChange = (event: Event) => {
     uploadQueue.value.push({
       id: crypto.randomUUID(),
       file,
+      recognitionMethod: recognitionMethod.value,
       status: 'pending',
     })
   })
@@ -210,7 +230,7 @@ const processUploadQueue = async () => {
     item.message = undefined
 
     try {
-      const submission = await uploadSubmission(assessmentId, item.file)
+      const submission = await uploadSubmission(assessmentId, item.file, item.recognitionMethod)
 
       // Update local state
       item.status = 'success'
@@ -400,6 +420,7 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
+  void loadRecognitionMethods()
   void loadPage()
 })
 
@@ -449,6 +470,18 @@ onUnmounted(() => {
           suggest a student match or place the file into verification.
         </p>
 
+        <label class="recognition-method-label">
+          Student number format
+          <select class="glass-input" v-model="recognitionMethod" :disabled="isProcessingQueue">
+            <option value="ocr">Handwritten digits (OCR)</option>
+            <option value="bubble" :disabled="!bubbleAvailable">Filled bubbles</option>
+          </select>
+        </label>
+        <p class="section-desc">
+          Choose the format before selecting files. Bubble recognition reads only filled bubbles,
+          never the written digits.
+        </p>
+        <p v-if="methodMessage" class="section-desc">{{ methodMessage }}</p>
         <div class="upload-controls">
           <!-- Added 'multiple' attribute -->
           <input
@@ -475,6 +508,11 @@ onUnmounted(() => {
             <li v-for="item in uploadQueue" :key="item.id" class="queue-item" :class="item.status">
               <div class="file-info">
                 <strong>{{ item.file.name }}</strong>
+                <span>{{
+                  item.recognitionMethod === 'bubble'
+                    ? 'Filled bubbles'
+                    : 'Handwritten digits (OCR)'
+                }}</span>
                 <span class="file-size">{{ (item.file.size / 1024 / 1024).toFixed(2) }} MB</span>
               </div>
 
