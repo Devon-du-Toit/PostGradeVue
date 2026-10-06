@@ -55,7 +55,26 @@ const logout = async () => {
             :aria-pressed="isLightMode"
             @click="toggleTheme"
           >
-            {{ isLightMode ? '🌙 Dark Mode' : '☀️ Light Mode' }}
+            <svg
+              class="theme-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path v-if="isLightMode" d="M20.9 13.3A9 9 0 0 1 10.7 3.1a9 9 0 1 0 10.2 10.2Z" />
+              <template v-else>
+                <circle cx="12" cy="12" r="4" />
+                <path
+                  d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"
+                />
+              </template>
+            </svg>
+            <span>{{ isLightMode ? 'Dark Mode' : 'Light Mode' }}</span>
           </button>
           <button class="button-secondary button-small" type="button" @click="logout">
             Log out
@@ -69,6 +88,16 @@ const logout = async () => {
 </template>
 
 <style scoped>
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.theme-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
 .app-root {
   min-height: 100vh;
 }
