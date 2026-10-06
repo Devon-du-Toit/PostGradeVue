@@ -23,8 +23,10 @@ onMounted(() => {
 })
 
 const logout = async () => {
-  authStore.logout()
-  await router.push('/login')
+  const revoked = await authStore.logout()
+  if (!revoked && !authStore.accessToken && router.currentRoute.value.name === 'login') {
+    await router.push({ name: 'login', query: { logout: 'local' } })
+  }
 }
 </script>
 

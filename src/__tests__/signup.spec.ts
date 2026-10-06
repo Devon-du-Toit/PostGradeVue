@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import LoginView from '@/views/LoginView.vue'
-import { registerUser } from '@/services/registration'
+import { registerUser, fetchRegistrationPolicy } from '@/services/registration'
 
 const { push, login, route } = vi.hoisted(() => ({
   push: vi.fn<(destination: unknown) => Promise<void>>(),
@@ -14,7 +14,10 @@ vi.mock('vue-router', async (original) => ({
   useRoute: () => route,
 }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ login }) }))
-vi.mock('@/services/registration', () => ({ registerUser: vi.fn<typeof registerUser>() }))
+vi.mock('@/services/registration', () => ({
+  registerUser: vi.fn<typeof registerUser>(),
+  fetchRegistrationPolicy: vi.fn<typeof fetchRegistrationPolicy>(),
+}))
 
 const mounted: ReturnType<typeof mount>[] = []
 const signupPage = async () => {
@@ -23,6 +26,7 @@ const signupPage = async () => {
     global: { stubs: { RouterLink: true } },
   })
   mounted.push(wrapper)
+  await flushPromises()
   await wrapper.get('#first-name').setValue(' Synthetic ')
   await wrapper.get('#last-name').setValue(' Lecturer ')
   await wrapper.get('#email').setValue(' synthetic@example.invalid ')
@@ -34,6 +38,7 @@ const signupPage = async () => {
 describe('sign up', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    vi.mocked(fetchRegistrationPolicy).mockResolvedValue(true)
     route.query = {}
   })
   afterEach(() => mounted.splice(0).forEach((wrapper) => wrapper.unmount()))
@@ -103,11 +108,36 @@ describe('sign up', () => {
     await flushPromises()
   })
 
-  it('shows the registration confirmation on sign-in', () => {
+  it('shows the registration confirmation on sign-in', async () => {
     route.query = { registered: '1' }
     const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } })
     mounted.push(wrapper)
+    await flushPromises()
     expect(wrapper.get('[role="status"]').text()).toContain('Your account has been created.')
     expect(wrapper.find('#first-name').exists()).toBe(false)
+  })
+  it('shows a closed-registration message and hides the signup form', async () => {
+    vi.mocked(fetchRegistrationPolicy).mockResolvedValue(false)
+    const wrapper = mount(LoginView, {
+      props: { mode: 'signup' },
+      global: { stubs: { RouterLink: true } },
+    })
+    mounted.push(wrapper)
+    await flushPromises()
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Registration is closed.')
+    expect(registerUser).not.toHaveBeenCalled()
+  })
+
+  it('shows policy errors without enabling signup', async () => {
+    vi.mocked(fetchRegistrationPolicy).mockRejectedValue(new Error('offline'))
+    const wrapper = mount(LoginView, {
+      props: { mode: 'signup' },
+      global: { stubs: { RouterLink: true } },
+    })
+    mounted.push(wrapper)
+    await flushPromises()
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Could not check account registration.')
   })
 })

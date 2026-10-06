@@ -77,4 +77,85 @@ describe('token refresh', () => {
     expect(push).toHaveBeenCalledWith({ name: 'login', query: { redirect: '/courses' } })
     expect(localStorage.getItem('refreshToken')).toBeNull()
   })
+  it('persists rotated tokens and restores them after application reload', async () => {
+    vi.spyOn(axios, 'post').mockResolvedValue({ data: { access: 'fresh', refresh: 'rotated' } })
+    await api.get('courses/')
+    expect(useAuthStore().refreshToken).toBe('rotated')
+    expect(localStorage.getItem('refreshToken')).toBe('rotated')
+    setActivePinia(createPinia())
+    expect(useAuthStore().accessToken).toBe('fresh')
+    expect(useAuthStore().refreshToken).toBe('rotated')
+  })
+
+  it('coordinates direct refresh calls through the same promise', async () => {
+    const post = vi
+      .spyOn(axios, 'post')
+      .mockResolvedValue({ data: { access: 'fresh', refresh: 'rotated' } })
+    const store = useAuthStore()
+    const first = store.refreshAccessToken()
+    const second = store.refreshAccessToken()
+    expect(await Promise.all([first, second])).toEqual(['fresh', 'fresh'])
+    expect(post).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not restore tokens when logout happens during rotation', async () => {
+    let finish!: (response: { data: { access: string; refresh: string } }) => void
+    const post = vi.spyOn(axios, 'post').mockImplementation((url) =>
+      String(url).endsWith('auth/refresh/')
+        ? new Promise((resolve) => {
+            finish = resolve
+          })
+        : Promise.resolve({ data: {} }),
+    )
+    const store = useAuthStore()
+    const refreshing = store.refreshAccessToken()
+    await store.logout()
+    finish({ data: { access: 'fresh', refresh: 'rotated-after-logout' } })
+    expect(await refreshing).toBeNull()
+    expect(store.accessToken).toBeNull()
+    expect(store.refreshToken).toBeNull()
+    expect(localStorage.getItem('accessToken')).toBeNull()
+    expect(localStorage.getItem('refreshToken')).toBeNull()
+    expect(
+      post.mock.calls.some(
+        ([url, body]) =>
+          String(url).endsWith('auth/logout/') &&
+          (body as { refresh: string }).refresh === 'rotated-after-logout',
+      ),
+    ).toBe(true)
+  })
+
+  it('clears the local session even if server logout is unavailable', async () => {
+    vi.spyOn(axios, 'post').mockRejectedValue(new Error('offline'))
+    const store = useAuthStore()
+    expect(await store.logout()).toBe(false)
+    expect(store.accessToken).toBeNull()
+    expect(store.refreshToken).toBeNull()
+    expect(localStorage.getItem('refreshToken')).toBeNull()
+  })
+
+  it('ignores a user response that arrives after logout', async () => {
+    let finish!: (response: { data: { id: number } }) => void
+    vi.spyOn(api, 'get').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    vi.spyOn(axios, 'post').mockResolvedValue({ data: {} })
+    const store = useAuthStore()
+    const fetching = store.fetchUser()
+    await store.logout()
+    finish({ data: { id: 1 } })
+    await fetching
+    expect(store.user).toBeNull()
+  })
+
+  it('does not refresh a session on incorrect login credentials', async () => {
+    const post = vi.spyOn(axios, 'post')
+    await expect(
+      api.post('auth/login/', { email: 'test@example.invalid', password: 'wrong' }),
+    ).rejects.toBeInstanceOf(AxiosError)
+    expect(post).not.toHaveBeenCalled()
+  })
 })

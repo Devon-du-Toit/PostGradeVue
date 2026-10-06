@@ -100,3 +100,12 @@ Opening `/` shows the sign-in form directly; users with a stored session go to t
 Create an assessment with its name and date. Upload scripts using OCR or filled bubbles, verify the enrolled student, then select **Email script**. The message attaches that verified file; no numeric mark is needed. Inspect delivery status separately, approve when configured, or retry a failed current record. Uncertain delivery requires explicit duplicate-send confirmation.
 
 The backend and frontend changes must be deployed together. The backend must expose course-filtered enrollments, `POST /api/submissions/{id}/email/`, assessment `script-emails/` lists and `script-emails/{id}/approve/`/`retry/`. Old mark/result/gradebook/result-email endpoints are removed. Apply the backend migrations and configure `SCRIPT_EMAIL_RELEASE_POLICY` before starting its mail worker. See the backend DOCS/MARKS_REMOVAL.md runbook for database backup and migration effects.
+
+
+### Account lifecycle and sessions (backend #8 / Vue #5)
+
+Deploy this Vue auth update before the matching backend account-lifecycle PR enables rotation. Refresh stores both returned tokens in the auth store and localStorage; one refresh runs per tab. Logout clears local state immediately, sends the refresh token to auth/logout/, and rejects/revokes a rotated response arriving after logout. A server/network error during logout reports that server revocation could not be confirmed. Existing access tokens can remain valid for their remaining five minutes; password resets and account deactivation invalidate sessions on the backend.
+
+Signup follows GET auth/registration-policy/. Development remains open with DEBUG=true; production needs ALLOW_REGISTRATION=true explicitly. A closed policy hides signup and directs users to an administrator. During deployment, a 404 from older backends preserves their existing open signup policy. Throttled login/signup requests show errors; invalid login credentials never trigger token refresh.
+
+Run backend migrations for the token blacklist and shared auth throttle cache; pre-release sessions require users to sign in again. The backend DOCS/PERMISSIONS.md documents expiry, proxy limits and the endpoint permission matrix. Tokens remain in localStorage; approved cookie storage, CSRF/CORS changes and cross-tab coordination are bounded follow-up [Vue #36](https://github.com/Devon-du-Toit/PostGradeVue/issues/36).

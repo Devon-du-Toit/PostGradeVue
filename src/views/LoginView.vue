@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 import AlertBox from '@/components/AlertBox.vue'
-import { registerUser } from '@/services/registration'
+import { registerUser, fetchRegistrationPolicy } from '@/services/registration'
 
 const props = withDefaults(defineProps<{ mode?: 'login' | 'signup' }>(), { mode: 'login' })
 const signingUp = computed(() => props.mode === 'signup')
+const registrationOpen = ref<boolean | null>(null)
+onMounted(async () => {
+  try {
+    registrationOpen.value = await fetchRegistrationPolicy()
+  } catch {
+    error.value = 'Could not check account registration. Please reload and try again.'
+  }
+})
 const firstName = ref('')
 const lastName = ref('')
 const confirmPassword = ref('')
@@ -31,7 +39,7 @@ watch(
 )
 
 const signup = async () => {
-  if (loading.value) return
+  if (loading.value || registrationOpen.value !== true) return
   error.value = ''
   if (password.value !== confirmPassword.value) {
     error.value = 'Passwords do not match.'
@@ -131,7 +139,18 @@ const login = async () => {
           >Your account has been created. Sign in to continue.</AlertBox
         >
 
-        <form @submit.prevent="signingUp ? signup() : login()">
+        <AlertBox v-if="signingUp && registrationOpen === false" type="error"
+          >Registration is closed. Contact an administrator for an account.</AlertBox
+        >
+        <AlertBox v-if="!signingUp && route.query.logout === 'local'" type="error"
+          >You are signed out on this device. Server session revocation could not be
+          confirmed.</AlertBox
+        >
+        <AlertBox type="error" v-if="error">{{ error }}</AlertBox>
+        <form
+          v-if="!signingUp || registrationOpen === true"
+          @submit.prevent="signingUp ? signup() : login()"
+        >
           <template v-if="signingUp">
             <label for="first-name">First name</label>
             <input
@@ -191,8 +210,6 @@ const login = async () => {
             />
           </template>
 
-          <AlertBox type="error" v-if="error">{{ error }}</AlertBox>
-
           <!-- Applied btn-primary -->
           <button type="submit" class="btn-primary" :disabled="loading">
             {{
@@ -206,7 +223,7 @@ const login = async () => {
             }}
           </button>
         </form>
-        <p class="account-link">
+        <p v-if="signingUp || registrationOpen === true" class="account-link">
           {{ signingUp ? 'Already have an account?' : 'New to PostGrade?' }}
           <RouterLink :to="signingUp ? '/login' : '/signup'">{{
             signingUp ? 'Sign in' : 'Sign up'
