@@ -103,30 +103,11 @@ const login = async () => {
       <div class="login-brand-content">
         <div class="login-brand">
           <img src="/postgradeLogo.jpg" alt="PostGrade Logo" class="login-logo-img" /><span
-            >PostGrade<small>Assessment workflow</small></span
+            >PostGrade</span
           >
         </div>
-        <p class="brand-eyebrow">MORE TIME FOR TEACHING</p>
-        <h1>From scanned scripts<br />to students.</h1>
-        <p class="login-intro">
-          Organise classes, recognise scanned submissions, verify students and return scripts in one
-          focused workflow.
-        </p>
-
-        <div class="feature-list">
-          <div>
-            <span>01</span>
-            <p><strong>Recognise</strong><br />Read handwritten digits or filled bubbles.</p>
-          </div>
-          <div>
-            <span>02</span>
-            <p><strong>Verify</strong><br />Review uncertain student matches quickly.</p>
-          </div>
-          <div>
-            <span>03</span>
-            <p><strong>Return</strong><br />Email verified scripts to their students.</p>
-          </div>
-        </div>
+        <h1>Scripts, simplified.</h1>
+        <p class="login-intro">Recognise. Verify. Return.</p>
       </div>
     </section>
 

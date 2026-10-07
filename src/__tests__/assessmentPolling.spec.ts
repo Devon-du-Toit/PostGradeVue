@@ -167,10 +167,7 @@ describe('assessment polling', () => {
     await firstFile.trigger('change')
     const upload = wrapper.findAll('button').find((item) => item.text() === 'Upload queue')!
     expect(upload.attributes('disabled')).toBeDefined()
-    await wrapper
-      .findAll('select')
-      .find((item) => item.text().includes('Choose the script layout'))!
-      .setValue('qr')
+    await wrapper.get('input[type="radio"][value="qr"]').setValue(true)
     expect(upload.attributes('disabled')).toBeDefined()
     await wrapper.get('input[placeholder="P1, P3"]').setValue('P1, P3')
     await wrapper.get('input[placeholder="KT2"]').setValue('KT2')

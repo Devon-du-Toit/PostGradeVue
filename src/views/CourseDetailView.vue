@@ -15,6 +15,7 @@ import type { Course } from '@/types/course'
 import type { Student } from '@/types/student'
 import AlertBox from '@/components/AlertBox.vue'
 import CourseMembershipPanel from '@/components/CourseMembershipPanel.vue'
+import AddCourseStudentForm from '@/components/AddCourseStudentForm.vue'
 
 const route = useRoute()
 const courseId = Number(route.params.id)
@@ -26,6 +27,14 @@ const loading = ref(true)
 const membershipRefreshKey = ref(0)
 const refreshStudents = async () => {
   students.value = await fetchCourseStudents(courseId)
+}
+const studentAdded = async () => {
+  membershipRefreshKey.value += 1
+  try {
+    await refreshStudents()
+  } catch {
+    error.value = 'Student saved. Refresh this course to load the updated list.'
+  }
 }
 const importing = ref(false)
 const creatingAssessment = ref(false)
@@ -284,6 +293,7 @@ onMounted(() => {
       <!-- Applied glass-panel -->
       <section class="panel glass-panel">
         <h2>Students</h2>
+        <AddCourseStudentForm :course-id="courseId" @added="studentAdded" />
 
         <p v-if="students.length === 0" class="status-text">No students enrolled yet.</p>
 
