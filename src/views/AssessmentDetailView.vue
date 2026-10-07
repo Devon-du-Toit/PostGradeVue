@@ -469,40 +469,59 @@ onUnmounted(() => {
         v-if="assessment.expected_qr_page_labels !== undefined && assessment.qr_test !== undefined"
         class="panel glass-panel"
       >
-        <h2>QR page intake</h2>
-        <p>
-          Set the printed test code and expected page labels before uploading. Leave labels empty
-          for single-script uploads. QR groups pages, while OCR or bubbles identify the student.
-        </p>
-        <form @submit.prevent="saveQR">
-          <label v-if="!assessment.expected_qr_page_labels.length && submissions.length === 0"
-            >First upload layout<select v-model="firstUploadChoice" class="glass-input">
-              <option :value="null" disabled>Choose the script layout before uploading</option>
-              <option value="qr">QR grouped pages — configure expected labels</option>
-              <option value="single">One complete script per file without QR grouping</option>
-            </select></label
+        <h2>Script layout</h2>
+        <form class="layout-form" @submit.prevent="saveQR">
+          <fieldset
+            v-if="!assessment.expected_qr_page_labels.length && submissions.length === 0"
+            class="layout-picker"
           >
-          <label
-            >Printed test code<input
-              v-model="qrTest"
-              class="glass-input"
-              placeholder="KT2"
-              :disabled="submissions.some((item) => item.grouped_pages?.length)"
-          /></label>
-          <label
-            >Expected page labels<input
-              v-model="qrLabels"
-              class="glass-input"
-              placeholder="P1, P3"
-              :disabled="submissions.some((item) => item.grouped_pages?.length)"
-          /></label>
-          <button
-            class="btn-primary"
-            type="submit"
-            :disabled="savingQR || submissions.some((item) => item.grouped_pages?.length)"
-          >
-            {{ savingQR ? 'Saving…' : 'Save QR configuration' }}
-          </button>
+            <legend>Files contain</legend>
+            <div class="layout-options">
+              <label
+                ><input
+                  v-model="firstUploadChoice"
+                  type="radio"
+                  name="script-layout"
+                  value="single"
+                /><span>One script per file</span></label
+              >
+              <label
+                ><input
+                  v-model="firstUploadChoice"
+                  type="radio"
+                  name="script-layout"
+                  value="qr"
+                /><span>QR grouped pages</span></label
+              >
+            </div>
+          </fieldset>
+          <template v-if="firstUploadChoice === 'qr' || assessment.expected_qr_page_labels.length">
+            <div class="qr-fields">
+              <label
+                >Printed test code<input
+                  v-model="qrTest"
+                  class="glass-input"
+                  placeholder="KT2"
+                  :disabled="submissions.some((item) => item.grouped_pages?.length)"
+              /></label>
+              <label
+                >Expected page labels<input
+                  v-model="qrLabels"
+                  class="glass-input"
+                  placeholder="P1, P3"
+                  :disabled="submissions.some((item) => item.grouped_pages?.length)"
+              /></label>
+            </div>
+            <div class="layout-actions">
+              <button
+                class="btn-primary"
+                type="submit"
+                :disabled="savingQR || submissions.some((item) => item.grouped_pages?.length)"
+              >
+                {{ savingQR ? 'Saving…' : 'Save QR configuration' }}
+              </button>
+            </div>
+          </template>
         </form>
       </section>
       <section class="panel glass-panel">
@@ -515,10 +534,7 @@ onUnmounted(() => {
         >
           {{ downloadingScripts ? 'Preparing ZIP…' : 'Download all scripts (ZIP)' }}
         </button>
-        <p class="section-desc">
-          Upload a scanned submission. PostGrade will run recognition automatically and either
-          suggest a student match or place the file into verification.
-        </p>
+        <p class="section-desc">Upload scripts, then review student matches.</p>
 
         <label class="recognition-method-label">
           Student number format
@@ -527,10 +543,7 @@ onUnmounted(() => {
             <option value="bubble" :disabled="!bubbleAvailable">Filled bubbles</option>
           </select>
         </label>
-        <p class="section-desc">
-          Choose the format before selecting files. Bubble recognition reads only filled bubbles,
-          never the written digits.
-        </p>
+        <p class="section-desc">Filled bubbles are read without OCR.</p>
         <p v-if="methodMessage" class="section-desc">{{ methodMessage }}</p>
         <div class="upload-controls">
           <!-- Added 'multiple' attribute -->
@@ -741,6 +754,75 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.recognition-method-label {
+  display: grid;
+  gap: 6px;
+  max-width: 440px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+.layout-form {
+  display: grid;
+  gap: 20px;
+}
+.layout-picker {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.layout-picker legend {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+}
+.layout-options,
+.qr-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.layout-options label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-input);
+  cursor: pointer;
+}
+.layout-options label:has(input:checked) {
+  border-color: var(--glass-border-highlight);
+  background: var(--surface-hover);
+}
+.layout-options input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--button-green);
+  margin: 0;
+  flex-shrink: 0;
+}
+.qr-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.qr-fields input {
+  width: 100%;
+}
+.layout-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+@media (max-width: 600px) {
+  .layout-options,
+  .qr-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
 .assessment-detail-page {
   max-width: 1200px;
   margin: 0 auto;

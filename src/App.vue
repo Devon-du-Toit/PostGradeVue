@@ -91,15 +91,10 @@ const logout = async () => {
         <RouterLink to="/courses"><AppIcon name="courses" />Courses</RouterLink>
         <RouterLink to="/verification-queue"><AppIcon name="verify" />Verification</RouterLink>
       </nav>
-      <div class="sidebar-note">
-        <AppIcon name="mail" />
-        <p>Less administration.<br /><strong>More time for teaching.</strong></p>
-      </div>
       <div class="sidebar-user">
         <span class="avatar">{{ initials }}</span
         ><span
-          ><strong>{{ authStore.user?.first_name || 'Lecturer' }}</strong
-          ><small>{{ authStore.user?.email }}</small></span
+          ><strong>{{ authStore.user?.first_name || 'Lecturer' }}</strong></span
         >
       </div>
     </aside>
@@ -227,24 +222,8 @@ const logout = async () => {
   color: #23483a;
   box-shadow: 0 3px 12px #00000010;
 }
-.sidebar-note {
-  margin-top: auto;
-  padding: 22px 12px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  color: #bbd0c6;
-}
-.sidebar-note p {
-  font-size: 0.75rem;
-  margin: 0;
-  line-height: 1.8;
-}
-.sidebar-note strong {
-  color: #eaf3ef;
-  font-weight: 500;
-}
 .sidebar-user {
+  margin-top: auto;
   display: flex;
   align-items: center;
   gap: 10px;
