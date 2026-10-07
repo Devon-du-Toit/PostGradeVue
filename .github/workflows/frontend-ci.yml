@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: frontend-ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   lint-format:
     runs-on: ubuntu-latest
@@ -85,7 +89,8 @@ jobs:
         run: npm run build
 
   e2e-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:17
@@ -123,8 +128,35 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Install Playwright
-        run: npx playwright install --with-deps chromium
+      - name: Configure bounded Ubuntu downloads
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          # The runner's Azure mirror can stall while the official HTTPS
+          # archive remains reachable. Do not wait on that mirror first.
+          for mirror_list in /etc/apt/apt-mirrors.txt /etc/apt/apt-mirrors-security.txt; do
+            if [[ -f "$mirror_list" ]]; then
+              printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee "$mirror_list" >/dev/null
+            fi
+          done
+          if [[ -f /etc/apt/sources.list.d/ubuntu.sources ]]; then
+            sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources
+          fi
+          sudo tee /etc/apt/apt.conf.d/99-postgrade-ci >/dev/null <<'EOF'
+          Acquire::Retries "2";
+          Acquire::http::Timeout "30";
+          Acquire::https::Timeout "30";
+          EOF
+
+      - name: Install Playwright system dependencies
+        timeout-minutes: 5
+        run: npx playwright install-deps chromium
+
+      - name: Install Chromium headless shell
+        timeout-minutes: 5
+        env:
+          PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: '60000'
+        run: npx playwright install --only-shell chromium
 
       - name: Set up Python
         uses: actions/setup-python@v5
