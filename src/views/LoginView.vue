@@ -5,10 +5,19 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AlertBox from '@/components/AlertBox.vue'
 import { registerUser, fetchRegistrationPolicy } from '@/services/registration'
+import { fetchRecoveryPolicy } from '@/services/passwordRecovery'
 
 const props = withDefaults(defineProps<{ mode?: 'login' | 'signup' }>(), { mode: 'login' })
 const signingUp = computed(() => props.mode === 'signup')
 const registrationOpen = ref<boolean | null>(null)
+const recoveryAvailable = ref(false)
+onMounted(async () => {
+  try {
+    recoveryAvailable.value = await fetchRecoveryPolicy()
+  } catch {
+    recoveryAvailable.value = false
+  }
+})
 onMounted(async () => {
   try {
     registrationOpen.value = await fetchRegistrationPolicy()
@@ -138,6 +147,9 @@ const login = async () => {
         <AlertBox v-if="!signingUp && route.query.registered === '1'" type="success"
           >Your account has been created. Sign in to continue.</AlertBox
         >
+        <AlertBox v-if="!signingUp && route.query.reset === '1'" type="success"
+          >Password updated. Sign in with your new password.</AlertBox
+        >
 
         <AlertBox v-if="signingUp && registrationOpen === false" type="error"
           >Registration is closed. Contact an administrator for an account.</AlertBox
@@ -223,6 +235,9 @@ const login = async () => {
             }}
           </button>
         </form>
+        <p v-if="!signingUp && recoveryAvailable" class="account-link">
+          <RouterLink to="/forgot-password">Forgot your password?</RouterLink>
+        </p>
         <p v-if="signingUp || registrationOpen === true" class="account-link">
           {{ signingUp ? 'Already have an account?' : 'New to PostGrade?' }}
           <RouterLink :to="signingUp ? '/login' : '/signup'">{{
