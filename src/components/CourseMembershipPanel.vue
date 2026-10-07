@@ -63,10 +63,13 @@ const confirm = async () => {
     <button class="btn-secondary" type="button" :disabled="busy" @click="load">
       Refresh memberships
     </button>
-    <ul>
-      <li v-for="row in rows" :key="row.id">
-        {{ row.student_number }} — {{ row.first_name }} {{ row.last_name }} ·
-        {{ row.withdrawn_at ? 'Withdrawn' : 'Active' }}
+    <ul class="membership-list">
+      <li v-for="row in rows" :key="row.id" class="membership-row">
+        <span class="student-identity">
+          <span class="student-number">{{ row.student_number }}</span>
+          <span>{{ row.first_name }} {{ row.last_name }}</span>
+        </span>
+        <span class="membership-status">{{ row.withdrawn_at ? 'Withdrawn' : 'Active' }}</span>
         <button
           class="btn-secondary"
           type="button"
@@ -96,8 +99,57 @@ const confirm = async () => {
   </section>
 </template>
 <style scoped>
-li {
-  margin-block: 0.8rem;
+.btn-secondary {
+  border: 1px solid var(--glass-border);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface-input);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-highlight);
+}
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.membership-list {
+  list-style: none;
+  padding: 0;
+  margin-block: 1rem;
+}
+.membership-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6rem 12rem;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 0.6rem;
+}
+.student-identity {
+  display: grid;
+  grid-template-columns: 9ch minmax(0, 1fr);
+  gap: 1rem;
+  overflow-wrap: anywhere;
+}
+.student-number {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 640px) {
+  .membership-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+  }
+  .membership-row button {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+  .student-identity {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+  }
 }
 label {
   display: grid;
