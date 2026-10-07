@@ -158,4 +158,22 @@ describe('token refresh', () => {
     ).rejects.toBeInstanceOf(AxiosError)
     expect(post).not.toHaveBeenCalled()
   })
+
+  it('does not send JWTs or refresh a session for password recovery', async () => {
+    const refresh = vi.spyOn(axios, 'post')
+    let bearer: unknown
+    api.defaults.adapter = async (config) => {
+      bearer = config.headers.Authorization
+      throw new AxiosError('Rejected', 'ERR_BAD_REQUEST', config, undefined, {
+        data: {},
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+        config,
+      })
+    }
+    await expect(api.post('auth/password-reset/confirm/', {})).rejects.toBeInstanceOf(AxiosError)
+    expect(bearer).toBeUndefined()
+    expect(refresh).not.toHaveBeenCalled()
+  })
 })

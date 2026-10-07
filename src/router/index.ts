@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import LoginView from '@/views/LoginView.vue'
+import PasswordRecoveryView from '@/views/PasswordRecoveryView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import CoursesView from '@/views/CoursesView.vue'
 import CourseDetailView from '@/views/CourseDetailView.vue'
@@ -10,6 +11,13 @@ import VerificationQueueView from '@/views/VerificationQueueView.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    { path: '/forgot-password', name: 'forgot-password', component: PasswordRecoveryView },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: PasswordRecoveryView,
+      props: { mode: 'confirm' },
+    },
     {
       path: '/',
       name: 'home',
