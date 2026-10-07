@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
-import { fetchAssessment } from '@/services/assessments'
+import { fetchAssessment, fetchAssessmentScripts } from '@/services/assessments'
 import { fetchCourseEnrollments } from '@/services/enrollments'
 import {
   fetchSubmissions,
@@ -30,6 +30,32 @@ const route = useRoute()
 const assessmentId = Number(route.params.id)
 
 const assessment = ref<Assessment | null>(null)
+const downloadingScripts = ref(false)
+let exportController: AbortController | undefined
+const downloadScripts = async () => {
+  if (downloadingScripts.value) return
+  downloadingScripts.value = true
+  error.value = ''
+  exportController = new AbortController()
+  try {
+    const blob = await fetchAssessmentScripts(assessmentId, exportController.signal)
+    if (exportController.signal.aborted) return
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `assessment-${assessmentId}-scripts.zip`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    // Give the browser time to start consuming the object URL.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } catch (caught) {
+    if (!exportController.signal.aborted)
+      error.value = caught instanceof Error ? caught.message : 'Could not download scripts.'
+  } finally {
+    downloadingScripts.value = false
+  }
+}
 const students = ref<EnrolledStudent[]>([])
 const submissions = ref<Submission[]>([])
 const loading = ref(true)
@@ -327,6 +353,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  exportController?.abort()
   window.removeEventListener('beforeunload', handleBeforeUnload)
   isUnmounted = true
   stopPolling()
@@ -351,6 +378,14 @@ onUnmounted(() => {
       <!-- Submissions Panel -->
       <section class="panel glass-panel">
         <h2>Submissions</h2>
+        <button
+          class="btn-secondary"
+          type="button"
+          :disabled="downloadingScripts || submissions.length === 0"
+          @click="downloadScripts"
+        >
+          {{ downloadingScripts ? 'Preparing ZIP…' : 'Download all scripts (ZIP)' }}
+        </button>
         <p class="section-desc">
           Upload a scanned submission. PostGrade will run recognition automatically and either
           suggest a student match or place the file into verification.
