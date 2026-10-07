@@ -230,4 +230,33 @@ describe('SubmissionReviewPanel', () => {
 
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:image/png')
   })
+  it('does not reuse a previous script identity override reason', async () => {
+    const grouped_pages = [
+      {
+        id: 11,
+        page_label: 'P1',
+        source_page: 1,
+        qr_fields: {},
+        qr_status: 'readable',
+        excluded: false,
+        recognition_outcome: 'matched',
+        quality_issues: [],
+        suggested_enrollment: 5,
+        linked_enrollment: null,
+        upload_id: 1,
+        download_url: '',
+        source_download_url: '',
+        review_history: [],
+      },
+    ]
+    const wrapper = await mountPanel(submission({ grouped_pages }))
+    await wrapper.get('textarea').setValue('Checked printed identity on the previous script')
+    await wrapper.setProps({ submission: submission({ id: 2, version: 8, grouped_pages }) })
+    await flushPromises()
+    mocked.verify.mockResolvedValue(submission({ id: 2, version: 9, status: 'verified' }))
+    await wrapper.get('[data-test="confirm"]').trigger('click')
+    await flushPromises()
+    expect(mocked.verify).toHaveBeenLastCalledWith(2, 5, 8)
+    wrapper.unmount()
+  })
 })

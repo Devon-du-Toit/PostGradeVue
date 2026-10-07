@@ -1,6 +1,7 @@
- /// <reference types="node" />
- import { test, expect } from '@playwright/test'
- import path from 'path'
+/// <reference types="node" />
+import { test, expect } from '@playwright/test'
+import path from 'path'
+import { chooseSingleScriptLayout } from './script-layout'
 test('upload failure displays an error message', async ({ page }) => {
   // Log in
   await page.goto('/login')
@@ -9,7 +10,7 @@ test('upload failure displays an error message', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 })
 
-    // Create the synthetic course needed by test
+  // Create the synthetic course needed by test
   await page.goto('/courses')
 
   await page.getByLabel('Code').fill('E2E103')
@@ -19,7 +20,7 @@ test('upload failure displays an error message', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Create course' }).click()
 
-// Wait for the created course to appear before opening it
+  // Wait for the created course to appear before opening it
   const courseCode = page.getByText('E2E103')
   await expect(courseCode).toBeVisible()
   await courseCode.click()
@@ -47,10 +48,12 @@ test('upload failure displays an error message', async ({ page }) => {
   })
 
   const submissionPath = path.join(process.cwd(), 'e2e', 'submission.png')
+  await chooseSingleScriptLayout(page)
   await page.locator('input[type="file"]').setInputFiles(submissionPath)
   await page.getByRole('button', { name: 'Upload queue' }).click()
 
-  await expect(page.getByText('Upload failed. Click to retry.')).toBeVisible()
+  await expect(page.getByText('Test upload failure', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Retry', exact: true })).toBeVisible()
 })
 test('login validation displays an error for invalid credentials', async ({ page }) => {
   await page.goto('/login')

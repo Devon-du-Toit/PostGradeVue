@@ -85,6 +85,7 @@ const resetForSubmission = async () => {
   zoom.value = 1
   rotation.value = 0
   error.value = ''
+  reviewReason.value = ''
   selected.value = preselectedEnrollment(evidence.value, props.submission.enrollment)
 
   if (!evidence.value?.region_image_url) {

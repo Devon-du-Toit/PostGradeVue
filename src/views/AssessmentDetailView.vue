@@ -91,6 +91,10 @@ const refreshSubmissions = async () => {
     emailRefreshKey.value += 1
     if (submissions.value.some((item) => item.status === 'processing')) startPolling()
   } catch (cause) {
+    if (generation !== snapshotGeneration || isUnmounted) return
+    // A mutation may have retired other rows. Do not leave stale actions enabled.
+    submissions.value = []
+    stopPolling()
     error.value = workflowError(
       cause,
       'Could not refresh scripts. Reload the assessment before continuing.',
@@ -302,15 +306,10 @@ const confirmSubmission = async (submission: Submission) => {
       submission.version,
       verificationReasons[submission.id]?.trim() || undefined,
     )
-    const index = submissions.value.findIndex((item) => item.id === verified.id)
-
-    if (index >= 0) {
-      submissions.value[index] = verified
-    }
-
-    verificationSelections[verified.id] = verified.enrollment
-
-    emailRefreshKey.value += 1
+    delete verificationReasons[verified.id]
+    // Verification can supersede another script, or keep this older upload in
+    // history. Reload the authoritative active list and fence older polls.
+    await refreshSubmissions()
 
     successMessage.value = `Verified ${verified.original_filename}.`
   } catch (cause) {

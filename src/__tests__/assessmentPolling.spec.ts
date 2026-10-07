@@ -372,4 +372,85 @@ describe('assessment polling', () => {
     await vi.advanceTimersByTimeAsync(9000)
     expect(fetch).toHaveBeenCalledTimes(1)
   })
+  it('removes the superseded active row after verifying its replacement', async () => {
+    const old = {
+      ...submission(7, 'verified'),
+      id: 10,
+      version: 1,
+      enrollment: 5,
+      original_filename: 'old.pdf',
+    }
+    const replacement = {
+      ...submission(7, 'needs_verification'),
+      id: 20,
+      version: 1,
+      enrollment: 5,
+      original_filename: 'new.pdf',
+    }
+    const verified = { ...replacement, version: 2, status: 'verified' as const }
+    fetch.mockResolvedValueOnce([old, replacement]).mockResolvedValue([verified])
+    vi.mocked(fetchCourseEnrollments).mockResolvedValue([
+      {
+        id: 5,
+        course: 1,
+        student: 3,
+        student_number: '00123456',
+        first_name: 'Ava',
+        last_name: 'Example',
+      },
+    ])
+    vi.mocked(verifySubmission).mockResolvedValue(verified)
+    const wrapper = await mountPage()
+    await wrapper
+      .findAll('.glass-table tbody tr')[1]!
+      .findAll('button')
+      .find((button) => button.text() === 'Verify')!
+      .trigger('click')
+    await flushPromises()
+    expect(verifySubmission).toHaveBeenCalledWith(20, 5, 1, undefined)
+    expect(wrapper.findAll('.glass-table tbody tr')).toHaveLength(1)
+    expect(wrapper.find('.glass-table').text()).not.toContain('old.pdf')
+  })
+  it('clears stale active actions if the refresh after verification fails', async () => {
+    const candidate = { ...submission(7, 'matched'), version: 1, enrollment: 5 }
+    fetch.mockResolvedValueOnce([candidate]).mockRejectedValueOnce(new Error('offline'))
+    vi.mocked(verifySubmission).mockResolvedValue({ ...candidate, status: 'verified', version: 2 })
+    const wrapper = await mountPage()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Confirm match')!
+      .trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.glass-table tbody tr')).toHaveLength(0)
+    expect(wrapper.text()).toContain('Could not refresh scripts')
+    expect(wrapper.findAll('button').some((button) => button.text() === 'Email script')).toBe(false)
+  })
+  it('fences an old in-flight poll after verification refreshes active scripts', async () => {
+    const candidate = { ...submission(7, 'matched'), id: 20, version: 1, enrollment: 5 }
+    const processing = { ...submission(), id: 30 }
+    const verified = { ...candidate, status: 'verified' as const, version: 2 }
+    let finish!: (items: Submission[]) => void
+    fetch
+      .mockResolvedValueOnce([candidate, processing])
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve
+          }),
+      )
+      .mockResolvedValue([verified, processing])
+    vi.mocked(verifySubmission).mockResolvedValue(verified)
+    const wrapper = await mountPage()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Confirm match')!
+      .trigger('click')
+    await flushPromises()
+    finish([candidate, processing])
+    await flushPromises()
+    expect(wrapper.findAll('button').some((button) => button.text() === 'Email script')).toBe(true)
+    expect(wrapper.findAll('button').some((button) => button.text() === 'Confirm match')).toBe(
+      false,
+    )
+  })
 })

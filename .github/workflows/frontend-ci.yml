@@ -24,9 +24,6 @@ jobs:
         run: npm run lint:check
 
       - name: Check formatting
-        # Non-blocking until the one-off project-wide Prettier pass (after the
-        # open feature PRs merge); reformatting now would conflict with them.
-        continue-on-error: true
         run: npm run format:check
 
   type-check:
@@ -89,10 +86,6 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
-    # Non-blocking until the specs are updated to the redesigned UI
-    # (Vue #1, #3, #4, #7 merged on 30 Sep changed labels and the upload flow).
-    continue-on-error: true
-
     services:
       postgres:
         image: postgres:17

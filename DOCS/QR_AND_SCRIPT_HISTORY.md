@@ -16,6 +16,10 @@ One upload may produce multiple paper groups. After an upload returns
 including newly created groups and updated existing groups. Processing polls
 refresh changed versions/timestamps even if status remains unchanged; a poll
 started before an upload/review refresh cannot replace the newer snapshot.
+Verification also reloads the active snapshot and history: the backend may retire
+the previously verified script, or retain an older upload only in history. If
+refreshing fails, stale script actions are cleared until the assessment is reloaded.
+Identity override reasons are cleared when moving to another script or version.
 
 The assessment page and verification review panel show grouped full-page metadata,
 recognition suggestions, missing/duplicate/conflicting page findings and audited
