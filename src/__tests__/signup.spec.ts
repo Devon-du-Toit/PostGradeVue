@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import LoginView from '@/views/LoginView.vue'
-import { registerUser, fetchRegistrationPolicy } from '@/services/registration'
+import { registerUser } from '@/services/registration'
 
 const { push, login, route } = vi.hoisted(() => ({
   push: vi.fn<(destination: unknown) => Promise<void>>(),
@@ -16,7 +16,6 @@ vi.mock('vue-router', async (original) => ({
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ login }) }))
 vi.mock('@/services/registration', () => ({
   registerUser: vi.fn<typeof registerUser>(),
-  fetchRegistrationPolicy: vi.fn<typeof fetchRegistrationPolicy>(),
 }))
 
 const mounted: ReturnType<typeof mount>[] = []
@@ -38,7 +37,6 @@ const signupPage = async () => {
 describe('sign up', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    vi.mocked(fetchRegistrationPolicy).mockResolvedValue(true)
     route.query = {}
   })
   afterEach(() => mounted.splice(0).forEach((wrapper) => wrapper.unmount()))
@@ -116,33 +114,14 @@ describe('sign up', () => {
     expect(wrapper.get('[role="status"]').text()).toContain('Your account has been created.')
     expect(wrapper.find('#first-name').exists()).toBe(false)
   })
-  it('shows a closed-registration message and hides the signup form', async () => {
-    vi.mocked(fetchRegistrationPolicy).mockResolvedValue(false)
-    const wrapper = mount(LoginView, {
-      props: { mode: 'signup' },
-      global: { stubs: { RouterLink: true } },
-    })
-    mounted.push(wrapper)
-    await flushPromises()
-    expect(wrapper.find('form').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Registration is closed.')
-    expect(registerUser).not.toHaveBeenCalled()
-  })
-
-  it('shows policy errors without enabling signup', async () => {
-    vi.mocked(fetchRegistrationPolicy).mockRejectedValue(new Error('offline'))
-    const wrapper = mount(LoginView, {
-      props: { mode: 'signup' },
-      global: { stubs: { RouterLink: true } },
-    })
-    mounted.push(wrapper)
-    await flushPromises()
-    expect(wrapper.find('form').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Could not check account registration.')
+  it('always renders the signup form without checking registration policy', async () => {
+    const wrapper = await signupPage()
+    expect(wrapper.find('form').exists()).toBe(true)
+    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.text()).not.toContain('Registration is closed.')
   })
 
   it('keeps initial sign-in usable without showing a failed signup availability check', async () => {
-    vi.mocked(fetchRegistrationPolicy).mockRejectedValue(new Error('offline'))
     const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } })
     mounted.push(wrapper)
     await flushPromises()
@@ -153,7 +132,6 @@ describe('sign up', () => {
   })
 
   it('reports a connection problem when a submitted sign-in cannot reach the server', async () => {
-    vi.mocked(fetchRegistrationPolicy).mockRejectedValue(new Error('offline'))
     login.mockRejectedValue(new Error('offline'))
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
     const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } })
@@ -165,23 +143,12 @@ describe('sign up', () => {
     logged.mockRestore()
   })
 
-  it('does not let a late policy failure replace the sign-in credential error', async () => {
-    let rejectPolicy!: (cause: Error) => void
-    vi.mocked(fetchRegistrationPolicy).mockImplementation(
-      () =>
-        new Promise((_, reject) => {
-          rejectPolicy = reject
-        }),
-    )
+  it('preserves the sign-in credential error', async () => {
     login.mockRejectedValue({ response: { status: 401 } })
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
     const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } })
     mounted.push(wrapper)
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    rejectPolicy(new Error('offline'))
-    await flushPromises()
     expect(wrapper.get('[role="alert"]').text()).toContain('Check your email and password')
-    logged.mockRestore()
   })
 })
