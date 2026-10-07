@@ -4,26 +4,17 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 import AlertBox from '@/components/AlertBox.vue'
-import { registerUser, fetchRegistrationPolicy } from '@/services/registration'
+import { registerUser } from '@/services/registration'
 import { fetchRecoveryPolicy } from '@/services/passwordRecovery'
 
 const props = withDefaults(defineProps<{ mode?: 'login' | 'signup' }>(), { mode: 'login' })
 const signingUp = computed(() => props.mode === 'signup')
-const registrationOpen = ref<boolean | null>(null)
-const registrationError = ref('')
 const recoveryAvailable = ref(false)
 onMounted(async () => {
   try {
     recoveryAvailable.value = await fetchRecoveryPolicy()
   } catch {
     recoveryAvailable.value = false
-  }
-})
-onMounted(async () => {
-  try {
-    registrationOpen.value = await fetchRegistrationPolicy()
-  } catch {
-    registrationError.value = 'Could not check account registration. Please reload and try again.'
   }
 })
 const firstName = ref('')
@@ -49,7 +40,7 @@ watch(
 )
 
 const signup = async () => {
-  if (loading.value || registrationOpen.value !== true) return
+  if (loading.value) return
   error.value = ''
   if (password.value !== confirmPassword.value) {
     error.value = 'Passwords do not match.'
@@ -153,21 +144,12 @@ const login = async () => {
           >Password updated. Sign in with your new password.</AlertBox
         >
 
-        <AlertBox v-if="signingUp && registrationOpen === false" type="error"
-          >Registration is closed. Contact an administrator for an account.</AlertBox
-        >
-        <AlertBox v-if="signingUp && registrationError" type="error">{{
-          registrationError
-        }}</AlertBox>
         <AlertBox v-if="!signingUp && route.query.logout === 'local'" type="error"
           >You are signed out on this device. Server session revocation could not be
           confirmed.</AlertBox
         >
         <AlertBox type="error" v-if="error">{{ error }}</AlertBox>
-        <form
-          v-if="!signingUp || registrationOpen === true"
-          @submit.prevent="signingUp ? signup() : login()"
-        >
+        <form @submit.prevent="signingUp ? signup() : login()">
           <template v-if="signingUp">
             <label for="first-name">First name</label>
             <input
@@ -243,7 +225,7 @@ const login = async () => {
         <p v-if="!signingUp && recoveryAvailable" class="account-link">
           <RouterLink to="/forgot-password">Forgot your password?</RouterLink>
         </p>
-        <p v-if="signingUp || registrationOpen === true" class="account-link">
+        <p class="account-link">
           {{ signingUp ? 'Already have an account?' : 'New to PostGrade?' }}
           <RouterLink :to="signingUp ? '/login' : '/signup'">{{
             signingUp ? 'Sign in' : 'Sign up'

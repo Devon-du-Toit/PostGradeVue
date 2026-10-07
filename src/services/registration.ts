@@ -15,14 +15,3 @@ export const registerUser = async (data: RegistrationInput) => {
   )
   return response.data
 }
-
-export const fetchRegistrationPolicy = async () => {
-  try {
-    const response = await api.get<{ registration_open: boolean }>('auth/registration-policy/')
-    return response.data.registration_open
-  } catch (error) {
-    // Compatibility during rollout with the older backend that has open signup.
-    if ((error as { response?: { status?: number } }).response?.status === 404) return true
-    throw error
-  }
-}
