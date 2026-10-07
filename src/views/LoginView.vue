@@ -10,6 +10,7 @@ import { fetchRecoveryPolicy } from '@/services/passwordRecovery'
 const props = withDefaults(defineProps<{ mode?: 'login' | 'signup' }>(), { mode: 'login' })
 const signingUp = computed(() => props.mode === 'signup')
 const registrationOpen = ref<boolean | null>(null)
+const registrationError = ref('')
 const recoveryAvailable = ref(false)
 onMounted(async () => {
   try {
@@ -22,7 +23,7 @@ onMounted(async () => {
   try {
     registrationOpen.value = await fetchRegistrationPolicy()
   } catch {
-    error.value = 'Could not check account registration. Please reload and try again.'
+    registrationError.value = 'Could not check account registration. Please reload and try again.'
   }
 })
 const firstName = ref('')
@@ -96,8 +97,9 @@ const login = async () => {
     await authStore.login(email.value, password.value)
     await router.push('/dashboard')
   } catch (err) {
-    console.error(err)
-    error.value = 'Could not sign in. Check your email and password and try again.'
+    error.value = (err as { response?: unknown } | null)?.response
+      ? 'Could not sign in. Check your email and password and try again.'
+      : 'Could not reach PostGrade. Check your connection and try again.'
   } finally {
     loading.value = false
   }
@@ -154,6 +156,9 @@ const login = async () => {
         <AlertBox v-if="signingUp && registrationOpen === false" type="error"
           >Registration is closed. Contact an administrator for an account.</AlertBox
         >
+        <AlertBox v-if="signingUp && registrationError" type="error">{{
+          registrationError
+        }}</AlertBox>
         <AlertBox v-if="!signingUp && route.query.logout === 'local'" type="error"
           >You are signed out on this device. Server session revocation could not be
           confirmed.</AlertBox

@@ -140,4 +140,48 @@ describe('sign up', () => {
     expect(wrapper.find('form').exists()).toBe(false)
     expect(wrapper.text()).toContain('Could not check account registration.')
   })
+
+  it('keeps initial sign-in usable without showing a failed signup availability check', async () => {
+    vi.mocked(fetchRegistrationPolicy).mockRejectedValue(new Error('offline'))
+    const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } })
+    mounted.push(wrapper)
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(wrapper.find('form').exists()).toBe(true)
+    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.text()).not.toContain('Could not check account registration.')
+  })
+
+  it('reports a connection problem when a submitted sign-in cannot reach the server', async () => {
+    vi.mocked(fetchRegistrationPolicy).mockRejectedValue(new Error('offline'))
+    login.mockRejectedValue(new Error('offline'))
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } })
+    mounted.push(wrapper)
+    await flushPromises()
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not reach PostGrade.')
+    logged.mockRestore()
+  })
+
+  it('does not let a late policy failure replace the sign-in credential error', async () => {
+    let rejectPolicy!: (cause: Error) => void
+    vi.mocked(fetchRegistrationPolicy).mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectPolicy = reject
+        }),
+    )
+    login.mockRejectedValue({ response: { status: 401 } })
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } })
+    mounted.push(wrapper)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    rejectPolicy(new Error('offline'))
+    await flushPromises()
+    expect(wrapper.get('[role="alert"]').text()).toContain('Check your email and password')
+    logged.mockRestore()
+  })
 })
