@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { fetchDashboardStats, type DashboardStats } from '@/services/dashboard'
 import AlertBox from '@/components/AlertBox.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
 const authStore = useAuthStore()
 const stats = ref<DashboardStats | null>(null)
@@ -32,6 +33,17 @@ onMounted(async () => {
           Manage courses, review submission matches and return verified scripts to students.
         </p>
       </div>
+      <div class="hero-summary" aria-label="Workspace summary">
+        <div>
+          <span>Active courses</span><strong>{{ stats?.active_courses ?? '—' }}</strong
+          ><small>Your teaching workspace</small>
+        </div>
+        <div>
+          <span>Awaiting verification</span
+          ><strong>{{ stats?.pending_verifications ?? '—' }}</strong
+          ><small>Ready for your review</small>
+        </div>
+      </div>
     </header>
 
     <section class="dashboard-section">
@@ -46,7 +58,7 @@ onMounted(async () => {
 
       <div class="actions">
         <RouterLink class="action-card glass-panel" to="/courses">
-          <span class="action-icon">C</span>
+          <span class="action-icon"><AppIcon name="courses" /></span>
           <div>
             <strong>Courses</strong>
             <span>Manage courses, students, assessments and scripts.</span>
@@ -60,7 +72,7 @@ onMounted(async () => {
 
         <!-- Link includes query param for filtered list -->
         <RouterLink class="action-card glass-panel" to="/verification-queue">
-          <span class="action-icon">V</span>
+          <span class="action-icon"><AppIcon name="verify" /></span>
           <div>
             <strong>Verification queue</strong>
             <span>Review student matches that still need lecturer confirmation.</span>
@@ -100,14 +112,21 @@ onMounted(async () => {
 
 .dashboard-hero {
   display: flex;
-  margin-bottom: 3.25rem;
-  align-items: flex-end;
+  margin-bottom: 2rem;
+  align-items: center;
   justify-content: space-between;
+  gap: 24px;
+  padding: 32px;
+  border-radius: var(--radius-lg);
+  background: var(--hero-bg);
+  background-color: #234b3d;
+  color: #f3f7f4;
 }
 
 .dashboard-hero h1 {
   margin-bottom: 0.65rem;
-  color: var(--text-primary);
+  color: #f3f7f4;
+  margin-top: 8px;
 }
 
 .page-eyebrow {
@@ -124,6 +143,64 @@ onMounted(async () => {
   max-width: 650px;
   margin-bottom: 0;
   color: var(--text-secondary);
+}
+.dashboard-hero .page-eyebrow {
+  color: #c8dfcc;
+  margin-top: 0;
+}
+.dashboard-hero .dashboard-subtitle {
+  color: #d0e0d6;
+  font-size: 0.88rem;
+  max-width: 470px;
+}
+.hero-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  flex-shrink: 0;
+}
+.hero-summary > div {
+  background: #ffffff0e;
+  border: 1px solid #ffffff1f;
+  border-radius: 10px;
+  padding: 18px;
+  min-width: 150px;
+}
+.hero-summary span,
+.hero-summary small {
+  display: block;
+  color: #d0e0d6;
+  font-size: 0.68rem;
+}
+.hero-summary strong {
+  display: block;
+  color: #ffffff;
+  font-size: 1.8rem;
+  line-height: 1.5;
+}
+@media (max-width: 1200px) {
+  .dashboard-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-summary {
+    width: 100%;
+  }
+}
+@media (max-width: 480px) {
+  .dashboard-hero {
+    padding: 24px;
+  }
+  .hero-summary > div {
+    min-width: 0;
+    padding: 12px;
+  }
+  .action-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .action-meta {
+    grid-column: 2;
+  }
 }
 
 .dashboard-section {

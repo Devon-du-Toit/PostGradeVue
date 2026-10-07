@@ -1,166 +1,258 @@
-/* src/assets/main.css */
-
 :root {
-  /* 1. Base App Background (Deep navy pulled from the logo background) */
-  --bg-gradient: linear-gradient(135deg, #0b1121 0%, #151f32 100%);
-
-  /* 2. Glassmorphism Core Tokens */
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-bg-hover: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  /* Highlight borders using the logo's green */
-  --glass-border-highlight: rgba(91, 166, 91, 0.4);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-  --glass-blur: blur(16px);
-
-  /* 3. Typography & Contrast (Matching the crisp white "Post" text) */
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --text-muted: #8391a7;
-
-  /* 4. Brand & Action Colors (The exact PostGrade green) */
-  --accent-green: #5ba65b;
-  --accent-green-hover: #4a8c4a;
-  /* Darker fills for white-text buttons: #3d7a3d is 5.2:1 and #2f6f2f
-     6.1:1 against white (WCAG AA needs 4.5:1). The accent green above
-     stays as the text/border colour, where it reads 6.3:1 on the navy. */
-  --button-green: #3d7a3d;
-  --button-green-hover: #2f6f2f;
-  --status-success: #5ba65b;
-  --status-warning: #f59e0b;
-  --status-error: #ef4444;
-
-  --surface-inset: rgba(0, 0, 0, 0.15);
-  --surface-header: rgba(0, 0, 0, 0.2);
-  --surface-input: rgba(0, 0, 0, 0.25);
-  --surface-input-focus: rgba(0, 0, 0, 0.4);
-  --surface-option: #151f32;
-  --surface-hover: rgba(255, 255, 255, 0.02);
-  --table-divider: rgba(255, 255, 255, 0.05);
-  --status-success-text: #86efac;
-  --status-warning-text: #fde047;
-  --status-error-text: #fca5a5;
-  --status-info-text: #93c5fd;
-  --status-match-text: #22d3ee;
-  --status-verified-text: #c084fc;
-  --pg-blue: #60a5fa;
-  --button-danger: #b91c1c;
-  --button-danger-hover: #991b1b;
-  --nav-background: #0b1121;
-
-  /* 5. Standardized Spacing */
-  --space-sm: 0.5rem;
+  color-scheme: dark;
+  --bg-gradient: #101b1b;
+  --glass-bg: #182526;
+  --glass-bg-hover: #203031;
+  --glass-border: #314242;
+  --glass-border-highlight: #628d76;
+  --glass-shadow: 0 8px 28px #00000012;
+  --glass-blur: none;
+  --text-primary: #edf4f1;
+  --text-secondary: #bacbc5;
+  --text-muted: #9eb4ab;
+  --accent-green: #a1d6b4;
+  --accent-green-hover: #c4e8d0;
+  --button-green: #32654b;
+  --button-green-hover: #3c775a;
+  --status-success: #6fba8c;
+  --status-warning: #d8a45d;
+  --status-error: #e58888;
+  --status-success-text: #a4e0bc;
+  --status-warning-text: #f5ce92;
+  --status-error-text: #ffb8b8;
+  --status-info-text: #b1d2fa;
+  --status-match-text: #a3dce4;
+  --status-verified-text: #d4c2ed;
+  --pg-blue: #a7cceb;
+  --surface-inset: #132020;
+  --surface-header: #203031;
+  --surface-input: #142122;
+  --surface-input-focus: #1b2c2c;
+  --surface-option: #182526;
+  --surface-hover: #253737;
+  --table-divider: #314242;
+  --button-danger: #a93737;
+  --button-danger-hover: #912c2c;
+  --nav-background: #182526;
+  --sidebar-bg: #142e27;
+  --sidebar-border: #314b41;
+  --hero-bg: linear-gradient(110deg, #234b3d, #1b3935);
+  --space-sm: 0.65rem;
   --space-md: 1rem;
   --space-lg: 1.5rem;
   --space-xl: 2rem;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-md: 9px;
+  --radius-lg: 14px;
 }
-
-/* Reset and Global Body Styles */
+body.light-theme {
+  color-scheme: light;
+  --bg-gradient: #f3f5f1;
+  --glass-bg: #ffffff;
+  --glass-bg-hover: #f5f8f4;
+  --glass-border: #dce4db;
+  --glass-border-highlight: #699078;
+  --glass-shadow: 0 5px 22px #253c3010;
+  --text-primary: #26382f;
+  --text-secondary: #52645a;
+  --text-muted: #5f7167;
+  --accent-green: #2d6945;
+  --accent-green-hover: #224f34;
+  --button-green: #32654b;
+  --button-green-hover: #254f3a;
+  --status-success: #2d6945;
+  --status-warning: #85531a;
+  --status-error: #a32e2e;
+  --status-success-text: #25643c;
+  --status-warning-text: #85531a;
+  --status-error-text: #a32e2e;
+  --status-info-text: #285896;
+  --status-match-text: #24616d;
+  --status-verified-text: #684395;
+  --pg-blue: #285896;
+  --surface-inset: #f5f7f3;
+  --surface-header: #f0f4ed;
+  --surface-input: #f9fbf8;
+  --surface-input-focus: #ffffff;
+  --surface-option: #ffffff;
+  --surface-hover: #eef3eb;
+  --table-divider: #dce4db;
+  --nav-background: #ffffff;
+  --sidebar-bg: #234b3c;
+  --sidebar-border: #355c49;
+  --hero-bg: linear-gradient(110deg, #2d5b43, #31574b);
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 body {
   margin: 0;
-  padding: 0;
   min-height: 100vh;
   background: var(--bg-gradient);
-  background-attachment: fixed;
   color: var(--text-primary);
   font-family:
-    'Inter',
+    'Segoe UI',
+    Inter,
     system-ui,
     -apple-system,
     sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  letter-spacing: 0.015em;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
 }
-
-body.light-theme {
-  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-bg-hover: rgba(255, 255, 255, 0.95);
-  --glass-border: rgba(15, 23, 42, 0.12);
-  --glass-border-highlight: rgba(91, 166, 91, 0.5);
-  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.1);
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #475569;
-  --accent-green: #286a36;
-  --accent-green-hover: #20582c;
-  --status-success: #166534;
-  --status-warning: #854d0e;
-  --status-error: #b91c1c;
-  --status-success-text: #166534;
-  --status-warning-text: #854d0e;
-  --status-error-text: #b91c1c;
-  --status-info-text: #1d4ed8;
-  --status-match-text: #155e75;
-  --status-verified-text: #6b21a8;
-  --pg-blue: #1d4ed8;
-  --surface-inset: #f1f5f9;
-  --surface-header: #e2e8f0;
-  --surface-input: #ffffff;
-  --surface-input-focus: #ffffff;
-  --surface-option: #ffffff;
-  --surface-hover: #e2e8f0;
-  --table-divider: #cbd5e1;
-  --nav-background: #ffffff;
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  font-weight: 650;
 }
-/* Reusable Glass Utility Classes */
+h1 {
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+}
+h2 {
+  font-size: 1.25rem;
+}
+h3 {
+  font-size: 1.05rem;
+}
+p {
+  overflow-wrap: anywhere;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  line-height: 1.3;
+}
+a {
+  color: var(--accent-green);
+}
 .glass-panel {
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--glass-shadow);
-  transition: all 0.3s ease;
 }
-
 .glass-input {
+  min-height: 44px;
+  max-width: 100%;
   background: var(--surface-input);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
-  padding: var(--space-sm) var(--space-md);
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
+  padding: 10px 13px;
 }
-
 .glass-input:focus {
-  outline: none;
   border-color: var(--accent-green);
   background: var(--surface-input-focus);
 }
-
-/* Base button styling using the brand green */
-.btn-primary {
-  background: var(--button-green);
-  color: #ffffff;
-  border: none;
-  padding: var(--space-sm) var(--space-md);
+.glass-input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+textarea {
+  resize: vertical;
+}
+.btn-primary,
+.button-primary,
+.btn-secondary,
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   font-weight: 600;
+  font-size: 0.88rem;
   cursor: pointer;
+  text-decoration: none;
   transition:
-    background 0.2s ease,
-    transform 0.1s ease;
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
-
-.btn-primary:hover {
+.btn-primary,
+.button-primary {
+  background: var(--button-green);
+  color: #ffffff;
+}
+.btn-primary:hover:not(:disabled),
+.button-primary:hover:not(:disabled) {
   background: var(--button-green-hover);
 }
-/* Accessibility: Ensure keyboard focus is always highly visible */
-*:focus-visible {
-  outline: 2px solid var(--pg-blue, #3b82f6) !important;
-  outline-offset: 2px !important;
-  border-radius: inherit;
+.btn-secondary,
+.button-secondary {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
 }
-
-.glass-input::placeholder {
+.btn-secondary:hover:not(:disabled),
+.button-secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--glass-border-highlight);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+*:focus-visible {
+  outline: 2px solid var(--pg-blue) !important;
+  outline-offset: 3px !important;
+}
+.app-content > main {
+  width: 100%;
+  max-width: 1320px;
+  padding: 32px 36px 64px;
+  margin: 0 auto;
+  min-width: 0;
+}
+.app-content .glass-panel {
+  box-shadow: var(--glass-shadow);
+}
+.app-content :is(.page-header, .course-header, .assessment-header, .queue-header) {
+  margin-bottom: 26px;
+}
+.app-content :is(.page-header, .course-header, .assessment-header, .queue-header) h1 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.app-content :is(.page-header, .course-header, .assessment-header, .queue-header) p {
   color: var(--text-secondary);
-  opacity: 1;
+  margin-top: 0;
+}
+.app-content .panel {
+  padding: 26px;
+}
+.app-content .panel h2 {
+  margin-top: 0;
+}
+.app-content :is(th, td) {
+  border-color: var(--table-divider);
+}
+@media (max-width: 760px) {
+  .app-content > main {
+    padding: 24px 18px 48px;
+  }
+  .app-content .panel {
+    padding: 20px;
+  }
+  .app-content :is(.table-wrapper, .table-container) {
+    overflow-x: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
