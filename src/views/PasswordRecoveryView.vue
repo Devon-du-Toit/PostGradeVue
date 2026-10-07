@@ -68,6 +68,7 @@ const submit = async () => {
 <template>
   <main class="recovery-page">
     <section class="glass-panel recovery-card">
+      <p class="recovery-brand">PostGrade / Account recovery</p>
       <h1>{{ confirming ? 'Choose a new password' : 'Forgot your password?' }}</h1>
       <AlertBox v-if="available === false" type="error"
         >Password recovery is unavailable. Contact an administrator.</AlertBox
@@ -129,15 +130,24 @@ const submit = async () => {
 
 <style scoped>
 .recovery-page {
-  min-height: 85vh;
+  min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 2rem;
+  padding: 96px 20px 40px;
 }
 .recovery-card {
   width: 100%;
   max-width: 480px;
-  padding: 2rem;
+  padding: 36px;
+}
+.recovery-brand {
+  color: var(--accent-green);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0 0 22px;
+}
+.recovery-card h1 {
+  font-size: 1.7rem;
 }
 form {
   display: grid;

@@ -1,27 +1,68 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-
 import { useAuthStore } from '@/stores/auth'
-
+import AppIcon from '@/components/AppIcon.vue'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-
 const showShell = computed(() => Boolean(route.meta.requiresAuth))
-const isLightMode = ref(false)
-
+const isLightMode = ref(localStorage.getItem('theme') === 'light')
+const menuOpen = ref(false)
+const sidebar = ref<HTMLElement | null>(null)
+const menuButton = ref<HTMLButtonElement | null>(null)
+watch(menuOpen, async (open) => {
+  await nextTick()
+  if (open) sidebar.value?.querySelector<HTMLButtonElement>('button')?.focus()
+  else menuButton.value?.focus()
+})
+const handleDrawerKey = (event: KeyboardEvent) => {
+  if (!menuOpen.value) return
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    menuOpen.value = false
+  }
+  if (event.key !== 'Tab') return
+  const controls = sidebar.value?.querySelectorAll<HTMLElement>('a, button:not(:disabled)')
+  const first = controls?.[0]
+  const last = controls?.[controls.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last?.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first?.focus()
+  }
+}
+const titles: Record<string, string> = {
+  dashboard: 'Overview',
+  courses: 'Courses',
+  'course-detail': 'Course workspace',
+  'assessment-detail': 'Assessment workspace',
+  'verification-queue': 'Verification',
+}
+const pageTitle = computed(() => titles[String(route.name)] || 'Workspace')
+const initials = computed(() =>
+  (authStore.user?.first_name?.[0] || authStore.user?.email?.[0] || 'L').toUpperCase(),
+)
+const applyTheme = () => document.body.classList.toggle('light-theme', isLightMode.value)
 const toggleTheme = () => {
   isLightMode.value = !isLightMode.value
-  document.body.classList.toggle('light-theme', isLightMode.value)
+  applyTheme()
   localStorage.setItem('theme', isLightMode.value ? 'light' : 'dark')
 }
-
-onMounted(() => {
-  isLightMode.value = localStorage.getItem('theme') === 'light'
-  document.body.classList.toggle('light-theme', isLightMode.value)
-})
-
+onMounted(applyTheme)
+const closeDesktopMenu = () => {
+  if (window.innerWidth > 1000) menuOpen.value = false
+}
+onMounted(() => window.addEventListener('resize', closeDesktopMenu))
+onUnmounted(() => window.removeEventListener('resize', closeDesktopMenu))
+watch(
+  () => route.fullPath,
+  () => {
+    menuOpen.value = false
+  },
+)
 const logout = async () => {
   const revoked = await authStore.logout()
   if (!revoked && !authStore.accessToken && router.currentRoute.value.name === 'login') {
@@ -29,229 +70,323 @@ const logout = async () => {
   }
 }
 </script>
-
 <template>
-  <div class="app-root">
-    <header v-if="showShell" class="app-header">
-      <div class="app-header__inner">
-        <RouterLink class="brand" to="/dashboard">
-          <!-- Replaced the 'P' box with the official logo -->
-          <img src="/postgradeLogo.jpg" alt="PostGrade Logo" class="header-logo" />
-          <span>
-            <strong>PostGrade</strong>
-            <small>Assessment workflow</small>
-          </span>
-        </RouterLink>
-
-        <nav class="app-nav" aria-label="Main navigation">
-          <RouterLink to="/dashboard">Dashboard</RouterLink>
-          <RouterLink to="/courses">Courses</RouterLink>
-          <RouterLink to="/verification-queue">Verification</RouterLink>
-        </nav>
-
-        <div class="app-user">
-          <span class="app-user__email">{{ authStore.user?.email }}</span>
+  <div class="app-root" :class="{ 'with-shell': showShell }" @keydown="handleDrawerKey">
+    <aside ref="sidebar" v-if="showShell" class="app-sidebar" :class="{ 'is-open': menuOpen }">
+      <button
+        class="button-secondary drawer-close"
+        type="button"
+        aria-label="Close navigation"
+        @click="menuOpen = false"
+      >
+        ×
+      </button>
+      <RouterLink class="brand" to="/dashboard">
+        <img src="/postgradeLogo.jpg" alt="PostGrade Logo" class="brand-logo" />
+        <span><strong>PostGrade</strong><small>Lecturer workspace</small></span>
+      </RouterLink>
+      <p class="nav-caption">YOUR WORKSPACE</p>
+      <nav id="main-navigation" class="app-nav" aria-label="Main navigation">
+        <RouterLink to="/dashboard"><AppIcon name="dashboard" />Dashboard</RouterLink>
+        <RouterLink to="/courses"><AppIcon name="courses" />Courses</RouterLink>
+        <RouterLink to="/verification-queue"><AppIcon name="verify" />Verification</RouterLink>
+      </nav>
+      <div class="sidebar-note">
+        <AppIcon name="mail" />
+        <p>Less administration.<br /><strong>More time for teaching.</strong></p>
+      </div>
+      <div class="sidebar-user">
+        <span class="avatar">{{ initials }}</span
+        ><span
+          ><strong>{{ authStore.user?.first_name || 'Lecturer' }}</strong
+          ><small>{{ authStore.user?.email }}</small></span
+        >
+      </div>
+    </aside>
+    <button
+      v-if="showShell && menuOpen"
+      class="sidebar-backdrop"
+      aria-label="Close navigation"
+      @click="menuOpen = false"
+    />
+    <div :class="showShell ? 'app-content' : 'guest-content'">
+      <header class="workspace-bar" :class="{ 'guest-bar': !showShell }">
+        <div v-if="showShell" class="workspace-location">
           <button
-            class="button-secondary button-small theme-toggle"
+            ref="menuButton"
+            class="button-secondary menu-toggle"
+            aria-label="Toggle navigation"
+            aria-controls="main-navigation"
+            :aria-expanded="menuOpen"
+            @click="menuOpen = !menuOpen"
+          >
+            <AppIcon name="menu" />
+          </button>
+          <strong>{{ pageTitle }}</strong
+          ><span>POSTGRADE / LECTURER</span>
+        </div>
+        <span v-else class="guest-brand">POSTGRADE</span>
+        <div class="workspace-controls">
+          <button
+            class="button-secondary theme-toggle"
             type="button"
             :aria-pressed="isLightMode"
+            :aria-label="isLightMode ? 'Dark Mode' : 'Light Mode'"
             @click="toggleTheme"
           >
-            <svg
-              class="theme-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <path v-if="isLightMode" d="M20.9 13.3A9 9 0 0 1 10.7 3.1a9 9 0 1 0 10.2 10.2Z" />
-              <template v-else>
-                <circle cx="12" cy="12" r="4" />
-                <path
-                  d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"
-                />
-              </template>
-            </svg>
-            <span>{{ isLightMode ? 'Dark Mode' : 'Light Mode' }}</span>
+            <AppIcon :name="isLightMode ? 'moon' : 'sun'" /><span>{{
+              isLightMode ? 'Dark Mode' : 'Light Mode'
+            }}</span>
           </button>
-          <button class="button-secondary button-small" type="button" @click="logout">
-            Log out
+          <button
+            v-if="showShell"
+            class="button-secondary"
+            type="button"
+            aria-label="Log out"
+            @click="logout"
+          >
+            <AppIcon name="logout" /><span>Log out</span>
           </button>
         </div>
-      </div>
-    </header>
-
-    <RouterView />
+      </header>
+      <RouterView />
+    </div>
   </div>
 </template>
-
 <style scoped>
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-.theme-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
 .app-root {
   min-height: 100vh;
 }
-
-.app-header {
-  position: sticky;
-  z-index: 20;
-  top: 0;
-  border-bottom: 1px solid var(--glass-border);
-  /* Opaque theme surface keeps navigation contrast stable while scrolling */
-  background: var(--nav-background);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+.with-shell {
+  padding-left: 248px;
 }
-
-.app-header__inner {
+.app-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 248px;
+  z-index: 40;
   display: flex;
-  max-width: 1200px;
-  min-height: 68px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-  align-items: center;
-  gap: 2rem;
+  flex-direction: column;
+  padding: 28px 18px 20px;
+  background: var(--sidebar-bg);
+  color: #eaf3ef;
+  border-right: 1px solid var(--sidebar-border);
 }
-
 .brand {
   display: flex;
-  min-width: 190px;
   align-items: center;
-  gap: 0.7rem;
-  color: var(--text-primary);
+  gap: 12px;
   text-decoration: none;
-  transition: opacity 0.2s ease;
+  color: inherit;
+  margin-bottom: 46px;
+  padding-inline: 8px;
 }
-
-.brand:hover {
-  opacity: 0.85;
+.brand-logo {
+  width: 46px;
+  height: 46px;
+  clip-path: circle(48%);
 }
-
-.header-logo {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+.brand strong {
+  display: block;
+  font-size: 1.18rem;
+  letter-spacing: -0.035em;
 }
-
-.brand strong,
 .brand small {
   display: block;
+  margin-top: 4px;
+  color: #bdcec6;
+  font-size: 0.7rem;
 }
-
-.brand strong {
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+.nav-caption {
+  margin: 0 12px 12px;
+  color: #afc8be;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  font-weight: 600;
 }
-
-.brand small {
-  margin-top: 0.15rem;
-  color: var(--accent-green);
-  font-size: 0.68rem;
+.app-nav {
+  display: grid;
+  gap: 6px;
+}
+.app-nav a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 14px;
+  border-radius: 9px;
+  font-size: 0.88rem;
+  font-weight: 550;
+  color: #d7e5df;
+  text-decoration: none;
+}
+.app-nav a:hover {
+  background: #ffffff0d;
+}
+.app-nav a.router-link-active {
+  background: #e7f1e9;
+  color: #23483a;
+  box-shadow: 0 3px 12px #00000010;
+}
+.sidebar-note {
+  margin-top: auto;
+  padding: 22px 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: #bbd0c6;
+}
+.sidebar-note p {
+  font-size: 0.75rem;
+  margin: 0;
+  line-height: 1.8;
+}
+.sidebar-note strong {
+  color: #eaf3ef;
   font-weight: 500;
 }
-
-.app-nav {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.app-nav a {
-  padding: 0.5rem 0.7rem;
-  border-radius: 7px;
-  color: var(--text-secondary);
-  font-size: 0.88rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.app-nav a:hover {
-  background: var(--glass-bg-hover);
-  color: var(--text-primary);
-}
-
-/* Make the active tab pop with the brand green */
-.app-nav a.router-link-active {
-  background: rgba(91, 166, 91, 0.15);
-  color: var(--accent-green);
-}
-
-.app-user {
+.sidebar-user {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 10px;
+  border-top: 1px solid #ffffff18;
+  padding: 20px 8px 0;
+  min-width: 0;
 }
-
-.app-user__email {
-  max-width: 190px;
+.sidebar-user > span:last-child {
+  min-width: 0;
+}
+.sidebar-user strong,
+.sidebar-user small {
+  display: block;
   overflow: hidden;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-/* Glassy logout button */
-.button-secondary {
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
-  color: var(--text-primary);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
+.sidebar-user strong {
+  font-size: 0.8rem;
+  font-weight: 550;
 }
-
-.button-secondary:hover:not(:disabled) {
-  border-color: var(--glass-border-highlight);
-  background: var(--glass-bg-hover);
-  color: var(--accent-green);
+.sidebar-user small {
+  font-size: 0.68rem;
+  color: #bdcec6;
+  margin-top: 4px;
 }
-
-.button-small {
-  min-height: 36px;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.82rem;
+.avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  background: #d8e7dd;
+  color: #23483a;
   font-weight: 600;
 }
-
-@media (max-width: 760px) {
-  .app-header__inner {
-    padding: 0 1rem;
-    gap: 0.75rem;
+.workspace-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 16px 36px;
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--nav-background);
+}
+.workspace-location {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.workspace-location strong {
+  font-size: 0.92rem;
+}
+.workspace-location > span,
+.guest-brand {
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.workspace-controls {
+  display: flex;
+  gap: 10px;
+}
+.workspace-controls button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.78rem;
+}
+.menu-toggle {
+  display: none;
+}
+.drawer-close {
+  display: none;
+}
+.guest-bar {
+  position: absolute;
+  inset: 0 0 auto;
+  border: 0;
+  background: transparent;
+  padding-inline: 32px;
+}
+.guest-brand {
+  visibility: hidden;
+}
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: #00000066;
+  border: 0;
+}
+@media (max-width: 1000px) {
+  .drawer-close {
+    display: inline-flex;
+    align-self: flex-end;
+    padding: 6px;
+    min-width: 32px;
+    min-height: 32px;
+    margin-bottom: 12px;
   }
-
-  .brand {
-    min-width: auto;
+  .with-shell {
+    padding-left: 0;
   }
-
-  .brand small,
-  .app-user__email {
+  .app-sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+  }
+  .app-sidebar.is-open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+  .menu-toggle {
+    display: inline-flex;
+    padding: 8px;
+  }
+  .workspace-bar {
+    padding: 14px 20px;
+  }
+  .workspace-location > span {
     display: none;
   }
-
-  .app-nav {
-    justify-content: center;
+}
+@media (max-width: 480px) {
+  .workspace-controls button span {
+    display: none;
   }
-
-  .app-nav a {
-    padding: 0.45rem 0.5rem;
-    font-size: 0.8rem;
+  .workspace-controls button {
+    padding: 10px;
+    min-width: 40px;
+  }
+  .guest-bar {
+    justify-content: flex-end;
+  }
+  .guest-brand {
+    display: none;
   }
 }
 </style>

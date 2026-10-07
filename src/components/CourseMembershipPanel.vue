@@ -80,20 +80,23 @@ const confirm = async () => {
         </button>
       </li>
     </ul>
-    <form v-if="selected" @submit.prevent="confirm">
+    <form v-if="selected" class="membership-confirmation" @submit.prevent="confirm">
       <h3>
-        {{ selected.withdrawn_at ? 'Restore' : 'Withdraw' }} {{ selected.student_number }} · version
-        {{ selected.version }}
+        {{ selected.withdrawn_at ? 'Restore membership for' : 'Withdraw' }}
+        {{ selected.first_name }} {{ selected.last_name }}
+        <small>{{ selected.student_number }}</small>
       </h3>
       <label
         >Reason<textarea v-model="reason" class="glass-input" required maxlength="1000" />
       </label>
-      <button class="btn-primary" type="submit" :disabled="busy || !reason.trim()">
-        {{ busy ? 'Saving…' : 'Confirm membership change' }}
-      </button>
-      <button class="btn-secondary" type="button" :disabled="busy" @click="selected = null">
-        Cancel
-      </button>
+      <div class="membership-actions">
+        <button class="btn-primary" type="submit" :disabled="busy || !reason.trim()">
+          {{ busy ? 'Saving…' : 'Confirm membership change' }}
+        </button>
+        <button class="btn-secondary" type="button" :disabled="busy" @click="selected = null">
+          Cancel
+        </button>
+      </div>
     </form>
     <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
   </section>
@@ -126,7 +129,8 @@ const confirm = async () => {
   grid-template-columns: minmax(0, 1fr) 6rem 12rem;
   align-items: center;
   gap: 1rem;
-  padding-block: 0.6rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--table-divider);
 }
 .student-identity {
   display: grid;
@@ -157,5 +161,44 @@ label {
 }
 form {
   margin-block: 1rem;
+}
+.membership-confirmation {
+  padding: 22px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+}
+.membership-confirmation h3 {
+  margin: 0 0 18px;
+}
+.membership-confirmation h3 small {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+.membership-confirmation textarea {
+  min-height: 96px;
+  width: 100%;
+}
+.membership-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+.membership-actions button {
+  min-height: 44px;
+}
+.membership-status {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+@media (max-width: 640px) {
+  .membership-actions {
+    flex-direction: column;
+  }
 }
 </style>

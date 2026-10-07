@@ -101,8 +101,13 @@ const login = async () => {
   <main class="login-page">
     <section class="login-brand-panel">
       <div class="login-brand-content">
-        <img src="/postgradeLogo.jpg" alt="PostGrade Logo" class="login-logo-img" />
-        <h1>Assessment administration, without the admin burden.</h1>
+        <div class="login-brand">
+          <img src="/postgradeLogo.jpg" alt="PostGrade Logo" class="login-logo-img" /><span
+            >PostGrade<small>Assessment workflow</small></span
+          >
+        </div>
+        <p class="brand-eyebrow">MORE TIME FOR TEACHING</p>
+        <h1>From scanned scripts<br />to students.</h1>
         <p class="login-intro">
           Organise classes, recognise scanned submissions, verify students and return scripts in one
           focused workflow.
@@ -126,8 +131,8 @@ const login = async () => {
     </section>
 
     <section class="login-form-panel">
-      <!-- Applied the new global glass-panel class here -->
       <div class="login-card glass-panel">
+        <span class="mobile-brand">PostGrade</span>
         <p class="page-eyebrow">{{ signingUp ? 'Welcome to PostGrade' : 'Welcome back' }}</p>
         <h2>{{ signingUp ? 'Create your account' : 'Sign in to PostGrade' }}</h2>
         <p class="login-help">
@@ -237,155 +242,206 @@ const login = async () => {
 </template>
 
 <style scoped>
-.password-help,
-.account-link {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-.account-link a {
-  color: var(--accent-green);
-}
-/* Stripped out all hardcoded backgrounds so the global gradient shows */
 .login-page {
   display: grid;
   min-height: 100vh;
-  grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
-  background: transparent;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
 }
-
 .login-brand-panel {
+  position: relative;
   display: flex;
-  padding: clamp(3rem, 7vw, 7rem);
+  padding: 64px clamp(32px, 5vw, 80px);
   align-items: center;
-  color: var(--text-primary);
+  background: var(--hero-bg);
+  color: #f0f6f2;
+  overflow: hidden;
 }
-
+.login-brand-panel::before {
+  content: '';
+  position: absolute;
+  width: 750px;
+  height: 750px;
+  border: 1px solid #c5dbc326;
+  border-radius: 42%;
+  transform: rotate(-22deg);
+  top: -420px;
+  left: -200px;
+  box-shadow:
+    0 0 0 90px #c5dbc309,
+    0 0 0 180px #c5dbc308,
+    0 0 0 270px #c5dbc307;
+  pointer-events: none;
+}
 .login-brand-content {
-  width: 100%;
-  max-width: 590px;
-}
-
-.login-logo-img {
-  width: 140px;
-  height: 140px;
-  margin-bottom: 1.5rem;
-  border-radius: 50%;
-  box-shadow: var(--glass-shadow);
-  border: 1px solid var(--glass-border);
-  transition: transform 0.3s ease;
-}
-
-.login-logo-img:hover {
-  transform: scale(1.05); /* Adds a subtle floating effect on hover */
-}
-
-.login-brand-panel .page-eyebrow {
-  color: var(--accent-green);
-  font-weight: 600;
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-}
-
-.login-brand-panel h1 {
-  max-width: 570px;
-  margin-bottom: 1.25rem;
-  color: var(--text-primary);
-  font-size: clamp(2.25rem, 5vw, 4rem);
-  line-height: 1.05;
-}
-
-.login-intro {
+  position: relative;
   max-width: 540px;
-  color: var(--text-secondary);
-  font-size: 1.05rem;
+  width: 100%;
 }
-
+.login-brand {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: clamp(50px, 8vh, 90px);
+}
+.login-logo-img {
+  width: 78px;
+  height: 78px;
+  clip-path: circle(48%);
+  border: 0;
+  box-shadow: none;
+}
+.login-brand > span {
+  font-size: 1.6rem;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+.login-brand small {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: #c7dbcd;
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+}
+.brand-eyebrow {
+  color: #c8dfcc;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+}
+.login-brand-panel h1 {
+  margin: 20px 0;
+  color: #f3f7f4;
+  font-size: clamp(2.3rem, 4.2vw, 3.7rem);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+.login-intro {
+  max-width: 425px;
+  color: #d0e0d6;
+  font-size: 0.98rem;
+  line-height: 1.8;
+}
 .feature-list {
   display: grid;
-  margin-top: 3.5rem;
-  gap: 1.35rem;
+  margin-top: 44px;
+  gap: 18px;
 }
-
 .feature-list > div {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 18px;
 }
-
 .feature-list span {
-  color: var(--accent-green);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff0f;
+  border: 1px solid #ffffff24;
+  color: #d6e7d9;
+  font-size: 0.68rem;
+  flex-shrink: 0;
 }
-
 .feature-list p {
   margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+  color: #c7dbce;
+  font-size: 0.8rem;
 }
-
 .feature-list strong {
-  color: var(--text-primary);
+  color: #f3f7f4;
+  font-size: 0.87rem;
+  font-weight: 550;
 }
-
 .login-form-panel {
   display: flex;
-  padding: 2rem;
+  padding: 94px 36px 48px;
   align-items: center;
   justify-content: center;
 }
-
 .login-card {
   width: 100%;
-  max-width: 420px;
-  padding: 2.5rem;
+  max-width: 455px;
+  padding: 36px;
 }
-
-.login-card h2 {
-  margin-bottom: 0.4rem;
-  color: var(--text-primary);
-  font-size: 1.8rem;
-}
-
-.login-help {
-  margin-bottom: 2rem;
+.login-card .page-eyebrow {
+  font-size: 0.75rem;
   color: var(--text-secondary);
+  margin: 0 0 10px;
 }
-
+.login-card h2 {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  letter-spacing: -0.035em;
+}
+.login-help {
+  margin: 0 0 30px;
+  color: var(--text-secondary);
+  font-size: 0.87rem;
+}
 form {
   display: grid;
-  gap: 0.7rem;
+  gap: 8px;
 }
-
-form input + label {
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
+form label {
   color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 550;
 }
-
+form input + label {
+  margin-top: 12px;
+}
+form input {
+  width: 100%;
+}
 form button {
   width: 100%;
-  margin-top: 1.2rem;
+  margin-top: 16px;
+  min-height: 46px;
 }
-
+.password-help,
+.account-link {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+.password-help {
+  margin: 4px 0;
+}
+.account-link {
+  margin-top: 20px;
+}
+.account-link a {
+  color: var(--accent-green);
+  font-weight: 550;
+  text-underline-offset: 3px;
+}
+.mobile-brand {
+  display: none;
+}
 @media (max-width: 850px) {
   .login-page {
     grid-template-columns: 1fr;
   }
-
   .login-brand-panel {
     display: none;
   }
-
   .login-form-panel {
     min-height: 100vh;
-    box-sizing: border-box;
-    padding: 1.25rem;
+    padding: 90px 20px 36px;
   }
-
   .login-card {
-    padding: 1.5rem;
+    padding: 28px;
+  }
+  .mobile-brand {
+    display: block;
+    color: var(--accent-green);
+    font-weight: 650;
+    font-size: 1.15rem;
+    margin-bottom: 24px;
   }
 }
 </style>
