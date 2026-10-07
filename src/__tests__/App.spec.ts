@@ -15,8 +15,8 @@ describe('App', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [router, createPinia()]
-      }
+        plugins: [router, createPinia()],
+      },
     })
 
     // 3. Satisfy requirement by asserting the header text rendered

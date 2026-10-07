@@ -9,7 +9,8 @@ These Playwright tests provide frontend end-to-end coverage for the main PostGra
 Frontend:
 
 - PostGradeVue
-- Branch: `issue-10-frontend-ci-e2e`
+- Use the frontend revision under review and its coordinated backend APIs.
+- Node.js 24 (the CI runtime)
 - Vue 3 / Vite
 - Playwright with Chromium
 
@@ -50,7 +51,7 @@ The Playwright tests cover:
 - Submission upload
 - Recognition review
 - Student verification
-- Marking
+- Verified-script email scheduling and delivery-status review, without marks
 - Invalid-login validation/error display
 - Missing-session redirect
 - Upload-failure display
@@ -81,5 +82,10 @@ Configure `CORS_ALLOWED_ORIGINS=http://127.0.0.1:5173` and `EMAIL_BACKEND=django
 The theme spec uses synthetic API responses and checks rendered text contrast on five screens. Screenshots are written to the Playwright output directory.
 
 The bubble-recognition spec creates a synthetic form with conflicting written digits and verifies that the selected bubble worker reads only the fills and suggests the enrolled student. It requires the backend bubble capability; it explicitly skips against an older backend where the UI disables that method. Run the recognition worker for this test. No real scripts are used.
+
+Upload specs select **One complete script per file without QR grouping** when the
+backend exposes the first-upload layout prompt. The upload-failure scenario asserts
+the server's reported error and an available retry control. Formatting and E2E
+failures block frontend CI; they are no longer ignored by `continue-on-error`.
 
 The sign-up spec uses a uniquely named synthetic account against the sandbox backend. It verifies direct landing-to-form navigation, password confirmation, account creation, sign-in with the new credentials, duplicate-email feedback and responsive layouts. The backend must enable its existing registration endpoint for this test.

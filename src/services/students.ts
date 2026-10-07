@@ -38,7 +38,3 @@ export const importCourseStudents = async (
 
   return response.data
 }
-
-export const removeCourseStudent = async (courseId: number, studentId: number) => {
-  await api.delete(`courses/${courseId}/students/${studentId}/`)
-}

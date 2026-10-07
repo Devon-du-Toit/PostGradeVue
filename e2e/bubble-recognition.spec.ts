@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
+import { chooseSingleScriptLayout } from './script-layout'
 
 test('selected bubbles decode fills rather than conflicting written digits', async ({ page }) => {
   await page.goto('/login')
@@ -37,6 +38,7 @@ test('selected bubbles decode fills rather than conflicting written digits', asy
   await page.getByRole('button', { name: 'Create assessment' }).click()
   await page.getByRole('link', { name: /Bubble recognition/ }).click()
   await page.getByLabel('Student number format').selectOption('bubble')
+  await chooseSingleScriptLayout(page)
 
   // Synthetic eight-column form with deliberately wrong writing-box digits.
   const data = await page.evaluate(() => {

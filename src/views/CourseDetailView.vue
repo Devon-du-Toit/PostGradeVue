@@ -7,7 +7,6 @@ import { fetchCourse } from '@/services/courses'
 import {
   fetchCourseStudents,
   importCourseStudents,
-  removeCourseStudent,
   type ImportRowError,
   type ImportSummary,
 } from '@/services/students'
@@ -15,6 +14,7 @@ import type { Assessment } from '@/types/assessment'
 import type { Course } from '@/types/course'
 import type { Student } from '@/types/student'
 import AlertBox from '@/components/AlertBox.vue'
+import CourseMembershipPanel from '@/components/CourseMembershipPanel.vue'
 
 const route = useRoute()
 const courseId = Number(route.params.id)
@@ -23,6 +23,10 @@ const course = ref<Course | null>(null)
 const students = ref<Student[]>([])
 const assessments = ref<Assessment[]>([])
 const loading = ref(true)
+const membershipRefreshKey = ref(0)
+const refreshStudents = async () => {
+  students.value = await fetchCourseStudents(courseId)
+}
 const importing = ref(false)
 const creatingAssessment = ref(false)
 const error = ref('')
@@ -61,48 +65,6 @@ const loadPage = async () => {
   }
 }
 
-// New state for custom confirmation modal
-const studentToRemove = ref<{ id: number; name: string } | null>(null)
-const removingStudentId = ref<number | null>(null)
-
-const promptRemoveStudent = (studentId: number, name: string) => {
-  studentToRemove.value = { id: studentId, name }
-}
-
-const cancelRemove = () => {
-  studentToRemove.value = null
-}
-
-const confirmRemoveStudent = async () => {
-  if (!studentToRemove.value) return
-
-  const { id } = studentToRemove.value
-  removingStudentId.value = id
-  error.value = ''
-
-  try {
-    await removeCourseStudent(courseId, id)
-    students.value = students.value.filter((s) => s.id !== id)
-    studentToRemove.value = null
-  } catch (e) {
-    const err = e as {
-      response?: {
-        data?: {
-          message?: string
-          detail?: string
-        }
-      }
-    }
-
-    error.value =
-      err.response?.data?.message ||
-      err.response?.data?.detail ||
-      'Could not remove student. Please try again.'
-    studentToRemove.value = null
-  } finally {
-    removingStudentId.value = null
-  }
-}
 const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0] ?? null
@@ -148,6 +110,7 @@ const importStudents = async () => {
     if (response.errors) importErrors.value = response.errors
 
     students.value = await fetchCourseStudents(courseId)
+    membershipRefreshKey.value += 1
     selectedFile.value = null
     filePreviewCount.value = null
   } catch (e) {
@@ -331,7 +294,6 @@ onMounted(() => {
                 <th>Student number</th>
                 <th>Name</th>
                 <th>Email</th>
-                <th class="actions-col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -339,47 +301,17 @@ onMounted(() => {
                 <td class="highlight-cell">{{ student.student_number }}</td>
                 <td>{{ student.first_name }} {{ student.last_name }}</td>
                 <td class="muted-cell">{{ student.email }}</td>
-                <td class="actions-col">
-                  <button
-                    v-if="false"
-                    class="btn-text btn-danger"
-                    :disabled="removingStudentId === student.id"
-                    @click="
-                      promptRemoveStudent(student.id, `${student.first_name} ${student.last_name}`)
-                    "
-                  >
-                    {{ removingStudentId === student.id ? '...' : 'Remove' }}
-                  </button>
-                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
+      <CourseMembershipPanel
+        :course-id="courseId"
+        :refresh-key="membershipRefreshKey"
+        @updated="refreshStudents"
+      />
     </template>
-    <!-- Custom Glass Modal for Removal Confirmation -->
-    <div v-if="studentToRemove" class="modal-overlay" @click.self="cancelRemove">
-      <div class="panel glass-panel modal-content">
-        <h3>Remove Student</h3>
-        <p>
-          Are you sure you want to remove <strong>{{ studentToRemove.name }}</strong> from this
-          course? <br /><br />
-          <span class="text-error">Warning: This will also remove any associated grades.</span>
-        </p>
-        <div class="modal-actions">
-          <button class="btn-text" @click="cancelRemove" :disabled="removingStudentId !== null">
-            Cancel
-          </button>
-          <button
-            class="btn-primary btn-danger-solid"
-            :disabled="removingStudentId === studentToRemove.id"
-            @click="confirmRemoveStudent"
-          >
-            {{ removingStudentId === studentToRemove.id ? 'Removing...' : 'Yes, remove student' }}
-          </button>
-        </div>
-      </div>
-    </div>
   </main>
 </template>
 

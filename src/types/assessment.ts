@@ -1,4 +1,6 @@
 export interface Assessment {
+  expected_qr_page_labels?: string[]
+  qr_test?: string
   id: number
   course: number
   name: string

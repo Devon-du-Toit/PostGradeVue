@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { test, expect } from '@playwright/test'
 import path from 'path'
+import { chooseSingleScriptLayout } from './script-layout'
 
 test('lecturer can set up course and assessment', async ({ page }) => {
   // Login
@@ -44,6 +45,7 @@ test('lecturer can set up course and assessment', async ({ page }) => {
   await assessmentLink.click()
 
   // Upload synthetic submission
+  await chooseSingleScriptLayout(page)
   const submissionPath = path.join(process.cwd(), 'e2e', 'submission.png')
   await page.locator('input[type="file"]').setInputFiles(submissionPath)
 

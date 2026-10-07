@@ -82,6 +82,16 @@ const createObjectURL = vi.fn<(blob: Blob) => string>((blob) => `blob:${blob.typ
 const revokeObjectURL = vi.fn<(url: string) => void>()
 
 describe('SubmissionReviewPanel', () => {
+  it('blocks verification of processing or unresolved QR scripts, including keyboard confirmation', async () => {
+    const wrapper = await mountPanel(submission({ qr_review_issues: ['duplicate:P1'] }))
+    expect(wrapper.get('[data-test="confirm"]').attributes('disabled')).toBeDefined()
+    await wrapper.trigger('keydown', { key: 'Enter', ctrlKey: true })
+    expect(mocked.verify).not.toHaveBeenCalled()
+    wrapper.unmount()
+    const processing = await mountPanel(submission({ status: 'processing' }))
+    expect(processing.get('[data-test="confirm"]').attributes('disabled')).toBeDefined()
+    processing.unmount()
+  })
   beforeEach(() => {
     vi.clearAllMocks()
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL }))
@@ -219,5 +229,34 @@ describe('SubmissionReviewPanel', () => {
     wrapper.unmount()
 
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:image/png')
+  })
+  it('does not reuse a previous script identity override reason', async () => {
+    const grouped_pages = [
+      {
+        id: 11,
+        page_label: 'P1',
+        source_page: 1,
+        qr_fields: {},
+        qr_status: 'readable',
+        excluded: false,
+        recognition_outcome: 'matched',
+        quality_issues: [],
+        suggested_enrollment: 5,
+        linked_enrollment: null,
+        upload_id: 1,
+        download_url: '',
+        source_download_url: '',
+        review_history: [],
+      },
+    ]
+    const wrapper = await mountPanel(submission({ grouped_pages }))
+    await wrapper.get('textarea').setValue('Checked printed identity on the previous script')
+    await wrapper.setProps({ submission: submission({ id: 2, version: 8, grouped_pages }) })
+    await flushPromises()
+    mocked.verify.mockResolvedValue(submission({ id: 2, version: 9, status: 'verified' }))
+    await wrapper.get('[data-test="confirm"]').trigger('click')
+    await flushPromises()
+    expect(mocked.verify).toHaveBeenLastCalledWith(2, 5, 8)
+    wrapper.unmount()
   })
 })

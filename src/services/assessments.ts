@@ -17,6 +17,18 @@ export const fetchAssessment = async (assessmentId: number) => {
   return response.data
 }
 
+export const updateAssessmentQR = async (
+  id: number,
+  expected_qr_page_labels: string[],
+  qr_test: string,
+) => {
+  const response = await api.patch<Assessment>(`assessments/${id}/`, {
+    expected_qr_page_labels,
+    qr_test,
+  })
+  return response.data
+}
+
 export const fetchAssessmentScripts = async (assessmentId: number, signal?: AbortSignal) => {
   try {
     const response = await api.get<Blob>(`assessments/${assessmentId}/scripts/export/`, {

@@ -10,6 +10,7 @@ import type { EnrolledStudent } from '@/types/enrollment'
 import type { Submission } from '@/types/submission'
 import AlertBox from '@/components/AlertBox.vue'
 import SubmissionReviewPanel from '@/components/SubmissionReviewPanel.vue'
+import { workflowError, orderedScriptPages } from '@/utils/workflow'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +24,10 @@ const verifyingId = ref<number | null>(null)
 const error = ref('')
 const successMessage = ref('')
 const reviewingId = ref<number | null>(null)
+const qrBlocked = (submission: Submission) =>
+  submission.status === 'processing' ||
+  submission.qr_group_status === 'manual_review' ||
+  Boolean(submission.qr_review_issues?.length)
 const panel = ref<InstanceType<typeof SubmissionReviewPanel> | null>(null)
 
 // 1. URL Syncing: Initialize filters from URL
@@ -98,6 +103,7 @@ watch(
 )
 
 const verify = async (submission: Submission) => {
+  if (qrBlocked(submission)) return
   const enrollment = selections[submission.id]
 
   if (typeof enrollment !== 'number') {
@@ -113,8 +119,11 @@ const verify = async (submission: Submission) => {
     const verified = await verifySubmission(submission.id, enrollment, submission.version)
     submissions.value = submissions.value.filter((item) => item.id !== verified.id)
     successMessage.value = `Verified ${verified.original_filename}.`
-  } catch {
-    error.value = 'Could not verify that submission for the selected student.'
+  } catch (cause) {
+    error.value = workflowError(
+      cause,
+      'Could not verify the selected student. Open Review to check the page evidence.',
+    )
   } finally {
     verifyingId.value = null
   }
@@ -200,6 +209,7 @@ onMounted(() => {
       :has-next="hasNext"
       @verified="onVerified"
       @retried="onRetried"
+      @updated="loadQueue"
       @next="reviewNext"
       @close="reviewingId = null"
     />
@@ -240,7 +250,18 @@ onMounted(() => {
               :key="submission.id"
               :class="{ 'is-reviewing': submission.id === reviewingId }"
             >
-              <td class="filename-cell">{{ submission.original_filename }}</td>
+              <td class="filename-cell">
+                {{ submission.original_filename }}
+                <p v-if="submission.qr_metadata?.test_number">
+                  Paper {{ submission.qr_metadata.test_number }} ·
+                  {{
+                    orderedScriptPages(submission.grouped_pages)
+                      .filter((page) => !page.excluded)
+                      .map((page) => page.page_label || 'Unreadable label')
+                      .join(', ')
+                  }}
+                </p>
+              </td>
               <td>
                 <RouterLink class="assessment-link" :to="`/assessments/${submission.assessment}`">
                   {{
@@ -285,12 +306,15 @@ onMounted(() => {
                   <button
                     class="btn-primary"
                     type="button"
-                    :disabled="verifyingId === submission.id"
+                    :disabled="verifyingId === submission.id || qrBlocked(submission)"
                     @click="verify(submission)"
                   >
                     {{ verifyingId === submission.id ? 'Verifying…' : 'Verify' }}
                   </button>
                 </div>
+                <p v-if="submission.qr_review_issues?.length">
+                  Page review required: {{ submission.qr_review_issues.join(', ') }}
+                </p>
               </td>
             </tr>
           </tbody>
