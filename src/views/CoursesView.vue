@@ -114,7 +114,7 @@ onMounted(() => {
         <label>
           Code
           <!-- Applied glass-input -->
-          <input class="glass-input" v-model.trim="form.code" required placeholder="PHY301" />
+          <input class="glass-input" v-model.trim="form.code" required placeholder="CMPG313" />
         </label>
 
         <label>
@@ -123,7 +123,7 @@ onMounted(() => {
             class="glass-input"
             v-model.trim="form.name"
             required
-            placeholder="Advanced Physics"
+            placeholder="Advanced Databases"
           />
         </label>
 
