@@ -32,16 +32,17 @@ onMounted(async () => {
         <p class="dashboard-subtitle">
           Manage courses, review submission matches and return verified scripts to students.
         </p>
-      </div>
-      <div class="hero-summary" aria-label="Workspace summary">
-        <div>
-          <span>Active courses</span><strong>{{ stats?.active_courses ?? '—' }}</strong
-          ><small>Your teaching workspace</small>
-        </div>
-        <div>
-          <span>Awaiting verification</span
-          ><strong>{{ stats?.pending_verifications ?? '—' }}</strong
-          ><small>Ready for your review</small>
+        <div class="workspace-summary" aria-label="Workspace summary">
+          <RouterLink to="/courses"
+            ><AppIcon name="courses" /><strong>{{ stats?.active_courses ?? '—' }}</strong
+            ><span>{{
+              stats?.active_courses === 1 ? 'active course' : 'active courses'
+            }}</span></RouterLink
+          >
+          <RouterLink to="/verification-queue"
+            ><AppIcon name="verify" /><strong>{{ stats?.pending_verifications ?? '—' }}</strong
+            ><span>awaiting verification</span></RouterLink
+          >
         </div>
       </div>
     </header>
@@ -85,19 +86,6 @@ onMounted(async () => {
             <span class="action-arrow">→</span>
           </div>
         </RouterLink>
-      </div>
-    </section>
-    <!-- Added glass-panel class here -->
-    <section class="workflow-card glass-panel">
-      <p class="page-eyebrow">PostGrade workflow</p>
-      <div class="workflow-steps">
-        <span>Upload</span>
-        <i>→</i>
-        <span>Recognise</span>
-        <i>→</i>
-        <span>Verify</span>
-        <i>→</i>
-        <span>Email script</span>
       </div>
     </section>
   </main>
@@ -153,47 +141,31 @@ onMounted(async () => {
   font-size: 0.88rem;
   max-width: 470px;
 }
-.hero-summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  flex-shrink: 0;
+.workspace-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin-top: 24px;
 }
-.hero-summary > div {
-  background: #ffffff0e;
-  border: 1px solid #ffffff1f;
-  border-radius: 10px;
-  padding: 18px;
-  min-width: 150px;
-}
-.hero-summary span,
-.hero-summary small {
-  display: block;
+.workspace-summary a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: #d0e0d6;
-  font-size: 0.68rem;
+  font-size: 0.85rem;
+  text-decoration: none;
 }
-.hero-summary strong {
-  display: block;
+.workspace-summary strong {
   color: #ffffff;
-  font-size: 1.8rem;
-  line-height: 1.5;
+  font-size: 1.05rem;
 }
-@media (max-width: 1200px) {
-  .dashboard-hero {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .hero-summary {
-    width: 100%;
-  }
+.workspace-summary a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 @media (max-width: 480px) {
   .dashboard-hero {
     padding: 24px;
-  }
-  .hero-summary > div {
-    min-width: 0;
-    padding: 12px;
   }
   .action-card {
     grid-template-columns: auto minmax(0, 1fr);
@@ -286,37 +258,6 @@ onMounted(async () => {
 .action-card:hover .action-arrow {
   transform: translateX(4px);
   color: var(--accent-green);
-}
-
-.workflow-card {
-  margin-top: 2.5rem;
-  padding: 1.5rem 1.75rem;
-}
-
-.workflow-card .page-eyebrow {
-  margin-bottom: 1rem;
-}
-
-.workflow-steps {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-}
-
-.workflow-steps span {
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 0.4rem 0.8rem;
-  background: var(--surface-header);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--glass-border);
-}
-
-.workflow-steps i {
-  color: var(--text-muted);
-  font-style: normal;
 }
 
 @media (max-width: 720px) {

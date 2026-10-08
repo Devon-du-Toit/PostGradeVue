@@ -164,7 +164,7 @@ const login = async () => {
             v-model.trim="email"
             type="email"
             autocomplete="email"
-            placeholder="you@university.edu"
+            placeholder="you@nwu.ac.za"
             required
           />
 
