@@ -14,6 +14,11 @@ const router = createRouter({
     return savedPosition ?? { top: 0 }
   },
   routes: [
+    {
+      path: '/ui-proposal',
+      name: 'ui-proposal',
+      component: () => import('@/views/UiProposalView.vue'),
+    },
     { path: '/forgot-password', name: 'forgot-password', component: PasswordRecoveryView },
     {
       path: '/reset-password',

@@ -113,8 +113,10 @@ const login = async () => {
             >PostGrade</span
           >
         </div>
-        <h1>Scripts, simplified.</h1>
-        <p class="login-intro">Recognise. Verify. Return.</p>
+        <h1>Lecturer workspace.</h1>
+        <p class="login-intro">
+          Manage courses, verify student matches and return assessment scripts.
+        </p>
       </div>
     </section>
 
@@ -255,7 +257,7 @@ const login = async () => {
   padding: 64px clamp(32px, 5vw, 80px);
   align-items: center;
   background: var(--hero-bg);
-  color: #f0f6f2;
+  color: var(--text-primary);
   overflow: hidden;
 }
 .login-brand-panel::before {
@@ -313,7 +315,7 @@ const login = async () => {
 }
 .login-brand-panel h1 {
   margin: 20px 0;
-  color: #f3f7f4;
+  color: var(--text-primary);
   font-size: clamp(2.3rem, 4.2vw, 3.7rem);
   line-height: 1.1;
   font-weight: 600;
@@ -321,7 +323,7 @@ const login = async () => {
 }
 .login-intro {
   max-width: 425px;
-  color: #d0e0d6;
+  color: var(--text-secondary);
   font-size: 0.98rem;
   line-height: 1.8;
 }
@@ -353,7 +355,7 @@ const login = async () => {
   font-size: 0.8rem;
 }
 .feature-list strong {
-  color: #f3f7f4;
+  color: var(--text-primary);
   font-size: 0.87rem;
   font-weight: 550;
 }

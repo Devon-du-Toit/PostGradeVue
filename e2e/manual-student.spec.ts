@@ -9,7 +9,7 @@ test('lecturer adds a student to a course using the manual form', async ({ page 
   await page.goto('/courses')
   await page.getByLabel('Code', { exact: true }).fill('MANUAL101')
   await page.getByLabel('Name', { exact: true }).fill('Manual student course')
-  await page.getByLabel('Year', { exact: true }).fill('2026')
+  await page.getByRole('spinbutton', { name: 'Year', exact: true }).fill('2026')
   await page.getByRole('button', { name: 'Create course', exact: true }).click()
   await page.getByText('MANUAL101', { exact: true }).click()
   await page.getByLabel('Student number', { exact: true }).fill('00998877')

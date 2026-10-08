@@ -26,8 +26,8 @@ test('selected bubbles decode fills rather than conflicting written digits', asy
   const filename = `${code}-bubbles.png`
   await page.getByLabel('Code', { exact: true }).fill(code)
   await page.getByLabel('Name', { exact: true }).fill('Synthetic bubbles')
-  await page.getByLabel('Year').fill('2026')
-  await page.getByLabel('Semester').selectOption('1')
+  await page.getByRole('spinbutton', { name: 'Year', exact: true }).fill('2026')
+  await page.getByRole('combobox', { name: 'Semester', exact: true }).selectOption('1')
   await page.getByRole('button', { name: 'Create course' }).click()
   await page.getByText(code, { exact: true }).click()
   await page

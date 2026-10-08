@@ -71,7 +71,8 @@ const logout = async () => {
 }
 </script>
 <template>
-  <div class="app-root" :class="{ 'with-shell': showShell }" @keydown="handleDrawerKey">
+  <RouterView v-if="route.name === 'ui-proposal'" />
+  <div v-else class="app-root" :class="{ 'with-shell': showShell }" @keydown="handleDrawerKey">
     <aside ref="sidebar" v-if="showShell" class="app-sidebar" :class="{ 'is-open': menuOpen }">
       <button
         class="button-secondary drawer-close"
@@ -87,9 +88,11 @@ const logout = async () => {
       </RouterLink>
       <p class="nav-caption">YOUR WORKSPACE</p>
       <nav id="main-navigation" class="app-nav" aria-label="Main navigation">
-        <RouterLink to="/dashboard"><AppIcon name="dashboard" />Dashboard</RouterLink>
-        <RouterLink to="/courses"><AppIcon name="courses" />Courses</RouterLink>
-        <RouterLink to="/verification-queue"><AppIcon name="verify" />Verification</RouterLink>
+        <RouterLink to="/dashboard"><AppIcon name="dashboard" /><span>Overview</span></RouterLink>
+        <RouterLink to="/courses"><AppIcon name="courses" /><span>Courses</span></RouterLink>
+        <RouterLink to="/verification-queue"
+          ><AppIcon name="verify" /><span>Verification</span></RouterLink
+        >
       </nav>
       <div class="sidebar-user">
         <span class="avatar">{{ initials }}</span
@@ -153,18 +156,18 @@ const logout = async () => {
   min-height: 100vh;
 }
 .with-shell {
-  padding-left: 248px;
+  padding-left: 84px;
 }
 .app-sidebar {
   position: fixed;
   inset: 0 auto 0 0;
-  width: 248px;
+  width: 84px;
   z-index: 40;
   display: flex;
   flex-direction: column;
   padding: 28px 18px 20px;
   background: var(--sidebar-bg);
-  color: #eaf3ef;
+  color: var(--text-primary);
   border-right: 1px solid var(--sidebar-border);
 }
 .brand {
@@ -366,6 +369,65 @@ const logout = async () => {
   }
   .guest-brand {
     display: none;
+  }
+}
+
+/* Console rail; full navigation is restored inside the mobile drawer. */
+@media (min-width: 1001px) {
+  .app-sidebar {
+    padding: 28px 10px 20px;
+    align-items: center;
+  }
+  .brand {
+    margin: 0 0 36px;
+    padding: 0;
+  }
+  .brand > span,
+  .nav-caption,
+  .sidebar-user > span:last-child {
+    display: none;
+  }
+  .brand-logo {
+    width: 38px;
+    height: 38px;
+  }
+  .app-nav a {
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    width: 64px;
+    padding: 12px 3px;
+    font-size: 0.62rem;
+  }
+  .sidebar-user {
+    padding: 20px 0 0;
+  }
+}
+.app-nav a {
+  color: var(--text-secondary);
+}
+.app-nav a:hover {
+  background: var(--surface-hover);
+}
+.app-nav a.router-link-active {
+  background: var(--surface-hover);
+  color: var(--accent-green);
+  box-shadow: none;
+}
+.avatar {
+  background: var(--surface-hover);
+  color: var(--accent-green);
+}
+.sidebar-user,
+.brand small {
+  color: var(--text-secondary);
+}
+.sidebar-user {
+  border-color: var(--glass-border);
+}
+@media (max-width: 1000px) {
+  .app-sidebar {
+    width: 248px;
   }
 }
 </style>
