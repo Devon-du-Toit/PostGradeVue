@@ -1,6 +1,6 @@
 # PostGrade UI proposals
 
-Local branch: `draft/three-ui-proposals`. This draft is not published.
+Local branch: `UI-improvements_I`. This draft is not published.
 
 Run `npm run dev` and open `/ui-proposal`. Switch styles using the top toolbar. Direct links: `/ui-proposal?style=campus`, `?style=editorial`, and `?style=console`.
 
@@ -13,3 +13,4 @@ Each concept includes overview, searchable courses, sample verification and sign
 Responsive navigation, semantic form labels, keyboard focus indicators, text status labels, empty states and reduced-motion support are included. The Campus palette is university-inspired; this proposal uses the existing PostGrade logo and an original CSS script illustration, without claiming official NWU branding.
 
 Validation: `npm run build` with `VITE_API_BASE_URL=/api/`, ESLint, and `npx playwright test e2e/uiProposal.spec.ts --project=chromium`. Browser checks cover all three styles, search, verification, signup help and mobile overflow. Screenshots are written to `proposal-previews/`.
+
