@@ -71,7 +71,8 @@ const logout = async () => {
 }
 </script>
 <template>
-  <div class="app-root" :class="{ 'with-shell': showShell }" @keydown="handleDrawerKey">
+  <RouterView v-if="route.name === 'ui-proposal'" />
+  <div v-else class="app-root" :class="{ 'with-shell': showShell }" @keydown="handleDrawerKey">
     <aside ref="sidebar" v-if="showShell" class="app-sidebar" :class="{ 'is-open': menuOpen }">
       <button
         class="button-secondary drawer-close"
