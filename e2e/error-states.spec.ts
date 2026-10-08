@@ -15,8 +15,8 @@ test('upload failure displays an error message', async ({ page }) => {
 
   await page.getByLabel('Code').fill('E2E103')
   await page.getByLabel('Name').fill('E2E Test Course')
-  await page.getByLabel('Year').fill('2026')
-  await page.getByLabel('Semester').selectOption('1')
+  await page.getByRole('spinbutton', { name: 'Year', exact: true }).fill('2026')
+  await page.getByRole('combobox', { name: 'Semester', exact: true }).selectOption('1')
 
   await page.getByRole('button', { name: 'Create course' }).click()
 

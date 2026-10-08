@@ -1,4 +1,4 @@
- import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
 test('lecturer can create a course', async ({ page }) => {
   // Log in
@@ -16,13 +16,11 @@ test('lecturer can create a course', async ({ page }) => {
   // Create a synthetic course
   await page.getByLabel('Code').fill('E2E101')
   await page.getByLabel('Name').fill('E2E Test Course')
-  await page.getByLabel('Year').fill('2026')
-  await page.getByLabel('Semester').selectOption('1')
+  await page.getByRole('spinbutton', { name: 'Year', exact: true }).fill('2026')
+  await page.getByRole('combobox', { name: 'Semester', exact: true }).selectOption('1')
 
   await page.getByRole('button', { name: 'Create course' }).click()
 
   // Confirm the course appears
-  await expect(
-    page.getByRole('link', { name: 'E2E101 E2E Test Course 2026' }),
-  ).toBeVisible()
+  await expect(page.getByRole('link', { name: 'E2E101 E2E Test Course 2026' })).toBeVisible()
 })
