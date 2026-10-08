@@ -157,10 +157,11 @@ onMounted(() => {
         <div class="filters-bar">
           <input
             class="glass-input search-input"
+            aria-label="Search courses"
             v-model="filters.search"
             placeholder="Search course name or code..."
           />
-          <select class="glass-input" v-model="filters.year">
+          <select class="glass-input" aria-label="Filter by year" v-model="filters.year">
             <option value="">All years</option>
             <option :value="2028">2028</option>
             <option :value="2027">2027</option>
@@ -168,7 +169,7 @@ onMounted(() => {
             <option :value="2025">2025</option>
             <option :value="2024">2024</option>
           </select>
-          <select class="glass-input" v-model="filters.semester">
+          <select class="glass-input" aria-label="Filter by semester" v-model="filters.semester">
             <option value="">All semesters</option>
             <option :value="1">Semester 1</option>
             <option :value="2">Semester 2</option>

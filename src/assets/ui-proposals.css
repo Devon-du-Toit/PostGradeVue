@@ -1502,3 +1502,47 @@
 .ui-draft .table-scroll {
   position: relative;
 }
+
+.ui-draft[data-concept='console'][data-theme='light'] {
+  --paper: #f3f6f8;
+  --surface: #fff;
+  --ink: #24333e;
+  --muted: #506472;
+  --line: #dce4e9;
+  --accent: #2d6945;
+  --accent-ink: #fff;
+  --soft: #e4f3ec;
+  --hero: #e8f1f4;
+  color-scheme: light;
+}
+.ui-draft[data-concept='console'][data-theme='light'] .draft-sidebar {
+  background: #f8fafb;
+}
+.ui-draft[data-concept='console'][data-theme='light'] .welcome {
+  background: linear-gradient(120deg, #e8f1f4, #e4f3ec);
+}
+.ui-draft[data-concept='console'][data-theme='light'] .purple {
+  background: #ece4f6;
+  color: #66409a;
+}
+.ui-draft[data-concept='console'][data-theme='light'] .orange {
+  background: #f8eade;
+  color: #955323;
+}
+.ui-draft[data-concept='console'][data-theme='light'] .blue {
+  background: #e3edf7;
+  color: #355b86;
+}
+.ui-draft[data-concept='console'][data-theme='light'] .verified {
+  background: #e4f2e9;
+  color: #29623e;
+}
+
+@media (max-width: 540px) {
+  .ui-draft .draft-topbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 58px;
+    padding-block: 14px;
+  }
+}

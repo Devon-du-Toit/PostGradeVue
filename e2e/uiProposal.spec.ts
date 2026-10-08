@@ -4,7 +4,7 @@ for (const style of ['campus', 'editorial', 'console']) {
   test(`${style}: preview navigation, search and verification`, async ({ page }) => {
     await page.goto(`/ui-proposal?style=${style}`)
     await expect(page.locator('.ui-draft')).toHaveAttribute('data-concept', style)
-    await expect(page.getByRole('heading', { name: 'More clarity. Less paperwork.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Assessment workspace.' })).toBeVisible()
     await page.screenshot({ path: `proposal-previews/${style}-desktop.png`, fullPage: true })
     await page.getByRole('button', { name: 'View all' }).click()
     await page.getByRole('searchbox', { name: 'Search courses' }).fill('CMPG313')
@@ -51,4 +51,17 @@ test('style switch preserves current screen and selected style in URL', async ({
   await page.getByRole('button', { name: /02.*Editorial/ }).click()
   await expect(page).toHaveURL(/style=editorial/)
   await expect(page.getByRole('heading', { name: 'Courses', exact: true })).toBeVisible()
+})
+
+test('Console proposal supports light and dark modes without promotional footer', async ({
+  page,
+}) => {
+  await page.goto('/ui-proposal?style=console')
+  await page.getByRole('button', { name: 'Light Mode' }).click()
+  await expect(page.locator('.ui-draft')).toHaveAttribute('data-theme', 'light')
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Dark Mode' })).toBeVisible()
+  await page.getByRole('button', { name: 'Dark Mode' }).click()
+  await expect(page.locator('.ui-draft')).toHaveAttribute('data-theme', 'dark')
+  await expect(page.locator('.draft-footer')).toHaveCount(0)
 })

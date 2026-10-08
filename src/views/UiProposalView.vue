@@ -24,6 +24,11 @@ const concepts = [
 ]
 const style = ref(concepts.find((item) => item.id === route.query.style)?.id ?? 'campus')
 const concept = computed(() => concepts.find((item) => item.id === style.value) ?? concepts[0]!)
+const light = ref(localStorage.getItem('theme') === 'light')
+const toggleTheme = () => {
+  light.value = !light.value
+  localStorage.setItem('theme', light.value ? 'light' : 'dark')
+}
 const page = ref('dashboard')
 const nav = [
   { id: 'dashboard', label: 'Overview', icon: 'dashboard' },
@@ -139,7 +144,7 @@ const submitPreview = () => {
 }
 </script>
 <template>
-  <div class="ui-draft" :data-concept="style">
+  <div class="ui-draft" :data-concept="style" :data-theme="light ? 'light' : 'dark'">
     <header class="draft-toolbar">
       <div class="draft-title">
         <span class="draft-dot"></span><strong>Design proposals</strong
@@ -188,8 +193,8 @@ const submitPreview = () => {
         </nav>
         <div class="sidebar-bottom">
           <div class="help-card">
-            <AppIcon name="courses" /><strong>A little less admin.</strong>
-            <p>A little more teaching.</p>
+            <AppIcon name="courses" /><strong>Course administration</strong>
+            <p>Students, assessments and scripts.</p>
           </div>
           <div class="profile">
             <span class="draft-avatar">SL</span>
@@ -203,6 +208,15 @@ const submitPreview = () => {
             <span class="breadcrumb">Workspace /</span
             ><strong>{{ nav.find((item) => item.id === page)?.label }}</strong>
           </div>
+          <button
+            v-if="style === 'console'"
+            class="secondary"
+            :aria-pressed="light"
+            :aria-label="light ? 'Dark Mode' : 'Light Mode'"
+            @click="toggleTheme"
+          >
+            <AppIcon :name="light ? 'moon' : 'sun'" />{{ light ? 'Dark Mode' : 'Light Mode' }}
+          </button>
           <span class="semester-pill">Semester 2, 2026</span
           ><span class="draft-avatar" aria-label="Sample lecturer profile">SL</span>
         </header>
@@ -212,7 +226,7 @@ const submitPreview = () => {
             ><section class="welcome">
               <div>
                 <p class="eyebrow">YOUR TEACHING, IN FOCUS</p>
-                <h1>More clarity.<br /><em>Less paperwork.</em></h1>
+                <h1>Assessment workspace.</h1>
                 <p class="welcome-copy">
                   Welcome back, Sam. Your courses and scripts,<br />together in one considered
                   workspace.
@@ -284,7 +298,7 @@ const submitPreview = () => {
               <section class="next-step">
                 <span class="next-icon"><AppIcon name="verify" /></span>
                 <p class="eyebrow">NEXT UP</p>
-                <h2>A quick check.<br />A confident return.</h2>
+                <h2>Pending verification</h2>
                 <p>
                   {{ remaining }} sample scripts are waiting for your confirmation. Review a match
                   before returning it.
@@ -422,9 +436,10 @@ const submitPreview = () => {
           <section v-else class="signin-layout">
             <div class="signin-story">
               <p class="eyebrow">POSTGRADE / ACADEMIC WORKSPACE</p>
-              <h1>Your time belongs<br />to <em>teaching.</em></h1>
+              <h1>Lecturer workspace</h1>
               <p>
-                From scanned scripts to verified returns.<br />Make room for the work that matters.
+                From scanned scripts to verified returns.<br />Manage courses and assessment
+                scripts.
               </p>
               <div class="signin-decoration" aria-hidden="true">
                 <span>Recognise.</span><span>Verify.</span><span>Return.</span>
@@ -501,10 +516,6 @@ const submitPreview = () => {
               <small>Preview only. Please use sample credentials.</small>
             </form>
           </section>
-          <footer class="draft-footer">
-            <span>PostGrade · Thoughtfully organised.</span
-            ><span>{{ concept.name }} · Draft proposal</span>
-          </footer>
         </main>
       </div>
     </div>

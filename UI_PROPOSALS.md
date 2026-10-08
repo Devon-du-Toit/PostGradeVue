@@ -14,3 +14,7 @@ Responsive navigation, semantic form labels, keyboard focus indicators, text sta
 
 Validation: `npm run build` with `VITE_API_BASE_URL=/api/`, ESLint, and `npx playwright test e2e/uiProposal.spec.ts --project=chromium`. Browser checks cover all three styles, search, verification, signup help and mobile overflow. Screenshots are written to `proposal-previews/`.
 
+
+## Implemented Console interface
+
+The live app now uses the Console interface at `/dashboard`, including real course summaries, compact desktop navigation and a mobile drawer. The persistent dark/light toggle applies to all live routes, including sign-in. The Console proposal also supports both modes. Academic headings replace the promotional copy, and the proposal footer has been removed.
