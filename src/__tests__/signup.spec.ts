@@ -41,6 +41,26 @@ describe('sign up', () => {
   })
   afterEach(() => mounted.splice(0).forEach((wrapper) => wrapper.unmount()))
 
+  it('shows and hides the password rules using the help button', async () => {
+    const wrapper = await signupPage()
+    const help = wrapper.get('[aria-controls="password-help"]')
+    expect(wrapper.find('#password-help').exists()).toBe(false)
+    await help.trigger('click')
+    expect(help.attributes('aria-expanded')).toBe('true')
+    expect(wrapper.get('#password-help').text()).toContain('special character')
+    await help.trigger('click')
+    expect(wrapper.find('#password-help').exists()).toBe(false)
+  })
+
+  it('rejects a password without a special character before registration', async () => {
+    const wrapper = await signupPage()
+    await wrapper.get('#password').setValue('ExamplePassword42')
+    await wrapper.get('#confirm-password').setValue('ExamplePassword42')
+    await wrapper.get('form').trigger('submit')
+    expect(registerUser).not.toHaveBeenCalled()
+    expect(wrapper.get('[role="alert"]').text()).toContain('special character')
+  })
+
   it('prevents mismatched passwords from creating an account', async () => {
     const wrapper = await signupPage()
     await wrapper.get('#confirm-password').setValue('different')

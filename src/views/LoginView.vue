@@ -20,6 +20,8 @@ onMounted(async () => {
 const firstName = ref('')
 const lastName = ref('')
 const confirmPassword = ref('')
+const showPasswordRules = ref(false)
+const hasSpecialCharacter = (value: string) => /[^\p{L}\p{N}\s]/u.test(value)
 
 const email = ref('')
 const password = ref('')
@@ -34,6 +36,7 @@ watch(
   () => props.mode,
   () => {
     error.value = ''
+    showPasswordRules.value = false
     password.value = ''
     confirmPassword.value = ''
   },
@@ -44,6 +47,10 @@ const signup = async () => {
   error.value = ''
   if (password.value !== confirmPassword.value) {
     error.value = 'Passwords do not match.'
+    return
+  }
+  if (!hasSpecialCharacter(password.value)) {
+    error.value = 'Password must contain at least one special character, such as !, @ or #.'
     return
   }
   loading.value = true
@@ -164,11 +171,24 @@ const login = async () => {
             v-model.trim="email"
             type="email"
             autocomplete="email"
-            placeholder="you@nwu.ac.za"
+            placeholder="you@mynwu.ac.za"
             required
           />
 
-          <label for="password">Password</label>
+          <div class="password-label-row">
+            <label for="password">Password</label>
+            <button
+              v-if="signingUp"
+              type="button"
+              class="password-rules-toggle"
+              aria-label="Show password rules"
+              aria-controls="password-help"
+              :aria-expanded="showPasswordRules"
+              @click="showPasswordRules = !showPasswordRules"
+            >
+              ?
+            </button>
+          </div>
           <!-- Applied glass-input -->
           <input
             id="password"
@@ -176,13 +196,14 @@ const login = async () => {
             v-model="password"
             type="password"
             :autocomplete="signingUp ? 'new-password' : 'current-password'"
-            :aria-describedby="signingUp ? 'password-help' : undefined"
+            :aria-describedby="signingUp && showPasswordRules ? 'password-help' : undefined"
             placeholder="Enter your password"
             required
           />
           <template v-if="signingUp">
-            <p id="password-help" class="password-help">
-              Use at least 8 characters. Avoid common passwords or personal details.
+            <p v-if="showPasswordRules" id="password-help" class="password-help">
+              Use at least 8 characters and include at least one special character, such as !, @ or
+              #. Avoid common passwords, entirely numeric passwords or personal details.
             </p>
             <label for="confirm-password">Confirm password</label>
             <input
@@ -382,6 +403,27 @@ form button {
   width: 100%;
   margin-top: 16px;
   min-height: 46px;
+}
+.password-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+form .password-rules-toggle {
+  width: 24px;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--text-secondary);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.password-rules-toggle:focus-visible {
+  outline: 2px solid var(--accent-green);
+  outline-offset: 3px;
 }
 .password-help,
 .account-link {
