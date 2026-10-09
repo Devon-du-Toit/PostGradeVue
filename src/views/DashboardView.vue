@@ -47,14 +47,6 @@ onMounted(async () => {
           >Review pending scripts <AppIcon name="arrow"
         /></RouterLink>
       </div>
-      <div class="script-illustration" aria-hidden="true">
-        <span class="script-label">POSTGRADE</span>
-        <div class="script-lines"><i></i><i></i><i></i></div>
-        <div class="script-bubbles">
-          <span v-for="n in 12" :key="n" :class="{ filled: [2, 5, 7, 12].includes(n) }"></span>
-        </div>
-        <span class="script-check"><AppIcon name="verify" /></span>
-      </div>
     </header>
     <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
     <section class="summary-grid" aria-label="Workspace summary" :aria-busy="loading">
@@ -120,7 +112,7 @@ onMounted(async () => {
 }
 .dashboard-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(180px, 0.7fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 32px;
   align-items: center;
   padding: 34px;
@@ -145,65 +137,6 @@ onMounted(async () => {
   color: var(--text-secondary);
   font-size: 0.9rem;
   margin: 0 0 24px;
-}
-.script-illustration {
-  justify-self: center;
-  width: 158px;
-  height: 180px;
-  position: relative;
-  transform: rotate(-8deg);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 10px;
-  padding: 22px;
-  box-shadow: 12px 18px 35px #00000012;
-}
-.script-label {
-  font-size: 0.5rem;
-  letter-spacing: 0.14em;
-  font-weight: 650;
-  color: var(--accent-green);
-}
-.script-lines {
-  display: grid;
-  gap: 6px;
-  margin: 15px 0 20px;
-}
-.script-lines i {
-  height: 4px;
-  border-radius: 4px;
-  background: var(--glass-border);
-}
-.script-lines i:last-child {
-  width: 60%;
-}
-.script-bubbles {
-  display: grid;
-  grid-template-columns: repeat(4, 12px);
-  gap: 9px;
-}
-.script-bubbles span {
-  height: 12px;
-  border: 1px solid var(--glass-border);
-  border-radius: 50%;
-}
-.script-bubbles .filled {
-  background: var(--accent-green);
-  border-color: var(--accent-green);
-}
-.script-check {
-  position: absolute;
-  right: -18px;
-  bottom: 16px;
-  background: var(--button-green);
-  color: var(--button-label);
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  transform: rotate(8deg);
-  border: 4px solid var(--glass-bg);
 }
 .summary-grid {
   display: grid;
@@ -350,9 +283,6 @@ onMounted(async () => {
   .dashboard-hero {
     padding: 26px;
     grid-template-columns: 1fr;
-  }
-  .script-illustration {
-    display: none;
   }
   .summary-grid {
     grid-template-columns: 1fr;

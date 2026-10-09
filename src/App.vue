@@ -132,9 +132,7 @@ const logout = async () => {
             :aria-label="isLightMode ? 'Dark Mode' : 'Light Mode'"
             @click="toggleTheme"
           >
-            <AppIcon :name="isLightMode ? 'moon' : 'sun'" /><span>{{
-              isLightMode ? 'Dark Mode' : 'Light Mode'
-            }}</span>
+            <AppIcon :name="isLightMode ? 'moon' : 'sun'" />
           </button>
           <button
             v-if="showShell"
@@ -301,6 +299,11 @@ const logout = async () => {
   gap: 8px;
   align-items: center;
   font-size: 0.78rem;
+}
+.workspace-controls .theme-toggle {
+  width: 42px;
+  min-width: 42px;
+  padding: 10px;
 }
 .menu-toggle {
   display: none;
