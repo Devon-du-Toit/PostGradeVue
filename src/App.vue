@@ -9,16 +9,6 @@ const router = useRouter()
 const authStore = useAuthStore()
 const showShell = computed(() => Boolean(route.meta.requiresAuth))
 const isLightMode = ref(localStorage.getItem('theme') === 'light')
-const pageTitle = computed(() => {
-  const names: Record<string, string> = {
-    dashboard: 'Overview',
-    courses: 'Courses',
-    'course-detail': 'Course workspace',
-    'assessment-detail': 'Assessment workspace',
-    'verification-queue': 'Verification',
-  }
-  return names[String(route.name)] || 'Workspace'
-})
 const toggleTheme = () => {
   isLightMode.value = !isLightMode.value
   document.body.classList.toggle('light-theme', isLightMode.value)
@@ -42,10 +32,6 @@ const logout = async () => {
           <img src="/postgradeLogo.jpg" alt="" />
           <span><strong>PostGrade</strong><small>ASSESSMENT OPERATIONS</small></span>
         </RouterLink>
-        <div class="console-location">
-          <span class="location-pulse" aria-hidden="true"></span>
-          <span>{{ pageTitle }}</span>
-        </div>
         <div class="header-actions">
           <span class="lecturer-name">{{ authStore.user?.first_name || 'Lecturer' }}</span>
           <button
@@ -114,7 +100,7 @@ const logout = async () => {
 .console-brand img {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
+  clip-path: circle(48%);
   object-fit: cover;
 }
 .console-brand strong,
@@ -131,22 +117,6 @@ const logout = async () => {
   color: var(--text-muted);
   font-size: 0.61rem;
   letter-spacing: 0.13em;
-}
-.console-location {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-left: 28px;
-  border-left: 1px solid var(--glass-border);
-  color: var(--text-secondary);
-  font-size: 0.83rem;
-}
-.location-pulse {
-  width: 7px;
-  height: 7px;
-  background: var(--accent-green);
-  border-radius: 50%;
-  box-shadow: 0 0 0 4px #46bde022;
 }
 .header-actions {
   margin-left: auto;
@@ -233,7 +203,6 @@ const logout = async () => {
     min-height: 62px;
     gap: 10px;
   }
-  .console-location,
   .lecturer-name,
   .console-brand small,
   .logout-button span {

@@ -146,7 +146,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   padding: 25px;
-  border-top: 3px solid var(--accent-green);
   color: var(--text-primary);
   text-decoration: none;
 }
