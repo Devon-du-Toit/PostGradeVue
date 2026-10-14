@@ -113,10 +113,11 @@ const login = async () => {
             >PostGrade</span
           >
         </div>
-        <h1>Lecturer workspace.</h1>
+        <h1>A better view of what matters.</h1>
         <p class="login-intro">
           Manage courses, verify student matches and return assessment scripts.
         </p>
+        <p class="brand-caption">FROM FIRST UPLOAD TO FINAL RETURN</p>
       </div>
     </section>
 
@@ -249,15 +250,15 @@ const login = async () => {
 .login-page {
   display: grid;
   min-height: 100vh;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
 }
 .login-brand-panel {
   position: relative;
   display: flex;
   padding: 64px clamp(32px, 5vw, 80px);
   align-items: center;
-  background: var(--hero-bg);
-  color: var(--text-primary);
+  background: linear-gradient(135deg, #2c513b, #192d23);
+  color: #f5e8d5;
   overflow: hidden;
 }
 .login-brand-panel::before {
@@ -298,6 +299,7 @@ const login = async () => {
   font-size: 1.6rem;
   font-weight: 650;
   letter-spacing: -0.04em;
+  color: #f5e8d5;
 }
 .login-brand small {
   display: block;
@@ -315,15 +317,16 @@ const login = async () => {
 }
 .login-brand-panel h1 {
   margin: 20px 0;
-  color: var(--text-primary);
-  font-size: clamp(2.3rem, 4.2vw, 3.7rem);
+  color: #f5e8d5;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(3rem, 4.8vw, 5rem);
   line-height: 1.1;
   font-weight: 600;
   letter-spacing: -0.045em;
 }
 .login-intro {
   max-width: 425px;
-  color: var(--text-secondary);
+  color: #d6e2cf;
   font-size: 0.98rem;
   line-height: 1.8;
 }
@@ -359,16 +362,30 @@ const login = async () => {
   font-size: 0.87rem;
   font-weight: 550;
 }
+.brand-caption {
+  margin-top: 54px;
+  padding-top: 18px;
+  border-top: 1px solid #d6e2cf55;
+  color: #d6e2cf;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+}
 .login-form-panel {
   display: flex;
   padding: 94px 36px 48px;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 1;
+  margin-left: -84px;
 }
 .login-card {
   width: 100%;
-  max-width: 455px;
-  padding: 36px;
+  max-width: 490px;
+  padding: clamp(32px, 4vw, 52px);
+  border-top: 4px solid var(--accent-green);
+  box-shadow: 0 20px 60px #0d201e35;
+  transform: translateX(-100px);
 }
 .login-card .page-eyebrow {
   font-size: 0.75rem;
@@ -378,7 +395,8 @@ const login = async () => {
 .login-card h2 {
   margin: 0 0 8px;
   color: var(--text-primary);
-  font-size: 1.75rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 2.2rem;
   letter-spacing: -0.035em;
 }
 .login-help {
@@ -457,9 +475,12 @@ form .password-rules-toggle {
   .login-form-panel {
     min-height: 100vh;
     padding: 90px 20px 36px;
+    margin-left: 0;
+    background: var(--bg-gradient);
   }
   .login-card {
     padding: 28px;
+    transform: none;
   }
   .mobile-brand {
     display: block;

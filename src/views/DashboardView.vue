@@ -35,263 +35,320 @@ onMounted(async () => {
 </script>
 <template>
   <main class="dashboard">
-    <header class="dashboard-hero">
-      <div>
+    <section class="lead-grid">
+      <header class="feature-hero">
         <p class="page-eyebrow">POSTGRADE / LECTURER</p>
-        <h1>Assessment workspace</h1>
-        <p class="dashboard-subtitle">
-          Welcome{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}. Manage
-          your courses, verify student matches and return assessment scripts.
+        <h1>Assessment work, beautifully in order.</h1>
+        <p>
+          Welcome{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}. Keep your
+          courses, student matches and returned scripts moving in one considered workspace.
         </p>
         <RouterLink class="button-primary" to="/verification-queue"
           >Review pending scripts <AppIcon name="arrow"
         /></RouterLink>
-      </div>
-    </header>
-    <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
-    <section class="summary-grid" aria-label="Workspace summary" :aria-busy="loading">
-      <RouterLink class="summary-card glass-panel" to="/courses"
-        ><span>Active courses<AppIcon name="courses" /></span
-        ><strong>{{ stats?.active_courses ?? '—' }}</strong
-        ><small>Manage courses and enrolled students <AppIcon name="arrow" /></small></RouterLink
-      ><RouterLink class="summary-card glass-panel" to="/verification-queue"
-        ><span>Awaiting verification<AppIcon name="verify" /></span
-        ><strong>{{ stats?.pending_verifications ?? '—' }}</strong
-        ><small>Review student matches <AppIcon name="arrow" /></small
-      ></RouterLink>
+      </header>
+      <aside class="review-note glass-panel">
+        <span class="note-number">01 / THE PRIORITY</span>
+        <div class="note-icon"><AppIcon name="verify" /></div>
+        <h2>Verification, made clear.</h2>
+        <p>Check scanned pages and confirm student details before returning scripts.</p>
+        <RouterLink to="/verification-queue">Open verification <AppIcon name="arrow" /></RouterLink>
+      </aside>
     </section>
-    <div class="dashboard-columns">
-      <section class="dashboard-section">
-        <div class="section-heading">
-          <div>
-            <p class="page-eyebrow">COURSE ADMINISTRATION</p>
-            <h2>Your courses</h2>
-          </div>
-          <RouterLink to="/courses">View all <AppIcon name="arrow" /></RouterLink>
+
+    <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
+    <section class="overview-band" aria-label="Workspace summary" :aria-busy="loading">
+      <RouterLink to="/courses">
+        <span>01 / ACTIVE COURSES</span>
+        <strong>{{ stats?.active_courses ?? '—' }}</strong>
+        <small>Manage your course collection <AppIcon name="arrow" /></small>
+      </RouterLink>
+      <RouterLink to="/verification-queue">
+        <span>02 / AWAITING VERIFICATION</span>
+        <strong>{{ stats?.pending_verifications ?? '—' }}</strong>
+        <small>Review student matches <AppIcon name="arrow" /></small>
+      </RouterLink>
+    </section>
+
+    <section class="courses-section" aria-labelledby="courses-heading">
+      <div class="section-heading">
+        <div>
+          <p class="page-eyebrow">YOUR COLLECTION</p>
+          <h2 id="courses-heading">Courses</h2>
+          <p>Every assessment begins here.</p>
         </div>
-        <div class="dashboard-courses glass-panel">
-          <p v-if="loading" class="course-status" role="status">Loading courses…</p>
-          <AlertBox v-else-if="courseError" type="error">{{ courseError }}</AlertBox>
-          <div v-else-if="!courses.length" class="course-status">
-            <h3>No courses yet</h3>
-            <p>Create a course to add students and assessments.</p>
-            <RouterLink class="button-secondary" to="/courses">Create course</RouterLink>
-          </div>
-          <RouterLink
-            v-for="course in courses"
-            v-else
-            :key="course.id"
-            class="dashboard-course"
-            :to="`/courses/${course.id}`"
-            ><span class="course-symbol"><AppIcon name="courses" /></span
-            ><span
-              ><strong>{{ course.name }}</strong
-              ><small
-                >{{ course.code }} · {{ course.year }} · Semester {{ course.semester }}</small
-              ></span
-            ><AppIcon name="arrow"
-          /></RouterLink>
-        </div>
-      </section>
-      <section class="verification-card glass-panel">
-        <span class="verification-icon"><AppIcon name="verify" /></span>
-        <p class="page-eyebrow">SCRIPT REVIEW</p>
-        <h2>Pending verification</h2>
-        <p>Check scanned pages and confirm student details before returning assessment scripts.</p>
-        <RouterLink class="button-secondary" to="/verification-queue"
-          >Open verification <AppIcon name="arrow"
-        /></RouterLink>
-      </section>
-    </div>
+        <RouterLink to="/courses">Explore all courses <AppIcon name="arrow" /></RouterLink>
+      </div>
+      <p v-if="loading" class="course-state" role="status">Loading courses…</p>
+      <AlertBox v-else-if="courseError" type="error">{{ courseError }}</AlertBox>
+      <div v-else-if="!courses.length" class="course-state glass-panel">
+        <h3>No courses yet</h3>
+        <p>Create a course to add students and assessments.</p>
+        <RouterLink class="button-primary" to="/courses">Create course</RouterLink>
+      </div>
+      <div v-else class="course-gallery">
+        <RouterLink
+          v-for="(course, index) in courses"
+          :key="course.id"
+          class="course-card glass-panel"
+          :to="`/courses/${course.id}`"
+        >
+          <span class="course-index">0{{ index + 1 }} / COURSE</span>
+          <span class="course-symbol"><AppIcon name="courses" /></span>
+          <h3>{{ course.name }}</h3>
+          <p>{{ course.code }} · {{ course.year }} · Semester {{ course.semester }}</p>
+          <span class="course-open">Open course <AppIcon name="arrow" /></span>
+        </RouterLink>
+      </div>
+    </section>
   </main>
 </template>
+
 <style scoped>
 .dashboard {
-  max-width: 1400px;
+  max-width: 1300px;
   margin: 0 auto;
 }
-.dashboard-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 32px;
-  align-items: center;
-  padding: 34px;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  background: var(--hero-bg);
-  margin-bottom: 24px;
-}
 .page-eyebrow {
-  color: var(--text-muted);
-  font-size: 0.65rem;
-  letter-spacing: 0.14em;
-  font-weight: 650;
-  margin: 0 0 12px;
+  margin: 0 0 18px;
+  color: var(--accent-green);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
 }
-.dashboard-hero h1 {
-  font-size: clamp(1.8rem, 3vw, 2.8rem);
+.lead-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.8fr);
+  gap: 22px;
+}
+.feature-hero {
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  padding: clamp(34px, 5vw, 64px);
+  border: 1px solid var(--glass-border);
+  background: var(--hero-bg);
+  position: relative;
+  overflow: hidden;
+}
+.feature-hero::after {
+  content: '';
+  width: 285px;
+  height: 285px;
+  position: absolute;
+  right: -90px;
+  bottom: -120px;
+  border: 1px solid #9d795b55;
+  border-radius: 48% 0 48% 0;
+  transform: rotate(-30deg);
+  box-shadow:
+    0 0 0 45px #b7906e14,
+    0 0 0 90px #b7906e0c;
+  pointer-events: none;
+}
+.feature-hero h1 {
+  max-width: 630px;
   margin: 0 0 16px;
+  font-size: clamp(2.6rem, 4vw, 4.25rem);
+  line-height: 1.08;
 }
-.dashboard-subtitle {
-  max-width: 560px;
+.feature-hero > p:not(.page-eyebrow) {
+  max-width: 520px;
+  margin: 0 0 28px;
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin: 0 0 24px;
+  font-size: 0.93rem;
 }
-.summary-grid {
+.feature-hero > a {
+  margin-top: auto;
+}
+.review-note {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+}
+.note-number,
+.course-index {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+.note-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  margin: 30px 0 22px;
+  background: var(--surface-header);
+  color: var(--accent-green);
+}
+.review-note h2 {
+  margin: 0 0 12px;
+  font-size: 1.9rem;
+}
+.review-note p {
+  margin: 0 0 24px;
+  color: var(--text-secondary);
+  font-size: 0.87rem;
+}
+.review-note > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.overview-band {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin: 24px 0 32px;
+  margin: 36px 0 52px;
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
 }
-.summary-card {
-  display: block;
-  padding: 22px;
+.overview-band a {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 14px;
+  padding: 25px 32px;
   color: var(--text-primary);
   text-decoration: none;
 }
-.summary-card:hover {
-  border-color: var(--accent-green);
+.overview-band a:first-child {
+  border-right: 1px solid var(--glass-border);
 }
-.summary-card > span,
-.summary-card > small {
-  display: flex;
-  justify-content: space-between;
+.overview-band a > span {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.overview-band strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 3.1rem;
+  font-weight: 500;
+  line-height: 1.15;
+}
+.overview-band small {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
+  align-self: end;
+  gap: 8px;
   color: var(--text-secondary);
-  font-size: 0.8rem;
-}
-.summary-card > strong {
-  display: block;
-  font-size: 2.2rem;
-  font-family: Consolas, monospace;
-  line-height: 1.3;
-  margin: 12px 0;
-}
-.summary-card > small {
-  border-top: 1px solid var(--glass-border);
-  padding-top: 12px;
   font-size: 0.75rem;
 }
-.summary-card svg {
-  width: 17px;
-}
-.dashboard-columns {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-  gap: 24px;
+.overview-band small svg {
+  width: 16px;
 }
 .section-heading {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin: 0 0 20px;
-}
-.section-heading .page-eyebrow {
-  margin-bottom: 8px;
+  align-items: end;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 .section-heading h2 {
+  margin: 0 0 4px;
+  font-size: 2.2rem;
+}
+.section-heading p:not(.page-eyebrow) {
   margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.87rem;
 }
 .section-heading > a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8rem;
   text-decoration: none;
   min-height: 44px;
+  font-size: 0.85rem;
 }
-.dashboard-courses {
-  padding: 0 22px;
+.course-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
 }
-.dashboard-course {
+.course-card {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 22px 0;
-  border-bottom: 1px solid var(--glass-border);
+  flex-direction: column;
+  align-items: start;
+  min-height: 260px;
+  padding: 26px;
   color: var(--text-primary);
   text-decoration: none;
 }
-.dashboard-course:last-child {
-  border: 0;
+.course-card:hover {
+  border-color: var(--glass-border-highlight);
+  background: var(--glass-bg-hover);
 }
-.dashboard-course > span:nth-child(2) {
-  flex: 1;
-  min-width: 0;
-}
-.dashboard-course strong {
-  display: block;
-  font-size: 0.85rem;
-}
-.dashboard-course small {
-  display: block;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  margin-top: 4px;
-}
-.dashboard-course:hover strong {
-  color: var(--accent-green);
-}
-.course-symbol,
-.verification-icon {
+.course-symbol {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  background: var(--surface-hover);
+  width: 40px;
+  height: 40px;
+  margin: 22px 0 14px;
+  background: var(--surface-header);
   color: var(--accent-green);
-  flex-shrink: 0;
 }
-.verification-card {
-  padding: 26px;
+.course-card h3 {
+  margin: 0 0 7px;
+  font-size: 1.45rem;
 }
-.verification-icon {
-  margin-bottom: 22px;
-}
-.verification-card h2 {
-  margin: 0 0 14px;
-}
-.verification-card > p:not(.page-eyebrow) {
+.course-card p {
+  margin: 0;
   color: var(--text-secondary);
-  font-size: 0.85rem;
-  margin: 0 0 22px;
+  font-size: 0.8rem;
 }
-.verification-card > a {
-  width: 100%;
+.course-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 25px;
+  color: var(--accent-green);
+  font-size: 0.79rem;
+  font-weight: 600;
 }
-.course-status {
-  padding: 22px 0;
+.course-open svg {
+  width: 16px;
+}
+.course-state {
+  padding: 24px;
   color: var(--text-secondary);
 }
-.course-status h3 {
+.course-state h3 {
+  color: var(--text-primary);
   margin: 0;
 }
-.course-status p {
-  font-size: 0.85rem;
+@media (max-width: 960px) {
+  .lead-grid {
+    grid-template-columns: 1fr;
+  }
+  .review-note {
+    min-height: 220px;
+  }
 }
-.dashboard-courses > :deep(.alert) {
-  margin: 22px 0;
-}
-@media (max-width: 760px) {
-  .dashboard-columns {
+@media (max-width: 720px) {
+  .overview-band {
     grid-template-columns: 1fr;
   }
-  .dashboard-hero {
-    padding: 26px;
+  .overview-band a:first-child {
+    border-right: 0;
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .course-gallery {
     grid-template-columns: 1fr;
   }
-  .summary-grid {
-    grid-template-columns: 1fr;
+  .section-heading {
+    align-items: start;
   }
-  .dashboard-course {
-    gap: 10px;
-  }
-  .dashboard-hero h1 {
-    font-size: 2rem;
+  .section-heading > a {
+    max-width: 125px;
   }
 }
 </style>
