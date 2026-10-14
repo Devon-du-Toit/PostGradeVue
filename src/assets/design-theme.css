@@ -1,0 +1,162 @@
+/* Sage Studio: calm, light surfaces inspired by the botanical and soft green references. */
+:root {
+  --bg-gradient: #14231e;
+  --glass-bg: #1c3028;
+  --glass-bg-hover: #254036;
+  --glass-border: #365346;
+  --glass-border-highlight: #92c8aa;
+  --glass-shadow: 0 12px 32px #081b1430;
+  --text-primary: #f2f8f1;
+  --text-secondary: #c6dacf;
+  --text-muted: #a9c5b5;
+  --accent-green: #a5ddba;
+  --accent-green-hover: #c3edcf;
+  --button-green: #a5ddba;
+  --button-label: #173324;
+  --button-green-hover: #c3edcf;
+  --surface-inset: #14251e;
+  --surface-header: #263e32;
+  --surface-input: #172b22;
+  --surface-input-focus: #203a2c;
+  --surface-option: #1c3028;
+  --surface-hover: #2b4939;
+  --table-divider: #365346;
+  --nav-background: #1c3028;
+  --sidebar-bg: #10241b;
+  --sidebar-border: #365346;
+  --hero-bg: linear-gradient(125deg, #244b36, #193327);
+  --radius-md: 12px;
+  --radius-lg: 20px;
+}
+body.light-theme {
+  --bg-gradient: #f5f7f1;
+  --glass-bg: #ffffff;
+  --glass-bg-hover: #f5f9f3;
+  --glass-border: #dae5d9;
+  --glass-border-highlight: #79a887;
+  --glass-shadow: 0 12px 36px #2549340e;
+  --text-primary: #21392c;
+  --text-secondary: #516a59;
+  --text-muted: #617968;
+  --accent-green: #326b4c;
+  --accent-green-hover: #234d37;
+  --button-green: #326b4c;
+  --button-label: #fff;
+  --button-green-hover: #26583d;
+  --surface-inset: #edf4ec;
+  --surface-header: #eef4eb;
+  --surface-input: #fbfdf9;
+  --surface-input-focus: #ffffff;
+  --surface-option: #ffffff;
+  --surface-hover: #e9f3e8;
+  --table-divider: #dce8da;
+  --nav-background: #fff;
+  --sidebar-bg: #e8f0e6;
+  --sidebar-border: #d5e2d1;
+  --hero-bg: linear-gradient(115deg, #e3efe2 0%, #f3f7eb 63%, #ddebd9 100%);
+}
+body {
+  font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+}
+body.light-theme .app-sidebar {
+  background: var(--sidebar-bg);
+}
+body .app-sidebar {
+  border-right: 1px solid var(--sidebar-border);
+}
+body .app-nav a {
+  border-radius: 13px;
+  font-weight: 650;
+}
+body .app-nav a.router-link-active {
+  background: var(--glass-bg);
+  box-shadow: 0 4px 14px #173c2014;
+}
+body .workspace-bar {
+  background: var(--nav-background);
+}
+body .glass-panel {
+  border-radius: var(--radius-lg);
+}
+body .button-primary,
+body .btn-primary {
+  box-shadow: 0 7px 16px #1d563324;
+}
+body .app-content > main {
+  max-width: 1400px;
+  padding-top: 40px;
+}
+body .dashboard-hero {
+  min-height: 246px;
+  padding: clamp(32px, 4vw, 56px);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+}
+body .dashboard-hero::after {
+  content: '';
+  position: absolute;
+  width: 330px;
+  height: 330px;
+  right: -72px;
+  top: -80px;
+  border: 34px solid #7ba98a22;
+  border-radius: 50% 18% 50% 18%;
+  transform: rotate(-28deg);
+  pointer-events: none;
+}
+body .dashboard-hero h1 {
+  font-size: clamp(2.1rem, 3.4vw, 3.25rem);
+}
+body .summary-grid {
+  gap: 20px;
+}
+body .summary-card {
+  padding: 28px;
+}
+body .summary-card > strong {
+  font-family: inherit;
+  font-weight: 650;
+  letter-spacing: -0.06em;
+}
+body .verification-card {
+  background: linear-gradient(150deg, var(--glass-bg), var(--surface-header));
+}
+body .login-page {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+body .login-brand-panel {
+  background: linear-gradient(145deg, #d9e9d4, #a9c7a7);
+  color: #183927;
+}
+body .login-brand-panel::before {
+  border-color: #ffffff45;
+  box-shadow:
+    0 0 0 100px #ffffff20,
+    0 0 0 200px #ffffff12;
+}
+body .login-brand-panel h1,
+body .login-brand > span {
+  color: #183927;
+}
+body .login-brand-panel .login-intro {
+  color: #315641;
+}
+body .login-form-panel {
+  background: var(--bg-gradient);
+}
+body .login-card {
+  box-shadow: 0 18px 60px #1b43251a;
+  padding: clamp(30px, 4vw, 48px);
+}
+body .glass-input {
+  border-radius: 11px;
+}
+@media (max-width: 850px) {
+  body .login-page {
+    grid-template-columns: 1fr;
+  }
+  body .login-form-panel {
+    background: var(--bg-gradient);
+  }
+}

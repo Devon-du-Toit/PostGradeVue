@@ -4,7 +4,10 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import '@/assets/main.css'
+import '@/assets/design-theme.css'
 import { useAuthStore } from '@/stores/auth'
+
+document.body.classList.toggle('light-theme', localStorage.getItem('theme') !== 'dark')
 
 const app = createApp(App)
 const pinia = createPinia()
