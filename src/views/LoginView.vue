@@ -113,15 +113,11 @@ const login = async () => {
             >PostGrade</span
           >
         </div>
-        <h1>Built for the next decision.</h1>
+        <h1>Automate, Distribute and Share.</h1>
         <p class="login-intro">
           Manage courses, verify student matches and return assessment scripts.
         </p>
-        <div class="brand-sequence" aria-label="PostGrade workflow">
-          <span><strong>01 /</strong> Capture submissions</span>
-          <span><strong>02 /</strong> Confirm matches</span>
-          <span><strong>03 /</strong> Return scripts</span>
-        </div>
+        <hr class="brand-divider" aria-hidden="true" />
       </div>
     </section>
 
@@ -257,7 +253,7 @@ const login = async () => {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 .login-brand-panel {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 1;
   position: relative;
   display: flex;
@@ -367,7 +363,7 @@ const login = async () => {
   font-weight: 550;
 }
 .login-form-panel {
-  grid-column: 1;
+  grid-column: 2;
   grid-row: 1;
   display: flex;
   padding: 94px 36px 48px;
@@ -381,22 +377,11 @@ const login = async () => {
   padding: clamp(30px, 4vw, 48px);
   border-top: 3px solid var(--accent-green);
 }
-.brand-sequence {
-  display: grid;
-  gap: 0;
-  margin-top: 50px;
-  max-width: 350px;
+.brand-divider {
+  width: min(100%, 350px);
+  margin: 50px 0 0;
+  border: 0;
   border-top: 1px solid var(--glass-border-highlight);
-}
-.brand-sequence span {
-  padding: 14px 0;
-  border-bottom: 1px solid var(--glass-border-highlight);
-  color: var(--text-secondary);
-  font-size: 0.88rem;
-}
-.brand-sequence strong {
-  color: var(--accent-green);
-  margin-right: 10px;
 }
 .login-card .page-eyebrow {
   font-size: 0.75rem;
