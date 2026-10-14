@@ -35,263 +35,293 @@ onMounted(async () => {
 </script>
 <template>
   <main class="dashboard">
-    <header class="dashboard-hero">
+    <header class="dashboard-heading">
       <div>
-        <p class="page-eyebrow">POSTGRADE / LECTURER</p>
-        <h1>Assessment workspace</h1>
-        <p class="dashboard-subtitle">
-          Welcome{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}. Manage
-          your courses, verify student matches and return assessment scripts.
-        </p>
-        <RouterLink class="button-primary" to="/verification-queue"
-          >Review pending scripts <AppIcon name="arrow"
-        /></RouterLink>
+        <p class="page-eyebrow">YOUR WORKSPACE</p>
+        <h1>
+          Good to see you{{ authStore.user?.first_name ? `, ${authStore.user.first_name}` : '' }}.
+        </h1>
+        <p>Pick up where you left off with courses and assessment scripts.</p>
       </div>
+      <RouterLink class="button-primary" to="/verification-queue">
+        Review submissions <AppIcon name="arrow" />
+      </RouterLink>
     </header>
-    <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
-    <section class="summary-grid" aria-label="Workspace summary" :aria-busy="loading">
-      <RouterLink class="summary-card glass-panel" to="/courses"
-        ><span>Active courses<AppIcon name="courses" /></span
-        ><strong>{{ stats?.active_courses ?? '—' }}</strong
-        ><small>Manage courses and enrolled students <AppIcon name="arrow" /></small></RouterLink
-      ><RouterLink class="summary-card glass-panel" to="/verification-queue"
-        ><span>Awaiting verification<AppIcon name="verify" /></span
-        ><strong>{{ stats?.pending_verifications ?? '—' }}</strong
-        ><small>Review student matches <AppIcon name="arrow" /></small
-      ></RouterLink>
-    </section>
-    <div class="dashboard-columns">
-      <section class="dashboard-section">
+
+    <div class="dashboard-layout">
+      <section class="course-zone" aria-labelledby="courses-heading">
         <div class="section-heading">
           <div>
             <p class="page-eyebrow">COURSE ADMINISTRATION</p>
-            <h2>Your courses</h2>
+            <h2 id="courses-heading">Your courses</h2>
           </div>
-          <RouterLink to="/courses">View all <AppIcon name="arrow" /></RouterLink>
+          <RouterLink to="/courses">View all courses <AppIcon name="arrow" /></RouterLink>
         </div>
-        <div class="dashboard-courses glass-panel">
+        <AlertBox v-if="error" type="error">{{ error }}</AlertBox>
+        <div class="course-list glass-panel">
           <p v-if="loading" class="course-status" role="status">Loading courses…</p>
           <AlertBox v-else-if="courseError" type="error">{{ courseError }}</AlertBox>
           <div v-else-if="!courses.length" class="course-status">
-            <h3>No courses yet</h3>
-            <p>Create a course to add students and assessments.</p>
-            <RouterLink class="button-secondary" to="/courses">Create course</RouterLink>
+            <h3>Start with a course</h3>
+            <p>Create a course to organise students, assessments and scripts.</p>
+            <RouterLink class="button-primary" to="/courses">Go to courses</RouterLink>
           </div>
-          <RouterLink
-            v-for="course in courses"
-            v-else
-            :key="course.id"
-            class="dashboard-course"
-            :to="`/courses/${course.id}`"
-            ><span class="course-symbol"><AppIcon name="courses" /></span
-            ><span
-              ><strong>{{ course.name }}</strong
-              ><small
-                >{{ course.code }} · {{ course.year }} · Semester {{ course.semester }}</small
-              ></span
-            ><AppIcon name="arrow"
-          /></RouterLink>
+          <template v-else>
+            <RouterLink
+              v-for="course in courses"
+              :key="course.id"
+              class="course-row"
+              :to="`/courses/${course.id}`"
+            >
+              <span class="course-mark"><AppIcon name="courses" /></span>
+              <span class="course-copy">
+                <strong>{{ course.name }}</strong>
+                <small
+                  >{{ course.code }} · {{ course.year }} · Semester {{ course.semester }}</small
+                >
+              </span>
+              <AppIcon name="arrow" />
+            </RouterLink>
+          </template>
         </div>
       </section>
-      <section class="verification-card glass-panel">
-        <span class="verification-icon"><AppIcon name="verify" /></span>
-        <p class="page-eyebrow">SCRIPT REVIEW</p>
-        <h2>Pending verification</h2>
-        <p>Check scanned pages and confirm student details before returning assessment scripts.</p>
-        <RouterLink class="button-secondary" to="/verification-queue"
-          >Open verification <AppIcon name="arrow"
-        /></RouterLink>
-      </section>
+
+      <aside class="insights-rail" aria-label="Workspace overview">
+        <section class="focus-card glass-panel">
+          <p class="page-eyebrow">TODAY'S FOCUS</p>
+          <h2>Every script, a clear next step.</h2>
+          <p>Confirm student matches before returning assessment scripts.</p>
+          <RouterLink class="button-secondary" to="/verification-queue">
+            Open verification <AppIcon name="arrow" />
+          </RouterLink>
+        </section>
+        <section class="rail-stats" aria-label="Live summary" :aria-busy="loading">
+          <RouterLink class="workspace-stat glass-panel" to="/courses">
+            <span>Active courses <AppIcon name="courses" /></span>
+            <strong>{{ stats?.active_courses ?? '—' }}</strong>
+            <small>Manage courses <AppIcon name="arrow" /></small>
+          </RouterLink>
+          <RouterLink class="workspace-stat glass-panel" to="/verification-queue">
+            <span>Awaiting verification <AppIcon name="verify" /></span>
+            <strong>{{ stats?.pending_verifications ?? '—' }}</strong>
+            <small>Review matches <AppIcon name="arrow" /></small>
+          </RouterLink>
+        </section>
+        <section class="workflow-note glass-panel">
+          <p class="page-eyebrow">HOW IT FLOWS</p>
+          <ol>
+            <li>Upload assessment pages</li>
+            <li>Recognise and review matches</li>
+            <li>Return verified scripts</li>
+          </ol>
+        </section>
+      </aside>
     </div>
   </main>
 </template>
+
 <style scoped>
 .dashboard {
-  max-width: 1400px;
+  max-width: 1320px;
   margin: 0 auto;
 }
-.dashboard-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 32px;
-  align-items: center;
-  padding: 34px;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  background: var(--hero-bg);
-  margin-bottom: 24px;
-}
-.page-eyebrow {
-  color: var(--text-muted);
-  font-size: 0.65rem;
-  letter-spacing: 0.14em;
-  font-weight: 650;
-  margin: 0 0 12px;
-}
-.dashboard-hero h1 {
-  font-size: clamp(1.8rem, 3vw, 2.8rem);
-  margin: 0 0 16px;
-}
-.dashboard-subtitle {
-  max-width: 560px;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin: 0 0 24px;
-}
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin: 24px 0 32px;
-}
-.summary-card {
-  display: block;
-  padding: 22px;
-  color: var(--text-primary);
-  text-decoration: none;
-}
-.summary-card:hover {
-  border-color: var(--accent-green);
-}
-.summary-card > span,
-.summary-card > small {
+.dashboard-heading {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  align-items: end;
+  gap: 2rem;
+  margin-bottom: 38px;
+}
+.dashboard-heading h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2.2rem, 3vw, 3.2rem);
+}
+.dashboard-heading p:last-child {
+  margin: 0;
   color: var(--text-secondary);
-  font-size: 0.8rem;
 }
-.summary-card > strong {
-  display: block;
-  font-size: 2.2rem;
-  font-family: Consolas, monospace;
-  line-height: 1.3;
-  margin: 12px 0;
+.dashboard-heading > a {
+  flex-shrink: 0;
 }
-.summary-card > small {
-  border-top: 1px solid var(--glass-border);
-  padding-top: 12px;
-  font-size: 0.75rem;
+.page-eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--accent-green);
 }
-.summary-card svg {
-  width: 17px;
-}
-.dashboard-columns {
+.dashboard-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.9fr);
+  gap: 28px;
+  align-items: start;
 }
 .section-heading {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin: 0 0 20px;
-}
-.section-heading .page-eyebrow {
-  margin-bottom: 8px;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 18px;
 }
 .section-heading h2 {
   margin: 0;
+  font-size: 1.65rem;
 }
 .section-heading > a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8rem;
-  text-decoration: none;
   min-height: 44px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
 }
-.dashboard-courses {
-  padding: 0 22px;
+.course-list {
+  padding: 8px 26px;
 }
-.dashboard-course {
+.course-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 22px 0;
-  border-bottom: 1px solid var(--glass-border);
+  gap: 16px;
+  padding: 23px 0;
+  border-bottom: 1px solid var(--table-divider);
   color: var(--text-primary);
   text-decoration: none;
 }
-.dashboard-course:last-child {
-  border: 0;
+.course-row:last-child {
+  border-bottom: 0;
 }
-.dashboard-course > span:nth-child(2) {
-  flex: 1;
-  min-width: 0;
-}
-.dashboard-course strong {
-  display: block;
-  font-size: 0.85rem;
-}
-.dashboard-course small {
-  display: block;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  margin-top: 4px;
-}
-.dashboard-course:hover strong {
+.course-row:hover .course-copy strong {
   color: var(--accent-green);
 }
-.course-symbol,
-.verification-icon {
+.course-mark {
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  background: var(--surface-hover);
+  border-radius: 12px;
+  background: var(--surface-header);
   color: var(--accent-green);
   flex-shrink: 0;
 }
-.verification-card {
-  padding: 26px;
+.course-copy {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
-.verification-icon {
-  margin-bottom: 22px;
+.course-copy strong {
+  font-size: 0.96rem;
 }
-.verification-card h2 {
-  margin: 0 0 14px;
-}
-.verification-card > p:not(.page-eyebrow) {
+.course-copy small {
   color: var(--text-secondary);
-  font-size: 0.85rem;
-  margin: 0 0 22px;
-}
-.verification-card > a {
-  width: 100%;
+  font-size: 0.78rem;
 }
 .course-status {
-  padding: 22px 0;
+  padding: 26px 0;
   color: var(--text-secondary);
 }
 .course-status h3 {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+.insights-rail {
+  display: grid;
+  gap: 16px;
+}
+.focus-card {
+  padding: 26px;
+  background: var(--hero-bg);
+}
+.focus-card h2 {
+  max-width: 250px;
+  margin: 0 0 14px;
+  font-size: 1.75rem;
+}
+.focus-card > p:not(.page-eyebrow) {
+  margin: 0 0 24px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.focus-card > a {
+  width: 100%;
+}
+.rail-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.workspace-stat {
+  display: grid;
+  gap: 9px;
+  padding: 20px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.workspace-stat > span,
+.workspace-stat > small {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+.workspace-stat strong {
+  font-size: 2.1rem;
+  line-height: 1;
+}
+.workspace-stat small {
+  padding-top: 10px;
+  border-top: 1px solid var(--table-divider);
+}
+.workspace-stat svg {
+  width: 16px;
+  flex-shrink: 0;
+}
+.workflow-note {
+  padding: 22px 26px;
+}
+.workflow-note ol {
   margin: 0;
+  padding-left: 1.2rem;
+  color: var(--text-secondary);
+  font-size: 0.83rem;
+  line-height: 2;
 }
-.course-status p {
-  font-size: 0.85rem;
-}
-.dashboard-courses > :deep(.alert) {
-  margin: 22px 0;
-}
-@media (max-width: 760px) {
-  .dashboard-columns {
+@media (max-width: 1120px) {
+  .dashboard-layout {
     grid-template-columns: 1fr;
   }
-  .dashboard-hero {
-    padding: 26px;
+  .insights-rail {
+    grid-template-columns: 1fr 1fr;
+  }
+  .rail-stats {
+    align-self: stretch;
+  }
+  .workflow-note {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 720px) {
+  .dashboard-heading {
+    display: grid;
+    gap: 18px;
+  }
+  .dashboard-heading > a {
+    justify-self: start;
+  }
+  .insights-rail {
     grid-template-columns: 1fr;
   }
-  .summary-grid {
-    grid-template-columns: 1fr;
+  .workflow-note {
+    grid-column: auto;
   }
-  .dashboard-course {
-    gap: 10px;
+  .section-heading {
+    align-items: start;
   }
-  .dashboard-hero h1 {
-    font-size: 2rem;
+  .section-heading > a {
+    white-space: normal;
   }
 }
 </style>

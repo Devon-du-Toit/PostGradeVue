@@ -113,10 +113,15 @@ const login = async () => {
             >PostGrade</span
           >
         </div>
-        <h1>Lecturer workspace.</h1>
+        <h1>A calmer way to run assessments.</h1>
         <p class="login-intro">
           Manage courses, verify student matches and return assessment scripts.
         </p>
+        <div class="login-steps" aria-label="PostGrade workflow">
+          <span><strong>01</strong> Organise courses</span>
+          <span><strong>02</strong> Verify submissions</span>
+          <span><strong>03</strong> Return scripts</span>
+        </div>
       </div>
     </section>
 
@@ -248,8 +253,11 @@ const login = async () => {
 <style scoped>
 .login-page {
   display: grid;
-  min-height: 100vh;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  min-height: min(760px, calc(100vh - 80px));
+  max-width: 1240px;
+  margin: 40px auto;
+  padding: 0 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 .login-brand-panel {
   position: relative;
@@ -259,6 +267,7 @@ const login = async () => {
   background: var(--hero-bg);
   color: var(--text-primary);
   overflow: hidden;
+  border-radius: 24px 0 0 24px;
 }
 .login-brand-panel::before {
   content: '';
@@ -364,6 +373,25 @@ const login = async () => {
   padding: 94px 36px 48px;
   align-items: center;
   justify-content: center;
+  border: 1px solid var(--glass-border);
+  border-left: 0;
+  border-radius: 0 24px 24px 0;
+}
+.login-steps {
+  display: grid;
+  gap: 14px;
+  margin-top: 42px;
+  max-width: 300px;
+}
+.login-steps span {
+  padding: 12px 0;
+  border-top: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+.login-steps strong {
+  margin-right: 16px;
+  color: var(--text-primary);
 }
 .login-card {
   width: 100%;
@@ -450,6 +478,9 @@ form .password-rules-toggle {
 @media (max-width: 850px) {
   .login-page {
     grid-template-columns: 1fr;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
   }
   .login-brand-panel {
     display: none;
@@ -457,6 +488,8 @@ form .password-rules-toggle {
   .login-form-panel {
     min-height: 100vh;
     padding: 90px 20px 36px;
+    border: 0;
+    border-radius: 0;
   }
   .login-card {
     padding: 28px;

@@ -154,12 +154,12 @@ const logout = async () => {
   min-height: 100vh;
 }
 .with-shell {
-  padding-left: 84px;
+  padding-left: 252px;
 }
 .app-sidebar {
   position: fixed;
   inset: 0 auto 0 0;
-  width: 84px;
+  width: 252px;
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -375,35 +375,25 @@ const logout = async () => {
   }
 }
 
-/* Console rail; full navigation is restored inside the mobile drawer. */
+/* Full navigation stays visible on desktop. */
 @media (min-width: 1001px) {
   .app-sidebar {
-    padding: 28px 10px 20px;
-    align-items: center;
+    padding: 28px 18px 20px;
   }
   .brand {
-    margin: 0 0 36px;
-    padding: 0;
-  }
-  .brand > span,
-  .nav-caption,
-  .sidebar-user > span:last-child {
-    display: none;
+    margin: 0 0 48px;
+    padding: 0 8px;
   }
   .brand-logo {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
   }
   .app-nav a {
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-    width: 64px;
-    padding: 12px 3px;
-    font-size: 0.62rem;
+    width: 100%;
+    font-size: 0.9rem;
   }
   .sidebar-user {
-    padding: 20px 0 0;
+    padding: 20px 8px 0;
   }
 }
 .app-nav a {
