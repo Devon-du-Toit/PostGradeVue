@@ -113,10 +113,11 @@ const login = async () => {
             >PostGrade</span
           >
         </div>
-        <h1>Lecturer workspace.</h1>
+        <h1>Automate, Distribute and Share.</h1>
         <p class="login-intro">
           Manage courses, verify student matches and return assessment scripts.
         </p>
+        <hr class="brand-divider" aria-hidden="true" />
       </div>
     </section>
 
@@ -249,9 +250,11 @@ const login = async () => {
 .login-page {
   display: grid;
   min-height: 100vh;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 .login-brand-panel {
+  grid-column: 1;
+  grid-row: 1;
   position: relative;
   display: flex;
   padding: 64px clamp(32px, 5vw, 80px);
@@ -360,15 +363,25 @@ const login = async () => {
   font-weight: 550;
 }
 .login-form-panel {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   padding: 94px 36px 48px;
   align-items: center;
   justify-content: center;
+  background: var(--bg-gradient);
 }
 .login-card {
   width: 100%;
-  max-width: 455px;
-  padding: 36px;
+  max-width: 480px;
+  padding: clamp(30px, 4vw, 48px);
+  border-top: 3px solid var(--accent-green);
+}
+.brand-divider {
+  width: min(100%, 350px);
+  margin: 50px 0 0;
+  border: 0;
+  border-top: 1px solid var(--glass-border-highlight);
 }
 .login-card .page-eyebrow {
   font-size: 0.75rem;
@@ -455,6 +468,8 @@ form .password-rules-toggle {
     display: none;
   }
   .login-form-panel {
+    grid-column: 1;
+    grid-row: 1;
     min-height: 100vh;
     padding: 90px 20px 36px;
   }
