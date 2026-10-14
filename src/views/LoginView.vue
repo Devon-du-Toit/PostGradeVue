@@ -113,10 +113,15 @@ const login = async () => {
             >PostGrade</span
           >
         </div>
-        <h1>Lecturer workspace.</h1>
+        <h1>Built for the next decision.</h1>
         <p class="login-intro">
           Manage courses, verify student matches and return assessment scripts.
         </p>
+        <div class="brand-sequence" aria-label="PostGrade workflow">
+          <span><strong>01 /</strong> Capture submissions</span>
+          <span><strong>02 /</strong> Confirm matches</span>
+          <span><strong>03 /</strong> Return scripts</span>
+        </div>
       </div>
     </section>
 
@@ -249,9 +254,11 @@ const login = async () => {
 .login-page {
   display: grid;
   min-height: 100vh;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 .login-brand-panel {
+  grid-column: 2;
+  grid-row: 1;
   position: relative;
   display: flex;
   padding: 64px clamp(32px, 5vw, 80px);
@@ -360,15 +367,36 @@ const login = async () => {
   font-weight: 550;
 }
 .login-form-panel {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   padding: 94px 36px 48px;
   align-items: center;
   justify-content: center;
+  background: var(--bg-gradient);
 }
 .login-card {
   width: 100%;
-  max-width: 455px;
-  padding: 36px;
+  max-width: 480px;
+  padding: clamp(30px, 4vw, 48px);
+  border-top: 3px solid var(--accent-green);
+}
+.brand-sequence {
+  display: grid;
+  gap: 0;
+  margin-top: 50px;
+  max-width: 350px;
+  border-top: 1px solid var(--glass-border-highlight);
+}
+.brand-sequence span {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--glass-border-highlight);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+.brand-sequence strong {
+  color: var(--accent-green);
+  margin-right: 10px;
 }
 .login-card .page-eyebrow {
   font-size: 0.75rem;
@@ -455,6 +483,8 @@ form .password-rules-toggle {
     display: none;
   }
   .login-form-panel {
+    grid-column: 1;
+    grid-row: 1;
     min-height: 100vh;
     padding: 90px 20px 36px;
   }
