@@ -1,0 +1,206 @@
+/* Field Notes: warm paper, botanical depth and editorial typography. */
+:root {
+  --bg-gradient: #1d2824;
+  --glass-bg: #28342e;
+  --glass-bg-hover: #34433a;
+  --glass-border: #506257;
+  --glass-border-highlight: #c89b75;
+  --glass-shadow: 0 12px 30px #0b150f38;
+  --text-primary: #f9f2e6;
+  --text-secondary: #d6cabb;
+  --text-muted: #c4b5a3;
+  --accent-green: #e7b38b;
+  --accent-green-hover: #f4c9a9;
+  --button-green: #b86f4c;
+  --button-label: #ffffff;
+  --button-green-hover: #cb825d;
+  --surface-inset: #1e2922;
+  --surface-header: #38443a;
+  --surface-input: #202b25;
+  --surface-input-focus: #2d3b31;
+  --surface-option: #28342e;
+  --surface-hover: #39483e;
+  --table-divider: #506257;
+  --nav-background: #28342e;
+  --sidebar-bg: #192820;
+  --sidebar-border: #506257;
+  --hero-bg: linear-gradient(130deg, #31503d, #21392c);
+  --radius-md: 4px;
+  --radius-lg: 5px;
+}
+body.light-theme {
+  --bg-gradient: #f7f3eb;
+  --glass-bg: #fffefa;
+  --glass-bg-hover: #f9f3e9;
+  --glass-border: #dfd3c3;
+  --glass-border-highlight: #ac7352;
+  --glass-shadow: 0 7px 24px #5b3f2610;
+  --text-primary: #2d352b;
+  --text-secondary: #615f51;
+  --text-muted: #77705e;
+  --accent-green: #8f4d30;
+  --accent-green-hover: #743c26;
+  --button-green: #8f4d30;
+  --button-label: #ffffff;
+  --button-green-hover: #743c26;
+  --surface-inset: #f1ebe0;
+  --surface-header: #f3ecdf;
+  --surface-input: #fffdfa;
+  --surface-input-focus: #ffffff;
+  --surface-option: #ffffff;
+  --surface-hover: #f1e8d9;
+  --table-divider: #e4dacb;
+  --nav-background: #fffefa;
+  --sidebar-bg: #263b2d;
+  --sidebar-border: #425b48;
+  --hero-bg: linear-gradient(120deg, #e7e3d1, #f6eee0 65%, #e9d7bf);
+}
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+body :is(h1, h2, h3) {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+body .app-sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+}
+body.light-theme .app-sidebar,
+body.light-theme .app-sidebar :is(.brand, .app-nav a, .sidebar-user strong) {
+  color: #f9f3e8;
+}
+body.light-theme .app-sidebar .app-nav a.router-link-active {
+  background: #f2e5cf;
+  color: #284434;
+}
+body .app-nav a {
+  border-radius: 4px;
+}
+body .app-nav a.router-link-active {
+  box-shadow: inset 3px 0 var(--accent-green);
+}
+body .workspace-bar {
+  background: var(--nav-background);
+}
+body .glass-panel {
+  border-radius: var(--radius-lg);
+}
+body .app-content > main {
+  max-width: 1360px;
+  padding-top: 46px;
+}
+body .dashboard-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 270px;
+  padding: clamp(34px, 5vw, 64px);
+  border-radius: 5px;
+}
+body .dashboard-hero::after {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  right: -65px;
+  bottom: -140px;
+  border: 1px solid #9d795b55;
+  border-radius: 48% 0 48% 0;
+  transform: rotate(-32deg);
+  box-shadow:
+    0 0 0 45px #b7906e12,
+    0 0 0 90px #b7906e0c;
+  pointer-events: none;
+}
+body .dashboard-hero h1 {
+  font-size: clamp(2.4rem, 4vw, 4rem);
+}
+body .dashboard .page-eyebrow,
+body .login-card .page-eyebrow {
+  color: var(--accent-green);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.2em;
+}
+body .summary-grid {
+  gap: 0;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+}
+body .summary-card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 30px;
+}
+body .summary-card + .summary-card {
+  border-left: 1px solid var(--glass-border);
+}
+body .summary-card > strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 3.1rem;
+  font-weight: 500;
+}
+body .verification-card {
+  background: var(--surface-header);
+}
+body .button-primary,
+body .btn-primary {
+  letter-spacing: 0.02em;
+}
+body .login-page {
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+}
+body .login-brand-panel {
+  background: linear-gradient(140deg, #284936, #172b22);
+}
+body .login-brand-panel::before {
+  border-radius: 45% 0 45% 0;
+  border-color: #e7c69d40;
+  box-shadow:
+    0 0 0 75px #dcb58610,
+    0 0 0 150px #dcb5860a;
+}
+body .login-brand-panel h1 {
+  color: #f5e8d5;
+  font-size: clamp(2.8rem, 5vw, 5rem);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+body .login-brand > span {
+  color: #f5e8d5;
+}
+body .login-brand-panel .login-intro {
+  color: #d6e2cf;
+}
+body .login-form-panel {
+  background: var(--bg-gradient);
+}
+body .login-card {
+  padding: clamp(30px, 4vw, 52px);
+  border-top: 4px solid var(--accent-green);
+}
+body .login-card h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 2.2rem;
+}
+body .glass-input {
+  border-radius: 3px;
+}
+@media (max-width: 850px) {
+  body .login-page {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  body .summary-grid {
+    border: 0;
+    gap: 12px;
+    background: none;
+  }
+  body .summary-card {
+    border: 1px solid var(--glass-border);
+  }
+  body .summary-card + .summary-card {
+    border-left: 1px solid var(--glass-border);
+  }
+}
