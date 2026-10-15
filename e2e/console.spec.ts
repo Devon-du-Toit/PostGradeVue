@@ -19,15 +19,19 @@ test('Console live dashboard uses API data and accessible mobile navigation in b
   await expect(page.getByRole('heading', { name: 'Assessment command center' })).toBeVisible()
   await expect(page.locator('.signal-card strong')).toHaveText(['4', '7'])
   await expect(page.locator('.course-table__row')).toContainText('Advanced Databases')
+  await expect(page.getByText('PostGrade · Thoughtfully organised.')).toHaveCount(0)
   for (const theme of ['dark', 'light']) {
     if (theme === 'light') await page.getByRole('button', { name: 'Light Mode' }).click()
     await page.waitForFunction(() =>
       document.getAnimations().every((animation) => animation.playState !== 'running'),
     )
-    await page.screenshot({ path: `proposal-previews/console-live-${theme}.png`, fullPage: true })
+    await page.screenshot({
+      path: test.info().outputPath(`console-live-${theme}.png`),
+      fullPage: true,
+    })
     await page.setViewportSize({ width: 390, height: 844 })
     await page.screenshot({
-      path: `proposal-previews/console-live-${theme}-mobile.png`,
+      path: test.info().outputPath(`console-live-${theme}-mobile.png`),
       fullPage: true,
     })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
