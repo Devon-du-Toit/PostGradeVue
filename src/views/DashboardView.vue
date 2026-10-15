@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import { fetchDashboardStats, type DashboardStats } from '@/services/dashboard'
 import { fetchCourses } from '@/services/courses'
 import type { Course } from '@/types/course'
 import AlertBox from '@/components/AlertBox.vue'
 import AppIcon from '@/components/AppIcon.vue'
-const authStore = useAuthStore()
 const stats = ref<DashboardStats | null>(null)
 const courses = ref<Course[]>([])
 const loading = ref(true)
