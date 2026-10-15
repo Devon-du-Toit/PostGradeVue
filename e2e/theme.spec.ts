@@ -120,7 +120,7 @@ for (const theme of ['light', 'dark']) {
         await input.focus()
         await checkContrast()
       }
-      await page.locator('.app-nav a').first().hover()
+      await page.locator('.console-nav a').first().hover()
       await checkContrast()
       const primary = page.locator('.btn-primary').first()
       if (await primary.count()) {

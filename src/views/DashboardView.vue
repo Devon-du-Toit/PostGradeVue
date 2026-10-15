@@ -247,7 +247,7 @@ onMounted(async () => {
 }
 .course-table__head {
   background: var(--surface-header);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 0.67rem;
   font-weight: 700;
   letter-spacing: 0.14em;
