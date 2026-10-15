@@ -129,6 +129,43 @@ describe('assessment polling', () => {
     expect(uploadSubmission).toHaveBeenCalledWith(7, file, 'bubble')
   })
 
+  it('asks for the script layout before accepting the first OCR file', async () => {
+    fetch.mockResolvedValue([])
+    vi.mocked(fetchAssessment).mockResolvedValue({
+      id: 7,
+      course: 1,
+      name: 'Assessment',
+      date: '',
+      created_at: '',
+      updated_at: '',
+      expected_qr_page_labels: [],
+      qr_test: '',
+    })
+    const wrapper = await mountPage()
+    const submissionsPanel = wrapper
+      .findAll('section.panel')
+      .find((panel) => panel.find('h2').text() === 'Submissions')!
+    const fileInput = submissionsPanel.get('input[type="file"]')
+    const upload = submissionsPanel
+      .findAll('button')
+      .find((button) => button.text() === 'Upload queue')!
+
+    expect(submissionsPanel.find('fieldset.layout-picker').exists()).toBe(true)
+    expect(fileInput.attributes('disabled')).toBeDefined()
+    expect(upload.attributes('disabled')).toBeDefined()
+
+    await submissionsPanel.get('input[type="radio"][value="single"]').setValue(true)
+    expect(fileInput.attributes('disabled')).toBeUndefined()
+
+    const file = new File(['synthetic'], 'ocr.jpeg', { type: 'image/jpeg' })
+    Object.defineProperty(fileInput.element, 'files', { value: [file], configurable: true })
+    await fileInput.trigger('change')
+    vi.mocked(uploadSubmission).mockResolvedValue(submission(7, 'needs_verification'))
+    await upload.trigger('click')
+    await flushPromises()
+    expect(uploadSubmission).toHaveBeenCalledWith(7, file, 'ocr')
+  })
+
   it('does not offer bubble processing when the backend has no method capability', async () => {
     fetch.mockResolvedValue([])
     vi.mocked(fetchRecognitionMethods).mockRejectedValue(new Error('not deployed'))
@@ -160,14 +197,11 @@ describe('assessment polling', () => {
     })
     const wrapper = await mountPage()
     const firstFile = wrapper.get('input[type="file"]')
-    Object.defineProperty(firstFile.element, 'files', {
-      value: [new File(['synthetic'], 'qr.pdf', { type: 'application/pdf' })],
-      configurable: true,
-    })
-    await firstFile.trigger('change')
     const upload = wrapper.findAll('button').find((item) => item.text() === 'Upload queue')!
+    expect(firstFile.attributes('disabled')).toBeDefined()
     expect(upload.attributes('disabled')).toBeDefined()
     await wrapper.get('input[type="radio"][value="qr"]').setValue(true)
+    expect(firstFile.attributes('disabled')).toBeDefined()
     expect(upload.attributes('disabled')).toBeDefined()
     await wrapper.get('input[placeholder="P1, P3"]').setValue('P1, P3')
     await wrapper.get('input[placeholder="KT2"]').setValue('KT2')
@@ -178,6 +212,12 @@ describe('assessment polling', () => {
     await flushPromises()
     expect(updateAssessmentQR).toHaveBeenCalledWith(7, ['P1', 'P3'], 'KT2')
     expect(wrapper.text()).toContain('QR intake configuration saved')
+    expect(firstFile.attributes('disabled')).toBeUndefined()
+    Object.defineProperty(firstFile.element, 'files', {
+      value: [new File(['synthetic'], 'qr.pdf', { type: 'application/pdf' })],
+      configurable: true,
+    })
+    await firstFile.trigger('change')
     expect(upload.attributes('disabled')).toBeUndefined()
   })
 
