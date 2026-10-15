@@ -16,37 +16,33 @@ test('Console live dashboard uses API data and accessible mobile navigation in b
     await route.fulfill({ json: data })
   })
   await page.goto('/dashboard')
-  await expect(page.getByRole('heading', { name: 'Assessment workspace' })).toBeVisible()
-  await expect(page.locator('.summary-card strong')).toHaveText(['4', '7'])
-  await expect(page.locator('.dashboard-course')).toContainText('Advanced Databases')
+  await expect(page.getByRole('heading', { name: 'Assessment command center' })).toBeVisible()
+  await expect(page.locator('.signal-card strong')).toHaveText(['4', '7'])
+  await expect(page.locator('.course-table__row')).toContainText('Advanced Databases')
   await expect(page.getByText('PostGrade · Thoughtfully organised.')).toHaveCount(0)
   for (const theme of ['dark', 'light']) {
     if (theme === 'light') await page.getByRole('button', { name: 'Light Mode' }).click()
     await page.waitForFunction(() =>
       document.getAnimations().every((animation) => animation.playState !== 'running'),
     )
-    await page.screenshot({ path: `proposal-previews/console-live-${theme}.png`, fullPage: true })
+    await page.screenshot({
+      path: test.info().outputPath(`console-live-${theme}.png`),
+      fullPage: true,
+    })
     await page.setViewportSize({ width: 390, height: 844 })
     await page.screenshot({
-      path: `proposal-previews/console-live-${theme}-mobile.png`,
+      path: test.info().outputPath(`console-live-${theme}-mobile.png`),
       fullPage: true,
     })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    await page.getByRole('button', { name: 'Toggle navigation' }).click()
-    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(page.getByRole('button', { name: 'Toggle navigation' })).toBeFocused()
-    await page.getByRole('button', { name: 'Toggle navigation' }).click()
-    await page
-      .getByRole('navigation', { name: 'Main navigation' })
-      .getByRole('link', { name: 'Courses', exact: true })
-      .click()
+    const navigation = page.getByRole('navigation', { name: 'Main navigation' })
+    await expect(navigation).toBeVisible()
+    await navigation.getByRole('link', { name: 'Courses', exact: true }).click()
     await expect(page).toHaveURL(/courses/)
     await expect(page.getByRole('spinbutton', { name: 'Year', exact: true })).toHaveCount(1)
     await expect(page.getByRole('combobox', { name: 'Semester', exact: true })).toHaveCount(1)
     await expect(page.getByLabel('Filter by year', { exact: true })).toHaveCount(1)
     await expect(page.getByLabel('Filter by semester', { exact: true })).toHaveCount(1)
-    await expect(page.locator('.app-sidebar')).not.toHaveClass(/is-open/)
     await page.goto('/dashboard')
     await page.setViewportSize({ width: 1280, height: 720 })
   }

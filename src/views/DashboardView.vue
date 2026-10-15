@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import { fetchDashboardStats, type DashboardStats } from '@/services/dashboard'
 import { fetchCourses } from '@/services/courses'
 import type { Course } from '@/types/course'
 import AlertBox from '@/components/AlertBox.vue'
 import AppIcon from '@/components/AppIcon.vue'
-const authStore = useAuthStore()
 const stats = ref<DashboardStats | null>(null)
 const courses = ref<Course[]>([])
 const loading = ref(true)
@@ -249,7 +247,7 @@ onMounted(async () => {
 }
 .course-table__head {
   background: var(--surface-header);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 0.67rem;
   font-weight: 700;
   letter-spacing: 0.14em;
