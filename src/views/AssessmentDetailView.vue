@@ -1017,7 +1017,7 @@ select.glass-input option {
 }
 
 .status-text {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-style: italic;
 }
 .warning-text {

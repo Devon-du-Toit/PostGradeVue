@@ -109,3 +109,18 @@ Deploy this Vue auth update before the matching backend account-lifecycle PR ena
 The Sign up link and /signup form are always available, without waiting for a registration-policy request. The matching backend always accepts lecturer registration; legacy ALLOW_REGISTRATION settings are ignored. Throttled login/signup requests show errors; invalid login credentials never trigger token refresh.
 
 Run backend migrations for the token blacklist and shared auth throttle cache; pre-release sessions require users to sign in again. The backend DOCS/PERMISSIONS.md documents expiry, proxy limits and the endpoint permission matrix. Tokens remain in localStorage; approved cookie storage, CSRF/CORS changes and cross-tab coordination are bounded follow-up [Vue #36](https://github.com/Devon-du-Toit/PostGradeVue/issues/36).
+
+## Docker (local)
+
+Start the Django Compose stack first so the API is available on port 8000. Then run from this repository:
+
+    docker compose up --build -d
+    docker compose ps
+
+Open http://localhost:8081/. The production build uses /api/ as its API URL. Nginx forwards those requests to the backend at host.docker.internal:8000 and serves the Vue router's nested routes through index.html. The backend's local Compose configuration already accepts the localhost Host header sent by this proxy.
+
+To stop the frontend:
+
+    docker compose down
+
+For a deployment with a separate API domain, set the VITE_API_BASE_URL build argument to its HTTPS API URL and rebuild the image. This value is public and baked into the JavaScript bundle.

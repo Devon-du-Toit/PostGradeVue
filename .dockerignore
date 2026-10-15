@@ -1,0 +1,13 @@
+.git
+.github
+.idea
+.vscode
+node_modules
+dist
+coverage
+test-results
+playwright-report
+proposal-previews
+.env
+.env.*
+*.log
