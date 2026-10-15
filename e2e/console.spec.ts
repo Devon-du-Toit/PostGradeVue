@@ -37,12 +37,19 @@ test('Console live dashboard uses API data and accessible mobile navigation in b
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     const navigation = page.getByRole('navigation', { name: 'Main navigation' })
     await expect(navigation).toBeVisible()
-    await navigation.getByRole('link', { name: 'Courses', exact: true }).click()
+    const coursesLink = navigation.getByRole('link', { name: 'Courses', exact: true })
+    await coursesLink.focus()
+    await expect(coursesLink).toBeFocused()
+    await coursesLink.click()
     await expect(page).toHaveURL(/courses/)
     await expect(page.getByRole('spinbutton', { name: 'Year', exact: true })).toHaveCount(1)
     await expect(page.getByRole('combobox', { name: 'Semester', exact: true })).toHaveCount(1)
     await expect(page.getByLabel('Filter by year', { exact: true })).toHaveCount(1)
     await expect(page.getByLabel('Filter by semester', { exact: true })).toHaveCount(1)
+    await expect(navigation.getByRole('link', { name: 'Courses', exact: true })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
     await page.goto('/dashboard')
     await page.setViewportSize({ width: 1280, height: 720 })
   }

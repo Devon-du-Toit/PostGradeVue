@@ -464,68 +464,71 @@ onUnmounted(() => {
         <p class="assessment-date">{{ assessment.date }}</p>
       </header>
 
-      <!-- Submissions Panel -->
-      <section
-        v-if="assessment.expected_qr_page_labels !== undefined && assessment.qr_test !== undefined"
-        class="panel glass-panel"
-      >
-        <h2>Script layout</h2>
-        <form class="layout-form" @submit.prevent="saveQR">
-          <fieldset
-            v-if="!assessment.expected_qr_page_labels.length && submissions.length === 0"
-            class="layout-picker"
-          >
-            <legend>Files contain</legend>
-            <div class="layout-options">
-              <label
-                ><input
-                  v-model="firstUploadChoice"
-                  type="radio"
-                  name="script-layout"
-                  value="single"
-                /><span>One script per file</span></label
-              >
-              <label
-                ><input
-                  v-model="firstUploadChoice"
-                  type="radio"
-                  name="script-layout"
-                  value="qr"
-                /><span>QR grouped pages</span></label
-              >
-            </div>
-          </fieldset>
-          <template v-if="firstUploadChoice === 'qr' || assessment.expected_qr_page_labels.length">
-            <div class="qr-fields">
-              <label
-                >Printed test code<input
-                  v-model="qrTest"
-                  class="glass-input"
-                  placeholder="KT2"
-                  :disabled="submissions.some((item) => item.grouped_pages?.length)"
-              /></label>
-              <label
-                >Expected page labels<input
-                  v-model="qrLabels"
-                  class="glass-input"
-                  placeholder="P1, P3"
-                  :disabled="submissions.some((item) => item.grouped_pages?.length)"
-              /></label>
-            </div>
-            <div class="layout-actions">
-              <button
-                class="btn-primary"
-                type="submit"
-                :disabled="savingQR || submissions.some((item) => item.grouped_pages?.length)"
-              >
-                {{ savingQR ? 'Saving…' : 'Save QR configuration' }}
-              </button>
-            </div>
-          </template>
-        </form>
-      </section>
       <section class="panel glass-panel">
         <h2>Submissions</h2>
+        <div
+          v-if="
+            assessment.expected_qr_page_labels !== undefined && assessment.qr_test !== undefined
+          "
+          class="script-layout"
+        >
+          <h3>Script layout</h3>
+          <form class="layout-form" @submit.prevent="saveQR">
+            <fieldset
+              v-if="!assessment.expected_qr_page_labels.length && submissions.length === 0"
+              class="layout-picker"
+            >
+              <legend>Files contain</legend>
+              <div class="layout-options">
+                <label
+                  ><input
+                    v-model="firstUploadChoice"
+                    type="radio"
+                    name="script-layout"
+                    value="single"
+                  /><span>One script per file</span></label
+                >
+                <label
+                  ><input
+                    v-model="firstUploadChoice"
+                    type="radio"
+                    name="script-layout"
+                    value="qr"
+                  /><span>QR grouped pages</span></label
+                >
+              </div>
+            </fieldset>
+            <template
+              v-if="firstUploadChoice === 'qr' || assessment.expected_qr_page_labels.length"
+            >
+              <div class="qr-fields">
+                <label
+                  >Printed test code<input
+                    v-model="qrTest"
+                    class="glass-input"
+                    placeholder="KT2"
+                    :disabled="submissions.some((item) => item.grouped_pages?.length)"
+                /></label>
+                <label
+                  >Expected page labels<input
+                    v-model="qrLabels"
+                    class="glass-input"
+                    placeholder="P1, P3"
+                    :disabled="submissions.some((item) => item.grouped_pages?.length)"
+                /></label>
+              </div>
+              <div class="layout-actions">
+                <button
+                  class="btn-primary"
+                  type="submit"
+                  :disabled="savingQR || submissions.some((item) => item.grouped_pages?.length)"
+                >
+                  {{ savingQR ? 'Saving…' : 'Save QR configuration' }}
+                </button>
+              </div>
+            </template>
+          </form>
+        </div>
         <button
           class="btn-secondary"
           type="button"
@@ -545,6 +548,13 @@ onUnmounted(() => {
         </label>
         <p class="section-desc">Filled bubbles are read without OCR.</p>
         <p v-if="methodMessage" class="section-desc">{{ methodMessage }}</p>
+        <p v-if="!intakeReady" class="section-desc">
+          {{
+            firstUploadChoice === 'qr'
+              ? 'Save the QR configuration before choosing files.'
+              : 'Choose a script layout before choosing files.'
+          }}
+        </p>
         <div class="upload-controls">
           <!-- Added 'multiple' attribute -->
           <input
@@ -552,6 +562,7 @@ onUnmounted(() => {
             type="file"
             multiple
             accept=".pdf,.jpg,.jpeg,.png"
+            :disabled="!intakeReady || savingQR || isProcessingQueue"
             @change="handleSubmissionFileChange"
           />
           <button
@@ -765,6 +776,12 @@ onUnmounted(() => {
   display: grid;
   gap: 20px;
 }
+.script-layout {
+  margin: 1.5rem 0;
+}
+.script-layout h3 {
+  margin: 0 0 1rem;
+}
 .layout-picker {
   border: 0;
   padding: 0;
@@ -917,6 +934,13 @@ onUnmounted(() => {
 
 .file-input {
   color: var(--text-secondary);
+}
+.file-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.file-input:disabled::file-selector-button {
+  cursor: not-allowed;
 }
 
 .file-input::file-selector-button {
